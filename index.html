@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="あそびば" />
+  <title>ちいく あそびば — LOGIC BOOK</title>
+  <style>
+    :root {
+      --font-rounded: "Hiragino Maru Gothic ProN", "Hiragino Maru Gothic Pro", "BIZ UDGothic", "Rounded Mplus 1c", "Arial Rounded MT Bold", ui-rounded, system-ui, -apple-system, sans-serif;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      touch-action: none;
+      font-family: var(--font-rounded);
+      background: #FFF8EC;
+      color: #2D3436;
+      overscroll-behavior: none;
+    }
+
+    /* Ruby styling (clean hiragana furigana) */
+    ruby {
+      ruby-align: center;
+      ruby-position: over;
+    }
+    rt {
+      font-size: 0.42em;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      opacity: 0.92;
+      line-height: 1.2;
+    }
+
+    /* App Container */
+    #app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .screen.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.96);
+    }
+
+    /* ============================================================
+       HOME MENU SCREEN (Lingokids-inspired Flat Toy Design)
+       ============================================================ */
+    #home-screen {
+      background: #FFF7E8;
+      padding: calc(18px + var(--safe-top)) calc(24px + var(--safe-right)) calc(20px + var(--safe-bottom)) calc(24px + var(--safe-left));
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .home-bg-decor {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bg-blob {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.45;
+    }
+    .bg-blob-1 { width: 340px; height: 340px; background: #FFE29A; top: -110px; left: -90px; }
+    .bg-blob-2 { width: 280px; height: 280px; background: #B8E8FC; top: -60px; right: -70px; }
+    .bg-blob-3 { width: 320px; height: 320px; background: #FFD1DC; bottom: -120px; left: 15%; }
+    .bg-blob-4 { width: 260px; height: 260px; background: #C8F2D6; bottom: -90px; right: 8%; }
+
+    .home-header {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 1060px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: #FFFFFF;
+      padding: 10px 22px 10px 14px;
+      border-radius: 999px;
+      border: 4px solid #FFE2B3;
+      box-shadow: 0 6px 0 #F2D29B;
+    }
+
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #FF7043;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 0 #D84315;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: clamp(20px, 2.8vw, 28px);
+      font-weight: 900;
+      color: #2D3436;
+      letter-spacing: 0.04em;
+      line-height: 1.15;
+    }
+
+    .brand-sub {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      color: #FF7043;
+      letter-spacing: 0.06em;
+    }
+
+    /* Flat Toy Icon Button (Sound / Back / etc.) */
+    .toy-icon-btn {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      border: none;
+      border-radius: 18px;
+      background: #FFFFFF;
+      color: #2D3436;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.14);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .toy-icon-btn:active,
+    .toy-icon-btn.is-pressed {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.14);
+    }
+
+    .toy-icon-btn.is-muted {
+      background: #E2E8F0;
+      color: #64748B;
+    }
+
+    /* Menu Main Area */
+    .home-main {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 1060px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(16px, 2.5vh, 28px);
+      padding: 12px 0;
+    }
+
+    .home-prompt {
+      margin: 0;
+      font-size: clamp(20px, 2.6vw, 30px);
+      font-weight: 900;
+      color: #3D405B;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 10px 28px;
+      border-radius: 999px;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 4px 0 rgba(61, 64, 91, 0.08);
+    }
+
+    .game-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(16px, 2.4vw, 28px);
+      align-items: stretch;
+    }
+
+    @media (max-width: 760px) {
+      .game-grid {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+        overflow-y: auto;
+        padding: 4px 4px 12px;
+      }
+    }
+
+    .game-card {
+      position: relative;
+      border: 5px solid #FFFFFF;
+      border-radius: 32px;
+      padding: clamp(18px, 2.4vw, 26px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      gap: 14px;
+      cursor: pointer;
+      color: #FFFFFF;
+      background: var(--card-bg, #FF7043);
+      box-shadow: 0 10px 0 var(--card-shadow, #D84315), 0 16px 28px rgba(45, 52, 54, 0.12);
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease;
+      min-height: clamp(240px, 38vh, 330px);
+    }
+
+    .game-card:active,
+    .game-card.is-pressed {
+      transform: translateY(7px) scale(0.98);
+      box-shadow: 0 3px 0 var(--card-shadow, #D84315), 0 6px 12px rgba(45, 52, 54, 0.10);
+    }
+
+    .game-card.is-coming-soon {
+      background: var(--card-bg, #A5B4FC);
+      color: #FFFFFF;
+      opacity: 0.94;
+    }
+
+    .game-card.is-boing {
+      animation: cardBoing 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes cardBoing {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.06, 0.93); }
+      55% { transform: scale(0.96, 1.04); }
+      80% { transform: scale(1.02, 0.98); }
+      100% { transform: scale(1); }
+    }
+
+    .card-badge {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: #FFD12E;
+      color: #5C3D00;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 5px 12px;
+      border-radius: 999px;
+      box-shadow: 0 3px 0 #D9A700;
+      letter-spacing: 0.04em;
+    }
+
+    .game-card.is-coming-soon .card-badge {
+      background: #FFFFFF;
+      color: #5B6770;
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .card-icon-wrap {
+      width: clamp(92px, 12vw, 126px);
+      height: clamp(92px, 12vw, 126px);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.24);
+      display: grid;
+      place-items: center;
+      margin-top: 10px;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: clamp(22px, 2.5vw, 30px);
+      font-weight: 900;
+      line-height: 1.35;
+      letter-spacing: 0.04em;
+    }
+
+    .card-title rt {
+      font-size: 0.48em;
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .card-desc {
+      margin: 0;
+      font-size: clamp(13px, 1.5vw, 16px);
+      font-weight: 800;
+      opacity: 0.92;
+      line-height: 1.4;
+    }
+
+    .card-play-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #FFFFFF;
+      color: var(--card-shadow, #D84315);
+      font-size: clamp(15px, 1.7vw, 18px);
+      font-weight: 900;
+      padding: 10px 26px;
+      border-radius: 999px;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.14);
+    }
+
+    .game-card.is-coming-soon .card-play-pill {
+      background: rgba(255, 255, 255, 0.3);
+      color: #FFFFFF;
+      box-shadow: none;
+    }
+
+    .home-footer {
+      position: relative;
+      z-index: 2;
+      font-size: 13px;
+      font-weight: 800;
+      color: #7F8C8D;
+      text-align: center;
+    }
+
+    /* ============================================================
+       GAME SHELL SCREEN (Shared Chrome for All Games)
+       ============================================================ */
+    #game-screen {
+      background: #EB5A3C;
+      transition: background-color 0.42s ease, opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .game-topbar {
+      position: absolute;
+      top: calc(14px + var(--safe-top));
+      left: calc(18px + var(--safe-left));
+      right: calc(18px + var(--safe-right));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 30;
+      pointer-events: none;
+    }
+
+    .game-topbar > * {
+      pointer-events: auto;
+    }
+
+    /* Hold-to-exit button (prevents accidental toddler exits) */
+    .hold-back-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hold-back-btn {
+      position: relative;
+      width: 58px;
+      height: 58px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      color: #2D3436;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+      padding: 0;
+      transition: transform 0.12s ease;
+    }
+
+    .hold-back-btn.is-holding {
+      transform: scale(0.94);
+    }
+
+    .hold-ring-svg {
+      position: absolute;
+      inset: -5px;
+      width: 68px;
+      height: 68px;
+      transform: rotate(-90deg);
+      pointer-events: none;
+    }
+
+    .hold-ring-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.35);
+      stroke-width: 5;
+    }
+
+    .hold-ring-progress {
+      fill: none;
+      stroke: #FFD12E;
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 188.5;
+      stroke-dashoffset: 188.5;
+    }
+
+    .hold-hint {
+      background: rgba(25, 30, 38, 0.82);
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 7px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+
+    .hold-hint.is-visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    #game-mount {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ============================================================
+       GAME 1: LOGIC BOOK (Computer Engineering for Babies)
+       ============================================================ */
+    .lb-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(16px + var(--safe-top)) calc(20px + var(--safe-right)) calc(18px + var(--safe-bottom)) calc(20px + var(--safe-left));
+      overflow: hidden;
+    }
+
+    /* Optional flat PCB background pattern for XOR & LATCH */
+    .lb-pcb-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .lb-pcb-bg.is-visible {
+      opacity: 1;
+    }
+
+    /* Stage Header Badge (Center Top) */
+    .lb-stage-header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 2px;
+      pointer-events: none;
+    }
+
+    .lb-stage-pill {
+      background: rgba(255, 255, 255, 0.22);
+      border: 3px solid rgba(255, 255, 255, 0.45);
+      color: #FFFFFF;
+      font-size: clamp(13px, 1.6vw, 16px);
+      font-weight: 900;
+      padding: 5px 18px;
+      border-radius: 999px;
+      letter-spacing: 0.06em;
+    }
+
+    .lb-root.is-light-bg .lb-stage-pill {
+      background: rgba(45, 52, 54, 0.12);
+      border-color: rgba(45, 52, 54, 0.22);
+      color: #3B2E00;
+    }
+
+    /* Main Interactive Board Stage (Fixed Aspect Ratio so SVG wires, buttons, LED never drift) */
+    .lb-stage-viewport {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .lb-board {
+      position: relative;
+      width: min(92vw, 940px, calc(66dvh * 1.85));
+      aspect-ratio: 900 / 480;
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+    }
+
+    .lb-board.slide-out-left {
+      transform: translateX(-50px) scale(0.96);
+      opacity: 0;
+    }
+    .lb-board.slide-out-right {
+      transform: translateX(50px) scale(0.96);
+      opacity: 0;
+    }
+
+    .lb-circuit-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    /* SVG Wire Styles */
+    .wire-base {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.42);
+      stroke-width: 11;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.2s ease;
+    }
+
+    .lb-root.is-light-bg .wire-base {
+      stroke: rgba(59, 46, 0, 0.28);
+    }
+
+    .wire-power {
+      fill: none;
+      stroke: #FFFFFF;
+      stroke-width: 11;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0;
+      transition: opacity 0.14s ease;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+    }
+
+    .wire-power.is-on {
+      opacity: 1;
+    }
+
+    .wire-pulse {
+      fill: none;
+      stroke: #FFF7A8;
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 14 26;
+      opacity: 0;
+      transition: opacity 0.14s ease;
+      animation: wireFlow 0.75s linear infinite;
+    }
+
+    .wire-pulse.is-on {
+      opacity: 1;
+    }
+
+    @keyframes wireFlow {
+      from { stroke-dashoffset: 40; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* Gate shapes */
+    .gate-body {
+      fill: rgba(255, 255, 255, 0.18);
+      stroke: #FFFFFF;
+      stroke-width: 8;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      transition: fill 0.18s ease, filter 0.18s ease;
+    }
+
+    .lb-root.is-light-bg .gate-body {
+      fill: rgba(255, 255, 255, 0.48);
+      stroke: #3B2E00;
+    }
+
+    .gate-body.is-active {
+      fill: rgba(255, 255, 255, 0.55);
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.75));
+    }
+
+    .lb-root.is-light-bg .gate-body.is-active {
+      fill: #FFFFFF;
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.95));
+    }
+
+    .gnd-line {
+      stroke: rgba(255, 255, 255, 0.8);
+      stroke-width: 7;
+      stroke-linecap: round;
+    }
+
+    .lb-root.is-light-bg .gnd-line {
+      stroke: #3B2E00;
+    }
+
+    /* Tactile 3D-Flat Toy Push Button */
+    .toy-push-btn {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 17.5%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: #FFFFFF;
+      padding: 1.1%;
+      box-shadow: 0 10px 0 rgba(0, 0, 0, 0.2), 0 16px 24px rgba(0, 0, 0, 0.16);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      touch-action: none;
+      z-index: 12;
+    }
+
+    .toy-push-btn-well {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--btn-well, #B58900);
+      display: grid;
+      place-items: center;
+    }
+
+    .toy-push-btn-cap {
+      position: relative;
+      width: 92%;
+      height: 92%;
+      border-radius: 50%;
+      background: var(--btn-color, #FFD12E);
+      box-shadow: 0 10px 0 var(--btn-depth, #D99B00), inset 0 -4px 0 rgba(0, 0, 0, 0.08);
+      transform: translateY(-6px);
+      transition: transform 0.07s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.07s ease, filter 0.1s ease;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Flat glossy highlight on button cap */
+    .toy-push-btn-cap::before {
+      content: "";
+      position: absolute;
+      top: 13%;
+      left: 19%;
+      width: 30%;
+      height: 18%;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.45);
+      transform: rotate(-28deg);
+      pointer-events: none;
+    }
+
+    .toy-push-btn.is-pressed .toy-push-btn-cap {
+      transform: translateY(3px) scale(0.98);
+      box-shadow: 0 2px 0 var(--btn-depth, #D99B00), inset 0 2px 0 rgba(0, 0, 0, 0.1);
+      filter: brightness(1.06);
+    }
+
+    .toy-push-btn.btn-yellow {
+      --btn-color: #FFD230;
+      --btn-depth: #D69600;
+      --btn-well: #9E6E00;
+    }
+
+    .toy-push-btn.btn-red {
+      --btn-color: #FF4747;
+      --btn-depth: #C81E2B;
+      --btn-well: #8C131C;
+    }
+
+    /* Ripple effect on button press */
+    .btn-ripple {
+      position: absolute;
+      inset: -14%;
+      border-radius: 50%;
+      border: 6px solid rgba(255, 255, 255, 0.85);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toy-push-btn.is-pressed .btn-ripple {
+      animation: btnRippleOut 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes btnRippleOut {
+      0% { transform: scale(0.85); opacity: 0.9; }
+      100% { transform: scale(1.32); opacity: 0; }
+    }
+
+    /* Button Side Label (for LATCH: RESET / SET) */
+    .btn-side-label {
+      position: absolute;
+      transform: translate(-100%, -50%);
+      padding-right: 14px;
+      text-align: right;
+      color: #FFFFFF;
+      font-weight: 900;
+      font-size: clamp(14px, 2vw, 22px);
+      line-height: 1.2;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 11;
+    }
+
+    .btn-side-label rt {
+      font-size: 0.56em;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    /* LED Lamp Component */
+    .toy-led {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 11.2%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: #FFFFFF;
+      padding: 0.95%;
+      box-shadow: 0 7px 0 rgba(0, 0, 0, 0.22);
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      z-index: 12;
+    }
+
+    .toy-led-bulb {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--led-off, #3B4252);
+      transition: background 0.12s ease, box-shadow 0.16s ease, transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toy-led-bulb::before {
+      content: "";
+      position: absolute;
+      top: 16%;
+      left: 20%;
+      width: 28%;
+      height: 20%;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.55);
+      transform: rotate(-25deg);
+    }
+
+    .toy-led.is-on .toy-led-bulb {
+      background: var(--led-on, #4ADE80);
+      transform: scale(1.08);
+      box-shadow:
+        0 0 0 6px rgba(255, 255, 255, 0.45),
+        0 0 28px 10px var(--led-glow, rgba(74, 222, 128, 0.9)),
+        0 0 58px 20px var(--led-glow, rgba(74, 222, 128, 0.55));
+    }
+
+    /* Sparkle Rays around LED when ON */
+    .led-sparkles {
+      position: absolute;
+      inset: -55%;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.5) rotate(-15deg);
+      transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toy-led.is-on .led-sparkles {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+      animation: sparkleFloat 2.2s ease-in-out infinite;
+    }
+
+    @keyframes sparkleFloat {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.09) rotate(8deg); }
+    }
+
+    /* Big Title & Furigana below circuit */
+    .lb-title-area {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      margin-bottom: 4px;
+      pointer-events: none;
+    }
+
+    .lb-circuit-name {
+      margin: 0;
+      font-size: clamp(34px, 5.2vw, 62px);
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: 0.12em;
+      line-height: 1.25;
+      text-shadow: 0 5px 0 rgba(0, 0, 0, 0.16);
+    }
+
+    .lb-circuit-name rt {
+      font-size: 0.34em;
+      letter-spacing: 0.12em;
+      text-shadow: none;
+      color: rgba(255, 255, 255, 0.96);
+    }
+
+    .lb-root.is-light-bg .lb-circuit-name {
+      color: #3B2E00;
+      text-shadow: 0 4px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .lb-root.is-light-bg .lb-circuit-name rt {
+      color: #5C4800;
+    }
+
+    .lb-circuit-tip {
+      margin: 2px 0 0;
+      font-size: clamp(14px, 1.8vw, 19px);
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.92);
+      letter-spacing: 0.04em;
+    }
+
+    .lb-root.is-light-bg .lb-circuit-tip {
+      color: #5C4800;
+    }
+
+    /* Bottom Navigation Bar (Prev / Page Dots / Next) */
+    .lb-nav {
+      position: relative;
+      z-index: 20;
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 4px;
+    }
+
+    .nav-arrow-btn {
+      width: clamp(58px, 7vw, 72px);
+      height: clamp(58px, 7vw, 72px);
+      border: 4px solid #FFFFFF;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #2D3436;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 7px 0 rgba(0, 0, 0, 0.18);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s ease;
+      padding: 0;
+    }
+
+    .nav-arrow-btn:active,
+    .nav-arrow-btn.is-pressed {
+      transform: translateY(5px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    .nav-arrow-btn.is-disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .lb-dots {
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 1.6vw, 16px);
+      background: rgba(0, 0, 0, 0.16);
+      padding: 10px 18px;
+      border-radius: 999px;
+    }
+
+    .lb-root.is-light-bg .lb-dots {
+      background: rgba(59, 46, 0, 0.14);
+    }
+
+    .lb-dot {
+      width: clamp(16px, 2vw, 20px);
+      height: clamp(16px, 2vw, 20px);
+      border-radius: 999px;
+      border: none;
+      background: rgba(255, 255, 255, 0.45);
+      cursor: pointer;
+      padding: 0;
+      transition: width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, transform 0.15s ease;
+    }
+
+    .lb-dot.is-active {
+      width: clamp(34px, 4vw, 44px);
+      background: #FFFFFF;
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.16);
+    }
+
+    .lb-root.is-light-bg .lb-dot {
+      background: rgba(59, 46, 0, 0.28);
+    }
+    .lb-root.is-light-bg .lb-dot.is-active {
+      background: #3B2E00;
+    }
+
+    /* Portrait adjustments for iPad vertical */
+    @media (orientation: portrait) {
+      .lb-board {
+        width: min(94vw, 760px);
+      }
+      .toy-push-btn {
+        width: 19%;
+      }
+      .toy-led {
+        width: 12.2%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- ==================== HOME MENU SCREEN ==================== -->
+    <section id="home-screen" class="screen" aria-label="ゲームメニュー">
+      <div class="home-bg-decor" aria-hidden="true">
+        <div class="bg-blob bg-blob-1"></div>
+        <div class="bg-blob bg-blob-2"></div>
+        <div class="bg-blob bg-blob-3"></div>
+        <div class="bg-blob bg-blob-4"></div>
+      </div>
+
+      <header class="home-header">
+        <div class="brand-badge">
+          <div class="brand-logo" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="14" r="9" fill="#FFD12E" stroke="#FFFFFF" stroke-width="3"/>
+              <circle cx="11" cy="11" r="2.5" fill="#FFFFFF" opacity="0.8"/>
+            </svg>
+          </div>
+          <div>
+            <span class="brand-sub">KIDS PLAYGROUND</span>
+            <h1 class="brand-title">ちいく あそびば</h1>
+          </div>
+        </div>
+
+        <button class="toy-icon-btn js-sound-toggle" type="button" aria-label="おとの オン・オフ">
+          <svg class="icon-sound-on" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+          <svg class="icon-sound-off" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+            <line x1="23" y1="9" x2="17" y2="15"/>
+            <line x1="17" y1="9" x2="23" y2="15"/>
+          </svg>
+        </button>
+      </header>
+
+      <main class="home-main">
+        <p class="home-prompt">どの あそびで あそぶ？</p>
+        <div id="game-grid" class="game-grid"></div>
+      </main>
+
+      <footer class="home-footer">
+        iPad マルチタッチたいおう ・ おとが でるよ
+      </footer>
+    </section>
+
+    <!-- ==================== GAME SHELL SCREEN ==================== -->
+    <section id="game-screen" class="screen is-hidden" aria-label="ゲーム画面">
+      <div class="game-topbar">
+        <div class="hold-back-wrap">
+          <button id="hold-back-btn" class="hold-back-btn" type="button" aria-label="ながおしで メニューにもどる">
+            <svg class="hold-ring-svg" viewBox="0 0 68 68" aria-hidden="true">
+              <circle class="hold-ring-track" cx="34" cy="34" r="30"/>
+              <circle id="hold-ring-progress" class="hold-ring-progress" cx="34" cy="34" r="30"/>
+            </svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 10.5L12 3l9 7.5"/>
+              <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/>
+            </svg>
+          </button>
+          <div id="hold-hint" class="hold-hint">ながおしで もどるよ</div>
+        </div>
+
+        <button class="toy-icon-btn js-sound-toggle" type="button" aria-label="おとの オン・オフ">
+          <svg class="icon-sound-on" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+          <svg class="icon-sound-off" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+            <line x1="23" y1="9" x2="17" y2="15"/>
+            <line x1="17" y1="9" x2="23" y2="15"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="game-mount"></div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      /* =========================================================================
+         1. HIGH-QUALITY WEB AUDIO SOUND ENGINE
+            (Tactile toy clicks + warm marimba/kalimba harmonics + room reverb)
+         ========================================================================= */
+      class SoundEngine {
+        constructor() {
+          this.ctx = null;
+          this.master = null;
+          this.dryBus = null;
+          this.wetBus = null;
+          this.noiseBuffer = null;
+          this.muted = false;
+          this.unlocked = false;
+        }
+
+        ensureContext() {
+          if (this.ctx) {
+            if (this.ctx.state === 'suspended') {
+              this.ctx.resume().catch(() => {});
+            }
+            return this.ctx;
+          }
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return null;
+
+          const ctx = new AudioCtx();
+          this.ctx = ctx;
+
+          // Master dynamics compressor for warm, clean, non-clipping output
+          const comp = ctx.createDynamicsCompressor();
+          comp.threshold.value = -14;
+          comp.knee.value = 18;
+          comp.ratio.value = 4;
+          comp.attack.value = 0.005;
+          comp.release.value = 0.16;
+
+          const master = ctx.createGain();
+          master.gain.value = this.muted ? 0 : 0.9;
+
+          const dryBus = ctx.createGain();
+          dryBus.gain.value = 0.85;
+
+          const wetBus = ctx.createGain();
+          wetBus.gain.value = 0.28;
+
+          // Procedural warm studio room reverb (impulse response)
+          const convolver = ctx.createConvolver();
+          convolver.buffer = this.createReverbIR(ctx, 1.15, 2.8);
+
+          dryBus.connect(comp);
+          wetBus.connect(convolver);
+          convolver.connect(comp);
+          comp.connect(master);
+          master.connect(ctx.destination);
+
+          this.master = master;
+          this.dryBus = dryBus;
+          this.wetBus = wetBus;
+          this.noiseBuffer = this.createNoiseBuffer(ctx, 0.5);
+
+          return ctx;
+        }
+
+        unlock() {
+          const ctx = this.ensureContext();
+          if (!ctx || this.unlocked) return;
+          if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+          }
+          // Play 1-sample silent buffer to unlock iOS Safari audio
+          const buf = ctx.createBuffer(1, 1, 22050);
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(ctx.destination);
+          try {
+            src.start(0);
+            this.unlocked = true;
+          } catch (_) {}
+        }
+
+        createNoiseBuffer(ctx, durationSec) {
+          const length = Math.floor(ctx.sampleRate * durationSec);
+          const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < length; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          return buffer;
+        }
+
+        createReverbIR(ctx, durationSec, decay) {
+          const rate = ctx.sampleRate;
+          const length = Math.floor(rate * durationSec);
+          const ir = ctx.createBuffer(2, length, rate);
+          for (let ch = 0; ch < 2; ch++) {
+            const data = ir.getChannelData(ch);
+            let lp = 0;
+            for (let i = 0; i < length; i++) {
+              const t = i / length;
+              const env = Math.pow(1 - t, decay);
+              // Gentle low-pass smoothing for warm wooden room feel
+              const white = Math.random() * 2 - 1;
+              lp = lp * 0.72 + white * 0.28;
+              data[i] = lp * env;
+            }
+          }
+          return ir;
+        }
+
+        setMuted(muted) {
+          this.muted = muted;
+          if (this.master && this.ctx) {
+            this.master.gain.setTargetAtTime(muted ? 0 : 0.9, this.ctx.currentTime, 0.02);
+          }
+        }
+
+        toggleMute() {
+          this.setMuted(!this.muted);
+          return this.muted;
+        }
+
+        /** Warm Marimba / Kalimba single note with rich overtones */
+        playMarimbaNote(freq, startTime, duration = 0.55, volume = 0.24, brightness = 1.0) {
+          const ctx = this.ctx;
+          if (!ctx || this.muted) return;
+
+          const out = ctx.createGain();
+          out.gain.setValueAtTime(0.0001, startTime);
+          out.gain.linearRampToValueAtTime(volume, startTime + 0.008);
+          out.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+          // Fundamental (warm triangle + sine blend)
+          const osc1 = ctx.createOscillator();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(freq, startTime);
+
+          const osc1b = ctx.createOscillator();
+          osc1b.type = 'triangle';
+          osc1b.frequency.setValueAtTime(freq * 1.002, startTime); // subtle warmth detune
+          const g1b = ctx.createGain();
+          g1b.gain.value = 0.35;
+
+          // 2nd harmonic (soft wooden body)
+          const osc2 = ctx.createOscillator();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(freq * 2, startTime);
+          const g2 = ctx.createGain();
+          g2.gain.setValueAtTime(0.18 * brightness, startTime);
+          g2.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.45);
+
+          // 4th harmonic (mallet strike ping)
+          const osc4 = ctx.createOscillator();
+          osc4.type = 'sine';
+          osc4.frequency.setValueAtTime(freq * 4, startTime);
+          const g4 = ctx.createGain();
+          g4.gain.setValueAtTime(0.09 * brightness, startTime);
+          g4.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.07);
+
+          osc1.connect(out);
+          osc1b.connect(g1b); g1b.connect(out);
+          osc2.connect(g2);   g2.connect(out);
+          osc4.connect(g4);   g4.connect(out);
+
+          out.connect(this.dryBus);
+          out.connect(this.wetBus);
+
+          [osc1, osc1b, osc2, osc4].forEach(osc => {
+            osc.start(startTime);
+            osc.stop(startTime + duration + 0.04);
+          });
+        }
+
+        /** Tactile toy push button DOWN sound (plastic click + resonant body thump) */
+        playButtonDown(variant = 'yellow') {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+
+          // 1. Crisp micro-switch click (bandpass filtered noise burst)
+          const noise = ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+          const bp = ctx.createBiquadFilter();
+          bp.type = 'bandpass';
+          bp.frequency.setValueAtTime(variant === 'red' ? 2100 : 2500, now);
+          bp.Q.value = 2.4;
+
+          const clickGain = ctx.createGain();
+          clickGain.gain.setValueAtTime(0.28, now);
+          clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+
+          noise.connect(bp);
+          bp.connect(clickGain);
+          clickGain.connect(this.dryBus);
+          noise.start(now);
+          noise.stop(now + 0.03);
+
+          // 2. Soft hollow plastic pop (pitched sine drop)
+          const pop = ctx.createOscillator();
+          pop.type = 'sine';
+          const baseFreq = variant === 'red' ? 185 : 225;
+          pop.frequency.setValueAtTime(baseFreq, now);
+          pop.frequency.exponentialRampToValueAtTime(baseFreq * 0.44, now + 0.055);
+
+          const popGain = ctx.createGain();
+          popGain.gain.setValueAtTime(0.26, now);
+          popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+          pop.connect(popGain);
+          popGain.connect(this.dryBus);
+          pop.start(now);
+          pop.stop(now + 0.07);
+        }
+
+        /** Tactile toy push button UP (release) sound */
+        playButtonUp(variant = 'yellow') {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          const startFreq = variant === 'red' ? 240 : 285;
+          osc.frequency.setValueAtTime(startFreq, now);
+          osc.frequency.exponentialRampToValueAtTime(startFreq * 1.32, now + 0.032);
+
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.11, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.038);
+
+          osc.connect(g);
+          g.connect(this.dryBus);
+          osc.start(now);
+          osc.stop(now + 0.045);
+        }
+
+        /** Lamp ON harmonic celebration tailored per circuit stage (C major pentatonic) */
+        playLampOn(stageId) {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+
+          // Musical chord voicings (all consonant in C major pentatonic)
+          const chords = {
+            wire:  [523.25, 783.99],                   // C5, G5
+            not:   [587.33, 880.00],                   // D5, A5
+            or:    [659.25, 783.99, 1046.50],          // E5, G5, C6
+            and:   [523.25, 659.25, 783.99, 1046.50],  // C5, E5, G5, C6 (big reward!)
+            xor:   [440.00, 659.25, 880.00],           // A4, E5, A5
+            latch: [523.25, 659.25, 783.99, 1174.66],  // C5, E5, G5, D6 (magical harp)
+          };
+
+          const notes = chords[stageId] || chords.wire;
+          const step = stageId === 'latch' ? 0.055 : (stageId === 'and' ? 0.038 : 0.025);
+          const dur = stageId === 'latch' ? 0.9 : 0.62;
+          const vol = 0.21 / Math.sqrt(notes.length * 0.65);
+
+          notes.forEach((freq, i) => {
+            this.playMarimbaNote(freq, now + i * step, dur, vol, stageId === 'and' ? 1.3 : 1.0);
+          });
+        }
+
+        /** Lamp OFF gentle rounded sound */
+        playLampOff(isLatchReset = false) {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+
+          if (isLatchReset) {
+            // Soft downward 2-note release for LATCH RESET
+            this.playMarimbaNote(587.33, now, 0.26, 0.14, 0.5);
+            this.playMarimbaNote(392.00, now + 0.065, 0.36, 0.16, 0.45);
+          } else {
+            // Subtle muted wooden drop
+            this.playMarimbaNote(392.00, now, 0.2, 0.08, 0.35);
+          }
+        }
+
+        /** Page turn sound (gentle paper whoosh + soft woodblock) */
+        playPageTurn(direction = 1) {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+
+          // Soft paper sweep
+          const noise = ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(direction > 0 ? 700 : 1200, now);
+          filter.frequency.exponentialRampToValueAtTime(direction > 0 ? 1500 : 650, now + 0.12);
+          filter.Q.value = 1.2;
+
+          const ng = ctx.createGain();
+          ng.gain.setValueAtTime(0.001, now);
+          ng.gain.linearRampToValueAtTime(0.11, now + 0.03);
+          ng.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+          noise.connect(filter);
+          filter.connect(ng);
+          ng.connect(this.dryBus);
+          noise.start(now);
+          noise.stop(now + 0.16);
+
+          // Light woodblock tap
+          const pitch = direction > 0 ? 659.25 : 523.25;
+          this.playMarimbaNote(pitch, now + 0.02, 0.18, 0.14, 0.7);
+        }
+
+        /** Menu launch chime */
+        playMenuSelect() {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+          [523.25, 659.25, 783.99].forEach((f, i) => {
+            this.playMarimbaNote(f, now + i * 0.055, 0.42, 0.19, 1.1);
+          });
+        }
+
+        /** Playful boing for Coming Soon cards */
+        playBoing() {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(240, now);
+          osc.frequency.exponentialRampToValueAtTime(460, now + 0.1);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.2);
+          osc.frequency.exponentialRampToValueAtTime(410, now + 0.28);
+
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.001, now);
+          g.gain.linearRampToValueAtTime(0.22, now + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+
+          osc.connect(g);
+          g.connect(this.dryBus);
+          g.connect(this.wetBus);
+          osc.start(now);
+          osc.stop(now + 0.36);
+        }
+      }
+
+      /* =========================================================================
+         2. GAME 1: LOGIC BOOK ("Computer Engineering for Babies" - 6 Circuits)
+         ========================================================================= */
+      const LOGIC_STAGES = [
+        {
+          id: 'wire',
+          name: 'WIRE',
+          ruby: 'わいやー',
+          tip: 'ぼたんを おすと らんぷが つくよ！',
+          bg: '#EB5A3C',
+          lightBg: false,
+          pcb: false,
+          ledOn: '#4ADE80',
+          ledOff: '#2B3A32',
+          ledGlow: 'rgba(74, 222, 128, 0.9)',
+          buttons: [
+            { id: 'y', color: 'yellow', x: 255, y: 240 }
+          ],
+          led: { x: 735, y: 240 },
+          evalState: (pressed) => {
+            const on = !!pressed.y;
+            return {
+              led: on,
+              wires: { main: on },
+              gates: {}
+            };
+          },
+          renderCircuitSvg: () => `
+            <g class="wire-group" data-wire="main">
+              <path class="wire-base"  d="M 255 240 L 735 240"/>
+              <path class="wire-power" d="M 255 240 L 735 240"/>
+              <path class="wire-pulse" d="M 255 240 L 735 240"/>
+            </g>
+            ${renderGndSvg(735, 290)}
+          `
+        },
+        {
+          id: 'not',
+          name: 'NOT',
+          ruby: 'のっと',
+          tip: 'おすと きえるよ！ はなすと つくよ！',
+          bg: '#59B4D6',
+          lightBg: false,
+          pcb: false,
+          ledOn: '#FFB703',
+          ledOff: '#3A3A3A',
+          ledGlow: 'rgba(255, 183, 3, 0.92)',
+          buttons: [
+            { id: 'y', color: 'yellow', x: 235, y: 240 }
+          ],
+          led: { x: 745, y: 240 },
+          evalState: (pressed) => {
+            const inp = !!pressed.y;
+            const out = !inp;
+            return {
+              led: out,
+              wires: { inY: inp, out },
+              gates: { gNot: out }
+            };
+          },
+          renderCircuitSvg: () => `
+            <g class="wire-group" data-wire="inY">
+              <path class="wire-base"  d="M 235 240 L 455 240"/>
+              <path class="wire-power" d="M 235 240 L 455 240"/>
+              <path class="wire-pulse" d="M 235 240 L 455 240"/>
+            </g>
+            <g class="wire-group" data-wire="out">
+              <path class="wire-base"  d="M 575 240 L 745 240"/>
+              <path class="wire-power" d="M 575 240 L 745 240"/>
+              <path class="wire-pulse" d="M 575 240 L 745 240"/>
+            </g>
+            <g data-gate="gNot">
+              <polygon class="gate-body" points="455,180 455,300 548,240"/>
+              <circle class="gate-body" cx="562" cy="240" r="14"/>
+            </g>
+            ${renderGndSvg(745, 290)}
+          `
+        },
+        {
+          id: 'or',
+          name: 'OR',
+          ruby: 'おあ',
+          tip: 'あか でも きいろ でも つくよ！',
+          bg: '#E8568C',
+          lightBg: false,
+          pcb: false,
+          ledOn: '#FF3B5C',
+          ledOff: '#4A2535',
+          ledGlow: 'rgba(255, 70, 105, 0.95)',
+          buttons: [
+            { id: 'r', color: 'red',    x: 235, y: 140 },
+            { id: 'y', color: 'yellow', x: 235, y: 340 }
+          ],
+          led: { x: 755, y: 240 },
+          evalState: (pressed) => {
+            const r = !!pressed.r;
+            const y = !!pressed.y;
+            const out = r || y;
+            return {
+              led: out,
+              wires: { inR: r, inY: y, out },
+              gates: { gOr: out }
+            };
+          },
+          renderCircuitSvg: () => `
+            <g class="wire-group" data-wire="inR">
+              <path class="wire-base"  d="M 235 140 L 365 140 L 365 210 L 458 210"/>
+              <path class="wire-power" d="M 235 140 L 365 140 L 365 210 L 458 210"/>
+              <path class="wire-pulse" d="M 235 140 L 365 140 L 365 210 L 458 210"/>
+            </g>
+            <g class="wire-group" data-wire="inY">
+              <path class="wire-base"  d="M 235 340 L 365 340 L 365 270 L 458 270"/>
+              <path class="wire-power" d="M 235 340 L 365 340 L 365 270 L 458 270"/>
+              <path class="wire-pulse" d="M 235 340 L 365 340 L 365 270 L 458 270"/>
+            </g>
+            <g class="wire-group" data-wire="out">
+              <path class="wire-base"  d="M 592 240 L 755 240"/>
+              <path class="wire-power" d="M 592 240 L 755 240"/>
+              <path class="wire-pulse" d="M 592 240 L 755 240"/>
+            </g>
+            <g data-gate="gOr">
+              <path class="gate-body" d="M 442 178 Q 475 240 442 302 L 496 302 Q 560 302 592 240 Q 560 178 496 178 Z"/>
+            </g>
+            ${renderGndSvg(755, 290)}
+          `
+        },
+        {
+          id: 'and',
+          name: 'AND',
+          ruby: 'あんど',
+          tip: 'あか と きいろ を いっしょに おしてね！',
+          bg: '#F6C927',
+          lightBg: true,
+          pcb: false,
+          ledOn: '#F43F9E',
+          ledOff: '#54461B',
+          ledGlow: 'rgba(244, 63, 158, 0.92)',
+          buttons: [
+            { id: 'r', color: 'red',    x: 235, y: 140 },
+            { id: 'y', color: 'yellow', x: 235, y: 340 }
+          ],
+          led: { x: 755, y: 240 },
+          evalState: (pressed) => {
+            const r = !!pressed.r;
+            const y = !!pressed.y;
+            const out = r && y;
+            return {
+              led: out,
+              wires: { inR: r, inY: y, out },
+              gates: { gAnd: out }
+            };
+          },
+          renderCircuitSvg: () => `
+            <g class="wire-group" data-wire="inR">
+              <path class="wire-base"  d="M 235 140 L 365 140 L 365 210 L 455 210"/>
+              <path class="wire-power" d="M 235 140 L 365 140 L 365 210 L 455 210"/>
+              <path class="wire-pulse" d="M 235 140 L 365 140 L 365 210 L 455 210"/>
+            </g>
+            <g class="wire-group" data-wire="inY">
+              <path class="wire-base"  d="M 235 340 L 365 340 L 365 270 L 455 270"/>
+              <path class="wire-power" d="M 235 340 L 365 340 L 365 270 L 455 270"/>
+              <path class="wire-pulse" d="M 235 340 L 365 340 L 365 270 L 455 270"/>
+            </g>
+            <g class="wire-group" data-wire="out">
+              <path class="wire-base"  d="M 585 240 L 755 240"/>
+              <path class="wire-power" d="M 585 240 L 755 240"/>
+              <path class="wire-pulse" d="M 585 240 L 755 240"/>
+            </g>
+            <g data-gate="gAnd">
+              <path class="gate-body" d="M 455 178 L 522 178 A 62 62 0 0 1 522 302 L 455 302 Z"/>
+            </g>
+            ${renderGndSvg(755, 290)}
+          `
+        },
+        {
+          id: 'xor',
+          name: 'XOR',
+          ruby: 'えっくすおあ',
+          tip: 'どっちか ひとつ だけ おすと つくよ！',
+          bg: '#55B375',
+          lightBg: false,
+          pcb: true,
+          ledOn: '#FFF04D',
+          ledOff: '#284534',
+          ledGlow: 'rgba(255, 240, 77, 0.95)',
+          buttons: [
+            { id: 'r', color: 'red',    x: 235, y: 140 },
+            { id: 'y', color: 'yellow', x: 235, y: 340 }
+          ],
+          led: { x: 755, y: 240 },
+          evalState: (pressed) => {
+            const r = !!pressed.r;
+            const y = !!pressed.y;
+            const out = (r || y) && !(r && y);
+            return {
+              led: out,
+              wires: { inR: r, inY: y, out },
+              gates: { gXor: out }
+            };
+          },
+          renderCircuitSvg: () => `
+            <g class="wire-group" data-wire="inR">
+              <path class="wire-base"  d="M 235 140 L 365 140 L 365 210 L 452 210"/>
+              <path class="wire-power" d="M 235 140 L 365 140 L 365 210 L 452 210"/>
+              <path class="wire-pulse" d="M 235 140 L 365 140 L 365 210 L 452 210"/>
+            </g>
+            <g class="wire-group" data-wire="inY">
+              <path class="wire-base"  d="M 235 340 L 365 340 L 365 270 L 452 270"/>
+              <path class="wire-power" d="M 235 340 L 365 340 L 365 270 L 452 270"/>
+              <path class="wire-pulse" d="M 235 340 L 365 340 L 365 270 L 452 270"/>
+            </g>
+            <g class="wire-group" data-wire="out">
+              <path class="wire-base"  d="M 602 240 L 755 240"/>
+              <path class="wire-power" d="M 602 240 L 755 240"/>
+              <path class="wire-pulse" d="M 602 240 L 755 240"/>
+            </g>
+            <g data-gate="gXor">
+              <path class="gate-body" style="fill:none;" d="M 432 178 Q 465 240 432 302"/>
+              <path class="gate-body" d="M 452 178 Q 485 240 452 302 L 506 302 Q 570 302 602 240 Q 570 178 506 178 Z"/>
+            </g>
+            ${renderGndSvg(755, 290)}
+          `
+        },
+        {
+          id: 'latch',
+          name: 'LATCH',
+          ruby: 'らっち',
+          tip: 'きいろ で ついたまま！ あか で きえるよ！',
+          bg: '#2D323B',
+          lightBg: false,
+          pcb: true,
+          ledOn: '#38E8FF',
+          ledOff: '#1E232B',
+          ledGlow: 'rgba(56, 232, 255, 0.95)',
+          buttons: [
+            { id: 'r', color: 'red',    x: 265, y: 135, label: 'RESET', labelRuby: 'りせっと' },
+            { id: 'y', color: 'yellow', x: 265, y: 345, label: 'SET',   labelRuby: 'せっと' }
+          ],
+          led: { x: 775, y: 240 },
+          evalState: (pressed, memory) => {
+            const reset = !!pressed.r;
+            const set = !!pressed.y;
+            // Dominant-Reset SR Latch: Q = (SET || Q) && !RESET
+            if (reset) {
+              memory.latched = false;
+            } else if (set) {
+              memory.latched = true;
+            }
+            const q = !!memory.latched;
+            const notReset = !reset;
+            const orOut = set || q;
+            return {
+              led: q,
+              wires: {
+                inR: reset,
+                notOut: notReset,
+                inY: set,
+                orOut: orOut,
+                out: q,
+                fb: q
+              },
+              gates: {
+                gNot: notReset,
+                gOr: orOut,
+                gAnd: q
+              }
+            };
+          },
+          renderCircuitSvg: () => `
+            <!-- RESET button to NOT gate -->
+            <g class="wire-group" data-wire="inR">
+              <path class="wire-base"  d="M 265 135 L 368 135"/>
+              <path class="wire-power" d="M 265 135 L 368 135"/>
+              <path class="wire-pulse" d="M 265 135 L 368 135"/>
+            </g>
+            <!-- NOT gate output to AND gate top input -->
+            <g class="wire-group" data-wire="notOut">
+              <path class="wire-base"  d="M 442 135 L 495 135 L 495 212 L 542 212"/>
+              <path class="wire-power" d="M 442 135 L 495 135 L 495 212 L 542 212"/>
+              <path class="wire-pulse" d="M 442 135 L 495 135 L 495 212 L 542 212"/>
+            </g>
+            <!-- SET button to OR gate bottom input -->
+            <g class="wire-group" data-wire="inY">
+              <path class="wire-base"  d="M 265 345 L 375 345"/>
+              <path class="wire-power" d="M 265 345 L 375 345"/>
+              <path class="wire-pulse" d="M 265 345 L 375 345"/>
+            </g>
+            <!-- Feedback loop from AND output back to OR top input -->
+            <g class="wire-group" data-wire="fb">
+              <path class="wire-base"  d="M 678 240 L 678 415 L 332 415 L 332 308 L 375 308"/>
+              <path class="wire-power" d="M 678 240 L 678 415 L 332 415 L 332 308 L 375 308"/>
+              <path class="wire-pulse" d="M 678 240 L 678 415 L 332 415 L 332 308 L 375 308"/>
+            </g>
+            <!-- OR output to AND bottom input -->
+            <g class="wire-group" data-wire="orOut">
+              <path class="wire-base"  d="M 468 326 L 495 326 L 495 268 L 542 268"/>
+              <path class="wire-power" d="M 468 326 L 495 326 L 495 268 L 542 268"/>
+              <path class="wire-pulse" d="M 468 326 L 495 326 L 495 268 L 542 268"/>
+            </g>
+            <!-- AND output to LED -->
+            <g class="wire-group" data-wire="out">
+              <path class="wire-base"  d="M 642 240 L 775 240"/>
+              <path class="wire-power" d="M 642 240 L 775 240"/>
+              <path class="wire-pulse" d="M 642 240 L 775 240"/>
+              <circle cx="678" cy="240" r="8" fill="#FFFFFF"/>
+            </g>
+
+            <!-- NOT Gate (compact) -->
+            <g data-gate="gNot">
+              <polygon class="gate-body" points="368,100 368,170 422,135"/>
+              <circle class="gate-body" cx="432" cy="135" r="10"/>
+            </g>
+            <!-- OR Gate (compact) -->
+            <g data-gate="gOr">
+              <path class="gate-body" d="M 366 286 Q 388 326 366 366 L 405 366 Q 446 366 468 326 Q 446 286 405 286 Z"/>
+            </g>
+            <!-- AND Gate -->
+            <g data-gate="gAnd">
+              <path class="gate-body" d="M 542 190 L 592 190 A 50 50 0 0 1 592 290 L 542 290 Z"/>
+            </g>
+            ${renderGndSvg(775, 290)}
+          `
+        }
+      ];
+
+      function renderGndSvg(x, topY) {
+        return `
+          <g class="gnd-symbol">
+            <line class="gnd-line" x1="${x}" y1="${topY}" x2="${x}" y2="${topY + 42}"/>
+            <line class="gnd-line" x1="${x - 24}" y1="${topY + 42}" x2="${x + 24}" y2="${topY + 42}"/>
+            <line class="gnd-line" x1="${x - 15}" y1="${topY + 55}" x2="${x + 15}" y2="${topY + 55}"/>
+            <line class="gnd-line" x1="${x - 7}"  y1="${topY + 68}" x2="${x + 7}"  y2="${topY + 68}"/>
+          </g>
+        `;
+      }
+
+      function renderPcbPatternSvg() {
+        return `
+          <svg class="lb-pcb-bg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g stroke="rgba(255,255,255,0.09)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M 40 120 H 180 L 230 170 H 360"/>
+              <path d="M 80 260 H 160 L 200 220 H 290"/>
+              <path d="M 60 660 H 240 L 290 610 H 420"/>
+              <path d="M 840 90 H 980 L 1030 140 H 1160"/>
+              <path d="M 920 240 H 1040 L 1090 190 H 1180"/>
+              <path d="M 780 680 H 960 L 1020 620 H 1160"/>
+              <path d="M 450 70 V 140 L 500 190"/>
+              <path d="M 680 740 V 660 L 730 610"/>
+              <circle cx="180" cy="120" r="8" fill="rgba(255,255,255,0.09)"/>
+              <circle cx="360" cy="170" r="8" fill="rgba(255,255,255,0.09)"/>
+              <circle cx="290" cy="220" r="8" fill="rgba(255,255,255,0.09)"/>
+              <circle cx="420" cy="610" r="8" fill="rgba(255,255,255,0.09)"/>
+              <circle cx="840" cy="90"  r="8" fill="rgba(255,255,255,0.09)"/>
+              <circle cx="1090" cy="190" r="8" fill="rgba(255,255,255,0.09)"/>
+              <circle cx="780" cy="680" r="8" fill="rgba(255,255,255,0.09)"/>
+              <circle cx="500" cy="190" r="8" fill="rgba(255,255,255,0.09)"/>
+              <circle cx="730" cy="610" r="8" fill="rgba(255,255,255,0.09)"/>
+            </g>
+          </svg>
+        `;
+      }
+
+      class LogicBookGame {
+        constructor(container, app) {
+          this.container = container;
+          this.app = app;
+          this.sound = app.sound;
+          this.stageIndex = 0;
+          this.pressed = {};
+          this.memory = { latched: false };
+          this.lastLedOn = false;
+          this.pointerMap = new Map(); // pointerId -> buttonId
+          this.isTransitioning = false;
+          this.onKeyDown = this.handleKeyDown.bind(this);
+          this.onKeyUp = this.handleKeyUp.bind(this);
+        }
+
+        mount() {
+          this.container.innerHTML = `
+            <div class="lb-root" id="lb-root">
+              ${renderPcbPatternSvg()}
+
+              <div class="lb-stage-header">
+                <div class="lb-stage-pill" id="lb-page-counter">1 / 6</div>
+              </div>
+
+              <div class="lb-stage-viewport">
+                <div class="lb-board" id="lb-board"></div>
+              </div>
+
+              <div class="lb-title-area">
+                <h2 class="lb-circuit-name" id="lb-circuit-name"></h2>
+                <p class="lb-circuit-tip" id="lb-circuit-tip"></p>
+              </div>
+
+              <nav class="lb-nav" aria-label="ページきりかえ">
+                <button class="nav-arrow-btn" id="lb-prev-btn" type="button" aria-label="まえの ページ">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+
+                <div class="lb-dots" id="lb-dots"></div>
+
+                <button class="nav-arrow-btn" id="lb-next-btn" type="button" aria-label="つぎの ページ">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </nav>
+            </div>
+          `;
+
+          this.rootEl = this.container.querySelector('#lb-root');
+          this.pcbEl = this.container.querySelector('.lb-pcb-bg');
+          this.boardEl = this.container.querySelector('#lb-board');
+          this.counterEl = this.container.querySelector('#lb-page-counter');
+          this.nameEl = this.container.querySelector('#lb-circuit-name');
+          this.tipEl = this.container.querySelector('#lb-circuit-tip');
+          this.prevBtn = this.container.querySelector('#lb-prev-btn');
+          this.nextBtn = this.container.querySelector('#lb-next-btn');
+          this.dotsEl = this.container.querySelector('#lb-dots');
+
+          this.buildDots();
+
+          this.prevBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            this.sound.unlock();
+            this.goToStage(this.stageIndex - 1, -1);
+          });
+
+          this.nextBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            this.sound.unlock();
+            this.goToStage(this.stageIndex + 1, 1);
+          });
+
+          window.addEventListener('keydown', this.onKeyDown);
+          window.addEventListener('keyup', this.onKeyUp);
+
+          this.renderStage(0, false);
+        }
+
+        unmount() {
+          window.removeEventListener('keydown', this.onKeyDown);
+          window.removeEventListener('keyup', this.onKeyUp);
+          this.pointerMap.clear();
+          this.container.innerHTML = '';
+        }
+
+        buildDots() {
+          this.dotsEl.innerHTML = '';
+          LOGIC_STAGES.forEach((st, idx) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'lb-dot';
+            dot.setAttribute('aria-label', `${st.ruby} ページへ`);
+            dot.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              if (idx !== this.stageIndex) {
+                this.goToStage(idx, idx > this.stageIndex ? 1 : -1);
+              }
+            });
+            this.dotsEl.appendChild(dot);
+          });
+        }
+
+        goToStage(nextIndex, direction) {
+          if (this.isTransitioning) return;
+          if (nextIndex < 0 || nextIndex >= LOGIC_STAGES.length) return;
+
+          this.isTransitioning = true;
+          this.sound.playPageTurn(direction);
+          this.boardEl.classList.add(direction > 0 ? 'slide-out-left' : 'slide-out-right');
+
+          setTimeout(() => {
+            this.renderStage(nextIndex, true);
+            this.boardEl.classList.remove('slide-out-left', 'slide-out-right');
+            this.isTransitioning = false;
+          }, 190);
+        }
+
+        renderStage(index, playNotInitSound = false) {
+          this.stageIndex = index;
+          const stage = LOGIC_STAGES[index];
+
+          // Reset transient state
+          this.pressed = {};
+          this.memory = { latched: false };
+          this.pointerMap.clear();
+
+          // Update shell & theme
+          this.app.setGameBackground(stage.bg);
+          this.rootEl.classList.toggle('is-light-bg', !!stage.lightBg);
+          this.pcbEl.classList.toggle('is-visible', !!stage.pcb);
+
+          this.counterEl.textContent = `${index + 1} / ${LOGIC_STAGES.length}`;
+          this.nameEl.innerHTML = `<ruby>${stage.name}<rt>${stage.ruby}</rt></ruby>`;
+          this.tipEl.textContent = stage.tip;
+
+          this.prevBtn.classList.toggle('is-disabled', index === 0);
+          this.nextBtn.classList.toggle('is-disabled', index === LOGIC_STAGES.length - 1);
+
+          Array.from(this.dotsEl.children).forEach((dot, i) => {
+            dot.classList.toggle('is-active', i === index);
+          });
+
+          // Build interactive board HTML (SVG wires + tactile HTML buttons + LED)
+          let buttonsHtml = '';
+          stage.buttons.forEach((btn) => {
+            const leftPct = (btn.x / 900) * 100;
+            const topPct = (btn.y / 480) * 100;
+            if (btn.label) {
+              const labelLeftPct = ((btn.x - 86) / 900) * 100;
+              buttonsHtml += `
+                <div class="btn-side-label" style="left:${labelLeftPct}%; top:${topPct}%;">
+                  <ruby>${btn.label}<rt>${btn.labelRuby}</rt></ruby>
+                </div>
+              `;
+            }
+            buttonsHtml += `
+              <div class="toy-push-btn btn-${btn.color}"
+                   data-btn-id="${btn.id}"
+                   data-btn-color="${btn.color}"
+                   style="left:${leftPct}%; top:${topPct}%;"
+                   role="button"
+                   aria-label="${btn.color === 'red' ? 'あかい ぼたん' : 'きいろい ぼたん'}">
+                <div class="btn-ripple"></div>
+                <div class="toy-push-btn-well">
+                  <div class="toy-push-btn-cap"></div>
+                </div>
+              </div>
+            `;
+          });
+
+          const ledLeftPct = (stage.led.x / 900) * 100;
+          const ledTopPct = (stage.led.y / 480) * 100;
+
+          this.boardEl.innerHTML = `
+            <svg class="lb-circuit-svg" viewBox="0 0 900 480" aria-hidden="true">
+              ${stage.renderCircuitSvg()}
+            </svg>
+            ${buttonsHtml}
+            <div class="toy-led" id="lb-led"
+                 style="left:${ledLeftPct}%; top:${ledTopPct}%; --led-on:${stage.ledOn}; --led-off:${stage.ledOff}; --led-glow:${stage.ledGlow};">
+              <svg class="led-sparkles" viewBox="0 0 140 140" aria-hidden="true">
+                <g stroke="${stage.ledOn}" stroke-width="7" stroke-linecap="round">
+                  <line x1="70" y1="6"  x2="70" y2="20"/>
+                  <line x1="70" y1="120" x2="70" y2="134"/>
+                  <line x1="6"  y1="70" x2="20" y2="70"/>
+                  <line x1="120" y1="70" x2="134" y2="70"/>
+                  <line x1="22" y1="22" x2="32" y2="32"/>
+                  <line x1="108" y1="108" x2="118" y2="118"/>
+                  <line x1="118" y1="22" x2="108" y2="32"/>
+                  <line x1="32" y1="108" x2="22" y2="118"/>
+                </g>
+              </svg>
+              <div class="toy-led-bulb"></div>
+            </div>
+          `;
+
+          this.bindButtonEvents();
+
+          // Evaluate initial state silently (so NOT starts lit without extra noise unless desired)
+          const initial = stage.evalState(this.pressed, this.memory);
+          this.lastLedOn = initial.led;
+          this.applyVisualState(initial);
+
+          if (playNotInitSound && stage.id === 'not') {
+            setTimeout(() => {
+              if (this.stageIndex === index && this.lastLedOn) {
+                this.sound.playLampOn('not');
+              }
+            }, 140);
+          }
+        }
+
+        bindButtonEvents() {
+          const btnEls = this.boardEl.querySelectorAll('.toy-push-btn');
+          btnEls.forEach((el) => {
+            const btnId = el.dataset.btnId;
+            const color = el.dataset.btnColor;
+            const activePointers = new Set();
+
+            const updateBtnPressed = () => {
+              const isDown = activePointers.size > 0;
+              const wasDown = !!this.pressed[btnId];
+              if (isDown === wasDown) return;
+
+              this.pressed[btnId] = isDown;
+              el.classList.toggle('is-pressed', isDown);
+
+              if (isDown) {
+                this.sound.playButtonDown(color);
+              } else {
+                this.sound.playButtonUp(color);
+              }
+              this.evaluateAndRender();
+            };
+
+            el.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              try { el.setPointerCapture(e.pointerId); } catch (_) {}
+              activePointers.add(e.pointerId);
+              this.pointerMap.set(e.pointerId, btnId);
+              updateBtnPressed();
+            });
+
+            const releasePointer = (e) => {
+              if (!activePointers.has(e.pointerId)) return;
+              activePointers.delete(e.pointerId);
+              this.pointerMap.delete(e.pointerId);
+              updateBtnPressed();
+            };
+
+            el.addEventListener('pointerup', releasePointer);
+            el.addEventListener('pointercancel', releasePointer);
+            el.addEventListener('lostpointercapture', releasePointer);
+          });
+        }
+
+        /* Optional keyboard support for desktop testing (1 = red, 2 = yellow, arrows = pages) */
+        handleKeyDown(e) {
+          if (e.repeat) return;
+          if (e.key === 'ArrowRight') {
+            this.goToStage(this.stageIndex + 1, 1);
+            return;
+          }
+          if (e.key === 'ArrowLeft') {
+            this.goToStage(this.stageIndex - 1, -1);
+            return;
+          }
+          const btnId = e.key === '1' ? 'r' : (e.key === '2' || e.key === ' ' ? 'y' : null);
+          if (!btnId) return;
+          const btnEl = this.boardEl.querySelector(`.toy-push-btn[data-btn-id="${btnId}"]`);
+          if (!btnEl || this.pressed[btnId]) return;
+          this.sound.unlock();
+          this.pressed[btnId] = true;
+          btnEl.classList.add('is-pressed');
+          this.sound.playButtonDown(btnEl.dataset.btnColor);
+          this.evaluateAndRender();
+        }
+
+        handleKeyUp(e) {
+          const btnId = e.key === '1' ? 'r' : (e.key === '2' || e.key === ' ' ? 'y' : null);
+          if (!btnId) return;
+          const btnEl = this.boardEl.querySelector(`.toy-push-btn[data-btn-id="${btnId}"]`);
+          if (!btnEl || !this.pressed[btnId]) return;
+          this.pressed[btnId] = false;
+          btnEl.classList.remove('is-pressed');
+          this.sound.playButtonUp(btnEl.dataset.btnColor);
+          this.evaluateAndRender();
+        }
+
+        evaluateAndRender() {
+          const stage = LOGIC_STAGES[this.stageIndex];
+          const state = stage.evalState(this.pressed, this.memory);
+          this.applyVisualState(state);
+
+          if (state.led !== this.lastLedOn) {
+            if (state.led) {
+              this.sound.playLampOn(stage.id);
+            } else {
+              this.sound.playLampOff(stage.id === 'latch');
+            }
+            this.lastLedOn = state.led;
+          }
+        }
+
+        applyVisualState(state) {
+          const ledEl = this.boardEl.querySelector('#lb-led');
+          if (ledEl) {
+            ledEl.classList.toggle('is-on', !!state.led);
+          }
+
+          Object.entries(state.wires).forEach(([wireId, isOn]) => {
+            const group = this.boardEl.querySelector(`.wire-group[data-wire="${wireId}"]`);
+            if (!group) return;
+            group.querySelectorAll('.wire-power, .wire-pulse').forEach((path) => {
+              path.classList.toggle('is-on', !!isOn);
+            });
+          });
+
+          Object.entries(state.gates).forEach(([gateId, isActive]) => {
+            const group = this.boardEl.querySelector(`[data-gate="${gateId}"]`);
+            if (!group) return;
+            group.querySelectorAll('.gate-body').forEach((shape) => {
+              shape.classList.toggle('is-active', !!isActive);
+            });
+          });
+        }
+      }
+
+      /* =========================================================================
+         3. EXTENSIBLE GAME REGISTRY
+            Add future games here — they automatically appear in the Home Menu!
+         ========================================================================= */
+      const GAME_REGISTRY = [
+        {
+          id: 'logic-book',
+          title: 'LOGIC BOOK',
+          ruby: 'ろじっく えほん',
+          desc: 'ぼたんと らんぷの 6つの ひみつ',
+          badge: 'あそべるよ！',
+          cta: 'あそぶ',
+          bg: '#FF7043',
+          shadow: '#D84315',
+          available: true,
+          iconSvg: `
+            <svg width="78" height="78" viewBox="0 0 80 80" fill="none">
+              <line x1="22" y1="40" x2="58" y2="40" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+              <circle cx="22" cy="40" r="14" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4.5"/>
+              <circle cx="58" cy="40" r="11" fill="#4ADE80" stroke="#FFFFFF" stroke-width="4.5"/>
+              <line x1="58" y1="53" x2="58" y2="63" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+              <line x1="50" y1="63" x2="66" y2="63" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+              <line x1="53" y1="69" x2="63" y2="69" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          `,
+          create: (container, app) => new LogicBookGame(container, app)
+        },
+        {
+          id: 'coming-sound-pad',
+          title: 'SOUND PAD',
+          ruby: 'おとの ぱっど',
+          desc: 'たたいて かなでる おんがく あそび',
+          badge: 'もうすぐ！',
+          cta: 'じゅんびちゅう',
+          bg: '#4FA3F7',
+          shadow: '#2575C7',
+          available: false,
+          iconSvg: `
+            <svg width="74" height="74" viewBox="0 0 80 80" fill="none">
+              <path d="M32 54V22L60 16V48" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="24" cy="54" r="9" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4"/>
+              <circle cx="52" cy="48" r="9" fill="#FF85A1" stroke="#FFFFFF" stroke-width="4"/>
+            </svg>
+          `
+        },
+        {
+          id: 'coming-color-mix',
+          title: 'COLOR MIX',
+          ruby: 'いろの まほう',
+          desc: 'いろを まぜて あたらしい いろ！',
+          badge: 'もうすぐ！',
+          cta: 'じゅんびちゅう',
+          bg: '#8E7CF6',
+          shadow: '#6351CC',
+          available: false,
+          iconSvg: `
+            <svg width="74" height="74" viewBox="0 0 80 80" fill="none">
+              <circle cx="32" cy="34" r="16" fill="#FF6B8B" stroke="#FFFFFF" stroke-width="4"/>
+              <circle cx="50" cy="38" r="16" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4" opacity="0.92"/>
+              <circle cx="38" cy="50" r="15" fill="#4DD0E1" stroke="#FFFFFF" stroke-width="4" opacity="0.92"/>
+            </svg>
+          `
+        }
+      ];
+
+      /* =========================================================================
+         4. APP SHELL (Navigation, Hold-to-Exit, Sound Toggle, iPad Touch Guard)
+         ========================================================================= */
+      class AppShell {
+        constructor() {
+          this.sound = new SoundEngine();
+          this.activeGame = null;
+          this.homeScreen = document.getElementById('home-screen');
+          this.gameScreen = document.getElementById('game-screen');
+          this.gameGrid = document.getElementById('game-grid');
+          this.gameMount = document.getElementById('game-mount');
+          this.holdBackBtn = document.getElementById('hold-back-btn');
+          this.holdRingProgress = document.getElementById('hold-ring-progress');
+          this.holdHint = document.getElementById('hold-hint');
+
+          this.initTouchGuards();
+          this.initSoundButtons();
+          this.initHoldBackButton();
+          this.renderMenu();
+        }
+
+        initTouchGuards() {
+          // Unlock audio on very first touch anywhere
+          const unlockOnce = () => {
+            this.sound.unlock();
+          };
+          window.addEventListener('pointerdown', unlockOnce, { passive: true });
+          window.addEventListener('touchstart', unlockOnce, { passive: true });
+
+          // Block iOS Safari pinch/double-tap zoom & long-press menu
+          document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+          document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+          document.addEventListener('contextmenu', (e) => e.preventDefault());
+          document.addEventListener('dblclick', (e) => e.preventDefault());
+        }
+
+        initSoundButtons() {
+          const btns = document.querySelectorAll('.js-sound-toggle');
+          const syncUI = (muted) => {
+            btns.forEach((btn) => {
+              btn.classList.toggle('is-muted', muted);
+              btn.querySelector('.icon-sound-on').style.display = muted ? 'none' : 'block';
+              btn.querySelector('.icon-sound-off').style.display = muted ? 'block' : 'none';
+            });
+          };
+
+          btns.forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              const muted = this.sound.toggleMute();
+              syncUI(muted);
+              if (!muted) {
+                this.sound.playButtonUp('yellow');
+              }
+            });
+          });
+        }
+
+        initHoldBackButton() {
+          const HOLD_MS = 750;
+          const CIRCUMFERENCE = 188.5;
+          let rafId = null;
+          let startTime = 0;
+          let holding = false;
+          let hintTimer = null;
+
+          const showHint = () => {
+            this.holdHint.classList.add('is-visible');
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(() => {
+              this.holdHint.classList.remove('is-visible');
+            }, 1800);
+          };
+
+          const cancelHold = (wasShortTap) => {
+            if (!holding) return;
+            holding = false;
+            cancelAnimationFrame(rafId);
+            this.holdBackBtn.classList.remove('is-holding');
+            this.holdRingProgress.style.strokeDashoffset = String(CIRCUMFERENCE);
+            if (wasShortTap) {
+              showHint();
+            }
+          };
+
+          const tick = (now) => {
+            if (!holding) return;
+            const elapsed = now - startTime;
+            const progress = Math.min(1, elapsed / HOLD_MS);
+            this.holdRingProgress.style.strokeDashoffset = String(CIRCUMFERENCE * (1 - progress));
+
+            if (progress >= 1) {
+              holding = false;
+              this.holdBackBtn.classList.remove('is-holding');
+              this.holdRingProgress.style.strokeDashoffset = String(CIRCUMFERENCE);
+              this.holdHint.classList.remove('is-visible');
+              this.sound.playPageTurn(-1);
+              this.exitGame();
+              return;
+            }
+            rafId = requestAnimationFrame(tick);
+          };
+
+          this.holdBackBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            this.sound.unlock();
+            try { this.holdBackBtn.setPointerCapture(e.pointerId); } catch (_) {}
+            holding = true;
+            startTime = performance.now();
+            this.holdBackBtn.classList.add('is-holding');
+            this.sound.playButtonDown('yellow');
+            rafId = requestAnimationFrame(tick);
+          });
+
+          this.holdBackBtn.addEventListener('pointerup', () => cancelHold(true));
+          this.holdBackBtn.addEventListener('pointercancel', () => cancelHold(false));
+          this.holdBackBtn.addEventListener('lostpointercapture', () => cancelHold(false));
+        }
+
+        renderMenu() {
+          this.gameGrid.innerHTML = '';
+          GAME_REGISTRY.forEach((item) => {
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = `game-card ${item.available ? '' : 'is-coming-soon'}`;
+            card.style.setProperty('--card-bg', item.bg);
+            card.style.setProperty('--card-shadow', item.shadow);
+
+            card.innerHTML = `
+              <span class="card-badge">${item.badge}</span>
+              <div class="card-icon-wrap">${item.iconSvg}</div>
+              <div>
+                <h2 class="card-title"><ruby>${item.title}<rt>${item.ruby}</rt></ruby></h2>
+                <p class="card-desc">${item.desc}</p>
+              </div>
+              <span class="card-play-pill">
+                ${item.available ? '▶ ' : ''}${item.cta}
+              </span>
+            `;
+
+            card.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              if (item.available) {
+                card.classList.add('is-pressed');
+                this.sound.playMenuSelect();
+                setTimeout(() => {
+                  card.classList.remove('is-pressed');
+                  this.launchGame(item);
+                }, 140);
+              } else {
+                this.sound.playBoing();
+                card.classList.remove('is-boing');
+                void card.offsetWidth;
+                card.classList.add('is-boing');
+              }
+            });
+
+            this.gameGrid.appendChild(card);
+          });
+        }
+
+        setGameBackground(color) {
+          this.gameScreen.style.backgroundColor = color;
+        }
+
+        launchGame(item) {
+          if (this.activeGame) {
+            this.activeGame.unmount();
+            this.activeGame = null;
+          }
+          this.activeGame = item.create(this.gameMount, this);
+          this.activeGame.mount();
+
+          this.homeScreen.classList.add('is-hidden');
+          this.gameScreen.classList.remove('is-hidden');
+        }
+
+        exitGame() {
+          this.gameScreen.classList.add('is-hidden');
+          this.homeScreen.classList.remove('is-hidden');
+          setTimeout(() => {
+            if (this.activeGame) {
+              this.activeGame.unmount();
+              this.activeGame = null;
+            }
+          }, 350);
+        }
+      }
+
+      // Boot application
+      window.addEventListener('DOMContentLoaded', () => {
+        window.__ygenApp = new AppShell();
+      });
+    })();
+  </script>
+</body>
+</html>
