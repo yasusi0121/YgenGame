@@ -181,20 +181,21 @@
       color: #64748B;
     }
 
-    /* Menu Main Area */
+    /* Menu Main Area (Scrollable for growing game library) */
     .home-main {
       position: relative;
       z-index: 2;
       width: 100%;
-      max-width: 1060px;
+      max-width: 1080px;
       flex: 1;
       min-height: 0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
-      gap: clamp(14px, 2.2vh, 26px);
-      padding: 12px 0;
+      gap: clamp(12px, 2vh, 22px);
+      padding: 8px 0 0;
+      overflow: hidden;
     }
 
     .home-prompt {
@@ -203,7 +204,7 @@
       font-weight: 900;
       color: #3D405B;
       text-align: center;
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       padding: 10px 28px;
       border-radius: 999px;
       border: 3px solid #FFFFFF;
@@ -213,40 +214,33 @@
 
     .game-grid {
       width: 100%;
+      flex: 1;
+      min-height: 0;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: clamp(16px, 2.4vw, 28px);
+      gap: clamp(16px, 2.2vw, 26px);
+      align-content: start;
       align-items: stretch;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      padding: 6px 8px 36px;
     }
 
-    /* iPad Portrait (e.g. 768x1024): Featured card full-width on top, 2 cards below */
-    @media (max-width: 860px) and (orientation: portrait) {
+    /* iPad Portrait (e.g. 768x1024): 2 clean columns, scrollable */
+    @media (max-width: 900px) and (orientation: portrait) {
       .game-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        max-width: 680px;
-      }
-      .game-grid .game-card:first-child {
-        grid-column: 1 / -1;
+        max-width: 700px;
       }
     }
 
-    /* Phone Portrait: single column with smooth vertical scroll */
+    /* Phone Portrait: single column, scrollable */
     @media (max-width: 600px) {
-      .home-main {
-        justify-content: flex-start;
-      }
       .game-grid {
         grid-template-columns: 1fr;
         max-width: 420px;
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        touch-action: pan-y;
-        padding: 4px 6px 24px;
-      }
-      .game-grid .game-card:first-child {
-        grid-column: auto;
+        padding: 4px 6px 32px;
       }
     }
 
@@ -878,22 +872,23 @@
       fill: #5C4800;
     }
 
-    /* Tactile 3D-Flat Rocker (Toggle) Switch */
+    /* Tactile 3D Seesaw Rocker Switch (distinct from round push buttons) */
     .toy-rocker {
       position: absolute;
       transform: translate(-50%, -50%);
-      width: 12.2%;
-      aspect-ratio: 100 / 150;
+      width: 12.6%;
+      aspect-ratio: 100 / 154;
       border-radius: 22px;
-      background: #FFFFFF;
-      padding: 0.85%;
-      box-shadow: 0 9px 0 rgba(0, 0, 0, 0.22), 0 14px 22px rgba(0, 0, 0, 0.16);
+      background: #F8FAFC;
+      padding: 0.9%;
+      box-shadow: 0 10px 0 rgba(0, 0, 0, 0.24), 0 16px 24px rgba(0, 0, 0, 0.18);
       cursor: pointer;
       touch-action: none;
       z-index: 14;
       display: flex;
       align-items: center;
       justify-content: center;
+      perspective: 260px;
     }
 
     .toy-rocker-well {
@@ -901,12 +896,13 @@
       width: 100%;
       height: 100%;
       border-radius: 15px;
-      background: #2C313A;
-      padding: 6%;
+      background: #1E242B;
+      padding: 7%;
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.55);
+      transform-style: preserve-3d;
     }
 
     .toy-rocker-paddle {
@@ -914,51 +910,92 @@
       width: 100%;
       height: 100%;
       border-radius: 11px;
-      background: var(--sw-off, #C93838);
+      background: linear-gradient(180deg, var(--sw-top-off) 0%, var(--sw-mid-off) 50%, var(--sw-bot-off) 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: 12% 0;
-      box-shadow: inset 0 -10px 0 rgba(0, 0, 0, 0.24), inset 0 4px 0 rgba(255, 255, 255, 0.2);
-      transition: background 0.14s ease, box-shadow 0.14s ease, transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+      padding: 14% 0;
+      /* OFF state: bottom tilted OUT toward user, top pushed IN */
+      transform: rotateX(-20deg) translateY(3px);
+      transform-origin: center center;
+      box-shadow:
+        0 -8px 0 var(--sw-edge, #7A141A),
+        0 3px 6px rgba(0, 0, 0, 0.35),
+        inset 0 -10px 0 rgba(255, 255, 255, 0.22),
+        inset 0 6px 8px rgba(0, 0, 0, 0.32);
+      transition: transform 0.13s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.13s ease, background 0.13s ease;
     }
 
+    /* Center pivot crease line so seesaw axis is unmistakable */
+    .toy-rocker-paddle::after {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      top: 50%;
+      height: 3px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.22);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.28);
+      pointer-events: none;
+    }
+
+    /* ON state: top tilted OUT toward user, bottom pushed IN */
     .toy-rocker.is-on .toy-rocker-paddle {
-      background: var(--sw-on, #FF4D4D);
-      box-shadow: inset 0 10px 0 rgba(255, 255, 255, 0.28), inset 0 -5px 0 rgba(0, 0, 0, 0.16);
-      transform: translateY(-2px);
+      background: linear-gradient(180deg, var(--sw-top-on) 0%, var(--sw-mid-on) 50%, var(--sw-bot-on) 100%);
+      transform: rotateX(20deg) translateY(-3px);
+      box-shadow:
+        0 9px 0 var(--sw-edge, #961920),
+        0 12px 14px rgba(0, 0, 0, 0.28),
+        inset 0 8px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -8px 8px rgba(0, 0, 0, 0.24);
+    }
+
+    .toy-rocker:active .toy-rocker-paddle {
+      transform: scale(0.95);
     }
 
     .toy-rocker.sw-red {
-      --sw-on: #FF4747;
-      --sw-off: #B8292F;
+      --sw-top-on: #FF6B6B;
+      --sw-mid-on: #FF3B3B;
+      --sw-bot-on: #D92323;
+      --sw-top-off: #9C2228;
+      --sw-mid-off: #BD2C33;
+      --sw-bot-off: #E03E45;
+      --sw-edge: #7A141A;
     }
 
     .toy-rocker.sw-yellow {
-      --sw-on: #FFD430;
-      --sw-off: #C49300;
+      --sw-top-on: #FFE46B;
+      --sw-mid-on: #FFD026;
+      --sw-bot-on: #E0A400;
+      --sw-top-off: #9C7400;
+      --sw-mid-off: #BD8F00;
+      --sw-bot-off: #DEA900;
+      --sw-edge: #7A5800;
     }
 
     .rocker-mark-on {
-      width: 34%;
-      height: 14%;
+      width: 44%;
+      height: 11%;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.35);
       transition: background 0.14s ease, box-shadow 0.14s ease;
     }
 
     .toy-rocker.is-on .rocker-mark-on {
       background: #FFFFFF;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.95);
+      box-shadow: 0 0 12px 3px rgba(255, 255, 255, 0.95);
     }
 
     .rocker-mark-off {
       width: 24%;
       aspect-ratio: 1 / 1;
       border-radius: 50%;
-      border: 3px solid rgba(255, 255, 255, 0.5);
-      opacity: 0.85;
+      border: 3px solid rgba(255, 255, 255, 0.72);
+      opacity: 0.92;
     }
 
     .toy-rocker.is-on .rocker-mark-off {
@@ -967,22 +1004,607 @@
 
     .rocker-state-pill {
       position: absolute;
-      bottom: -26px;
+      bottom: -27px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(11px, 1.25vw, 13px);
+      font-size: clamp(11px, 1.25vw, 14px);
       font-weight: 900;
-      padding: 2px 10px;
+      padding: 3px 12px;
       border-radius: 999px;
-      background: rgba(0, 0, 0, 0.26);
+      background: rgba(0, 0, 0, 0.32);
       color: #FFFFFF;
       white-space: nowrap;
       pointer-events: none;
+      transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
     }
 
     .toy-rocker.is-on .rocker-state-pill {
+      background: #4ADE80;
+      color: #0F3D22;
+      box-shadow: 0 3px 0 #1E8A4B;
+      transform: translateX(-50%) scale(1.06);
+    }
+
+    /* ============================================================
+       GAME 3: COLOR MIX (いろの まほう)
+       ============================================================ */
+    .cm-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(16px + var(--safe-top)) calc(20px + var(--safe-right)) calc(18px + var(--safe-bottom)) calc(20px + var(--safe-left));
+      gap: 10px;
+    }
+
+    .cm-mission-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #2D3436;
+      padding: 8px 18px;
+      border-radius: 999px;
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.12);
+      font-weight: 900;
+      font-size: clamp(14px, 1.8vw, 18px);
+      z-index: 10;
+    }
+
+    .cm-mission-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+      display: inline-block;
+    }
+
+    .cm-mission-btn {
+      border: none;
+      background: #FFD12E;
+      color: #4D3300;
+      font-family: var(--font-rounded);
+      font-weight: 900;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      box-shadow: 0 3px 0 #D69600;
+      cursor: pointer;
+    }
+
+    .cm-stage {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .cm-cauldron-wrap {
+      position: relative;
+      width: clamp(190px, 32vh, 270px);
+      height: clamp(190px, 32vh, 270px);
+      display: grid;
+      place-items: center;
+    }
+
+    .cm-bowl {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #FFFFFF;
+      padding: 12px;
+      box-shadow: 0 12px 0 rgba(0, 0, 0, 0.14), 0 20px 36px rgba(0, 0, 0, 0.14);
+      position: relative;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .cm-bowl.is-splash {
+      animation: cardBoing 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .cm-liquid {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #F1F5F9;
+      transition: background-color 0.35s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .cm-liquid::before {
+      content: "";
+      position: absolute;
+      top: 12%;
+      left: 18%;
+      width: 32%;
+      height: 18%;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.42);
+      transform: rotate(-28deg);
+    }
+
+    .cm-result-emoji {
+      font-size: clamp(46px, 7vh, 68px);
+      line-height: 1;
+      filter: drop-shadow(0 4px 0 rgba(0,0,0,0.14));
+    }
+
+    .cm-result-name {
+      margin-top: 6px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #2D3436;
+      font-size: clamp(18px, 2.5vw, 24px);
+      font-weight: 900;
+      padding: 4px 18px;
+      border-radius: 999px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+    }
+
+    .cm-formula {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .cm-drop-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #2D3436;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 900;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+    }
+
+    .cm-palette {
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(10px, 2vw, 20px);
+      flex-wrap: wrap;
+    }
+
+    .cm-paint-btn {
+      width: clamp(74px, 12vw, 108px);
+      height: clamp(74px, 12vw, 108px);
+      border-radius: 28px;
+      border: 5px solid #FFFFFF;
+      background: var(--p-bg);
+      color: var(--p-fg, #FFFFFF);
+      font-family: var(--font-rounded);
+      font-size: clamp(14px, 1.8vw, 18px);
+      font-weight: 900;
+      box-shadow: 0 8px 0 var(--p-shadow), 0 12px 18px rgba(0,0,0,0.14);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .cm-paint-btn:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 var(--p-shadow);
+    }
+
+    /* ============================================================
+       GAME 4: SOUND MAGIC (おとの まほう)
+       ============================================================ */
+    .sm-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(16px + var(--safe-top)) calc(18px + var(--safe-right)) calc(18px + var(--safe-bottom)) calc(18px + var(--safe-left));
+      gap: 10px;
+    }
+
+    .sm-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      z-index: 10;
+    }
+
+    .sm-inst-btn {
+      border: 4px solid rgba(255,255,255,0.65);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.25);
+      color: #FFFFFF;
+      font-family: var(--font-rounded);
+      font-size: clamp(13px, 1.7vw, 17px);
+      font-weight: 900;
+      padding: 8px 16px;
+      cursor: pointer;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.14);
+      transition: transform 0.1s ease, background 0.15s ease;
+    }
+
+    .sm-inst-btn.is-active {
       background: #FFFFFF;
       color: #2D3436;
+      border-color: #FFFFFF;
+      transform: translateY(-2px);
+    }
+
+    .sm-pads-wrap {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      max-width: 980px;
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: clamp(8px, 1.4vw, 16px);
+      align-items: end;
+      padding: 12px 4px;
+    }
+
+    @media (max-width: 680px) {
+      .sm-pads-wrap {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        align-items: stretch;
+      }
+    }
+
+    .sm-key {
+      position: relative;
+      height: var(--key-h, 86%);
+      min-height: 110px;
+      border: 5px solid #FFFFFF;
+      border-radius: 28px;
+      background: var(--k-bg);
+      color: #FFFFFF;
+      box-shadow: 0 10px 0 var(--k-shadow), 0 14px 20px rgba(0,0,0,0.16);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 6px;
+      cursor: pointer;
+      touch-action: none;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.1s ease;
+    }
+
+    .sm-key.is-pressed {
+      transform: translateY(7px) scale(0.97);
+      box-shadow: 0 3px 0 var(--k-shadow);
+      filter: brightness(1.12);
+    }
+
+    .sm-key.is-guide {
+      box-shadow: 0 0 0 7px #FFF04D, 0 10px 0 var(--k-shadow);
+      animation: cardBoing 0.6s ease infinite;
+    }
+
+    .sm-key-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    .sm-key-label {
+      font-size: clamp(20px, 2.8vw, 30px);
+      font-weight: 900;
+      text-shadow: 0 3px 0 rgba(0,0,0,0.15);
+    }
+
+    .sm-float-note {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translate(-50%, 0);
+      font-size: 32px;
+      pointer-events: none;
+      animation: floatNoteUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes floatNoteUp {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(0.7); }
+      100% { opacity: 0; transform: translate(-50%, -90px) scale(1.35); }
+    }
+
+    /* ============================================================
+       GAME 5: PLUS MAGIC (たしざん の まほう - 3 Modes)
+       ============================================================ */
+    .pm-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(14px + var(--safe-top)) calc(18px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(18px + var(--safe-left));
+      gap: 8px;
+    }
+
+    .pm-mode-tabs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.16);
+      padding: 6px;
+      border-radius: 999px;
+      z-index: 15;
+    }
+
+    .pm-tab-btn {
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: #FFFFFF;
+      font-family: var(--font-rounded);
+      font-size: clamp(13px, 1.7vw, 17px);
+      font-weight: 900;
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: background 0.16s ease, color 0.16s ease;
+    }
+
+    .pm-tab-btn.is-active {
+      background: #FFFFFF;
+      color: #1F513B;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.14);
+    }
+
+    .pm-board {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(10px, 1.8vh, 18px);
+    }
+
+    .pm-status-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .pm-pill {
+      background: rgba(255,255,255,0.92);
+      color: #2D3436;
+      font-weight: 900;
+      font-size: clamp(14px, 1.7vw, 17px);
+      padding: 6px 16px;
+      border-radius: 999px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+    }
+
+    .pm-toggle-pill {
+      border: 3px solid #FFFFFF;
+      background: rgba(255,255,255,0.22);
+      color: #FFFFFF;
+      font-family: var(--font-rounded);
+      font-weight: 900;
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .pm-toggle-pill.is-on {
+      background: #FFD12E;
+      color: #4D3300;
+    }
+
+    .pm-equation-card {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 32px;
+      padding: clamp(14px, 2.2vh, 24px) clamp(16px, 2.5vw, 28px);
+      box-shadow: 0 10px 0 rgba(0, 0, 0, 0.14);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      color: #2D3436;
+    }
+
+    .pm-visual-groups {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(10px, 2vw, 22px);
+      flex-wrap: wrap;
+    }
+
+    .pm-basket {
+      background: #FFF7E6;
+      border: 4px solid #FFE0A3;
+      border-radius: 24px;
+      padding: 12px 16px;
+      min-width: clamp(120px, 24vw, 220px);
+      min-height: 86px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s ease;
+    }
+
+    .pm-basket.is-right {
+      background: #EBF8FF;
+      border-color: #BAE6FD;
+    }
+
+    .pm-basket.is-merged {
+      background: #ECFDF5;
+      border-color: #6EE7B7;
+      min-width: min(90%, 480px);
+    }
+
+    .pm-item {
+      font-size: clamp(26px, 4vw, 38px);
+      line-height: 1;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-block;
+    }
+
+    .pm-item.is-pop {
+      transform: scale(1.38);
+    }
+
+    .pm-eq-text {
+      font-size: clamp(34px, 5.5vw, 56px);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: #2D3436;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .pm-num-a { color: #FF5722; }
+    .pm-num-b { color: #0284C7; }
+    .pm-num-ans {
+      display: inline-grid;
+      place-items: center;
+      min-width: 1.5em;
+      padding: 2px 14px;
+      border-radius: 18px;
+      background: #FEF3C7;
+      border: 4px solid #F59E0B;
+      color: #B45309;
+    }
+    .pm-num-ans.is-correct {
+      background: #4ADE80;
+      border-color: #16A34A;
+      color: #FFFFFF;
+      animation: cardBoing 0.45s ease;
+    }
+
+    .pm-concept-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .pm-stepper {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.92);
+      padding: 8px 14px;
+      border-radius: 24px;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.14);
+    }
+
+    .pm-step-btn {
+      width: 48px;
+      height: 48px;
+      border: none;
+      border-radius: 16px;
+      background: var(--s-bg, #FF7043);
+      color: #FFFFFF;
+      font-size: 28px;
+      font-weight: 900;
+      box-shadow: 0 4px 0 var(--s-sh, #D84315);
+      cursor: pointer;
+    }
+
+    .pm-step-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--s-sh, #D84315); }
+
+    .pm-merge-btn {
+      border: 5px solid #FFFFFF;
+      border-radius: 999px;
+      background: #FFD12E;
+      color: #4D3300;
+      font-family: var(--font-rounded);
+      font-size: clamp(18px, 2.3vw, 24px);
+      font-weight: 900;
+      padding: 12px 32px;
+      box-shadow: 0 7px 0 #D69600;
+      cursor: pointer;
+    }
+
+    .pm-merge-btn:active { transform: translateY(4px); box-shadow: 0 3px 0 #D69600; }
+
+    .pm-choices {
+      width: 100%;
+      max-width: 720px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(10px, 2vw, 18px);
+    }
+
+    .pm-choice-btn {
+      height: clamp(72px, 11vh, 96px);
+      border: 5px solid #FFFFFF;
+      border-radius: 26px;
+      background: #FFFFFF;
+      color: #2D3436;
+      font-family: var(--font-rounded);
+      font-size: clamp(30px, 4.4vw, 44px);
+      font-weight: 900;
+      box-shadow: 0 8px 0 rgba(0, 0, 0, 0.16);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+    }
+
+    .pm-choice-btn:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.16);
+    }
+
+    .pm-choice-btn.is-correct {
+      background: #4ADE80;
+      color: #FFFFFF;
+      box-shadow: 0 8px 0 #16A34A;
+    }
+
+    .pm-choice-btn.is-wrong {
+      animation: gentleShake 0.36s ease;
+      background: #FEE2E2;
+      color: #B91C1C;
+    }
+
+    @keyframes gentleShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-7px); }
+      75% { transform: translateX(7px); }
     }
 
     /* Compact Indicator LED (for Shift Register / Decoder / Memory Cells) */
@@ -1699,6 +2321,150 @@
             this.playMarimbaNote(523.25, now, 0.28, 0.16, 0.65);
             this.playMarimbaNote(392.00, now + 0.055, 0.36, 0.16, 0.55);
           }
+        }
+
+        /** Multi-instrument synthesizer for Sound Magic (marimba / piano / sparkle / drum) */
+        playInstrumentNote(instrument, freq, index = 0) {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+
+          if (instrument === 'marimba') {
+            this.playMarimbaNote(freq, now, 0.65, 0.28, 1.15);
+            return;
+          }
+
+          if (instrument === 'piano') {
+            // Warm Rhodes-like electric piano (fundamental + 2nd + 3rd harmonic with soft bell attack)
+            const out = ctx.createGain();
+            out.gain.setValueAtTime(0.0001, now);
+            out.gain.linearRampToValueAtTime(0.24, now + 0.008);
+            out.gain.exponentialRampToValueAtTime(0.0001, now + 1.15);
+
+            [1, 2, 3].forEach((mult, idx) => {
+              const osc = ctx.createOscillator();
+              osc.type = idx === 0 ? 'triangle' : 'sine';
+              osc.frequency.setValueAtTime(freq * mult, now);
+              const g = ctx.createGain();
+              g.gain.value = idx === 0 ? 0.7 : (idx === 1 ? 0.22 : 0.08);
+              osc.connect(g);
+              g.connect(out);
+              osc.start(now);
+              osc.stop(now + 1.2);
+            });
+            out.connect(this.dryBus);
+            out.connect(this.wetBus);
+            return;
+          }
+
+          if (instrument === 'sparkle') {
+            // Music box / Celesta bell (crystal clear high overtone)
+            const out = ctx.createGain();
+            out.gain.setValueAtTime(0.0001, now);
+            out.gain.linearRampToValueAtTime(0.22, now + 0.005);
+            out.gain.exponentialRampToValueAtTime(0.0001, now + 1.35);
+
+            const o1 = ctx.createOscillator();
+            o1.type = 'sine';
+            o1.frequency.setValueAtTime(freq * 2, now);
+            const o2 = ctx.createOscillator();
+            o2.type = 'sine';
+            o2.frequency.setValueAtTime(freq * 4.01, now);
+            const g2 = ctx.createGain();
+            g2.gain.setValueAtTime(0.18, now);
+            g2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+            o1.connect(out);
+            o2.connect(g2); g2.connect(out);
+            out.connect(this.dryBus);
+            out.connect(this.wetBus);
+            o1.start(now); o2.start(now);
+            o1.stop(now + 1.4); o2.stop(now + 0.4);
+            return;
+          }
+
+          // 'drum' — playful pitched percussions (tom / bongo / woodblock / shaker)
+          const pitch = 110 + index * 48;
+          const osc = ctx.createOscillator();
+          osc.type = index % 2 === 0 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(pitch * 1.7, now);
+          osc.frequency.exponentialRampToValueAtTime(pitch * 0.65, now + 0.14);
+
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.32, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+          osc.connect(g);
+          g.connect(this.dryBus);
+          g.connect(this.wetBus);
+          osc.start(now);
+          osc.stop(now + 0.25);
+
+          // Crisp rim / shaker accent
+          const noise = ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+          const bp = ctx.createBiquadFilter();
+          bp.type = 'bandpass';
+          bp.frequency.setValueAtTime(1400 + index * 380, now);
+          bp.Q.value = 2.0;
+          const ng = ctx.createGain();
+          ng.gain.setValueAtTime(0.18, now);
+          ng.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+          noise.connect(bp); bp.connect(ng); ng.connect(this.dryBus);
+          noise.start(now); noise.stop(now + 0.065);
+        }
+
+        /** Liquid splash plop for Color Mix */
+        playSplash(pitchShift = 0) {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+          const base = 320 + pitchShift * 55;
+
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(base * 0.72, now);
+          osc.frequency.exponentialRampToValueAtTime(base * 1.65, now + 0.11);
+
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.001, now);
+          g.gain.linearRampToValueAtTime(0.24, now + 0.015);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+
+          osc.connect(g);
+          g.connect(this.dryBus);
+          g.connect(this.wetBus);
+          osc.start(now);
+          osc.stop(now + 0.19);
+        }
+
+        /** Happy celebratory fanfare for Color Mix mission / Plus Magic correct answer */
+        playSuccessFanfare() {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+          [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+            this.playMarimbaNote(f, now + i * 0.075, 0.55, 0.22, 1.25);
+          });
+        }
+
+        /** Gentle, friendly nudge (never harsh buzzer) */
+        playGentleNudge() {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+          this.playMarimbaNote(349.23, now, 0.24, 0.15, 0.5);
+          this.playMarimbaNote(329.63, now + 0.08, 0.28, 0.15, 0.45);
+        }
+
+        /** Counting pip that climbs up a happy major scale */
+        playCountPip(stepIndex) {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+          const scale = [261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.0, 987.77, 1046.5];
+          const freq = scale[stepIndex % scale.length];
+          this.playMarimbaNote(freq, now, 0.32, 0.22, 1.05);
         }
       }
 
@@ -3122,6 +3888,680 @@
       }
 
       /* =========================================================================
+         2C. GAME 3: COLOR MIX (いろの まほう)
+         ========================================================================= */
+      const COLOR_PAINTS = {
+        red:    { id: 'red',    name: 'あか',   hex: '#FF4757', shadow: '#C81E2B', fg: '#FFFFFF', pitch: 0 },
+        yellow: { id: 'yellow', name: 'きいろ', hex: '#FFD32A', shadow: '#D69600', fg: '#4D3300', pitch: 2 },
+        blue:   { id: 'blue',   name: 'あお',   hex: '#1E90FF', shadow: '#0C5BB8', fg: '#FFFFFF', pitch: 4 },
+        white:  { id: 'white',  name: 'しろ',   hex: '#FFFFFF', shadow: '#CBD5E1', fg: '#334155', pitch: 6 }
+      };
+
+      const COLOR_RECIPES = {
+        '':                 { name: 'いろを いれてね', hex: '#F1F5F9', emoji: '✨' },
+        'red':              { name: 'あか',           hex: '#FF4757', emoji: '🍎' },
+        'yellow':           { name: 'きいろ',         hex: '#FFD32A', emoji: '🍋' },
+        'blue':             { name: 'あお',           hex: '#1E90FF', emoji: '🐳' },
+        'white':            { name: 'しろ',           hex: '#FFFFFF', emoji: '☁️' },
+        'red+yellow':       { name: 'おれんじ',       hex: '#FF8C1A', emoji: '🍊', mission: true },
+        'blue+yellow':      { name: 'みどり',         hex: '#2ED573', emoji: '🍀', mission: true },
+        'blue+red':         { name: 'むらさき',       hex: '#9B59B6', emoji: '🍇', mission: true },
+        'red+white':        { name: 'ぴんく',         hex: '#FF85B3', emoji: '🍑', mission: true },
+        'blue+white':       { name: 'みずいろ',       hex: '#67E8F9', emoji: '🐬', mission: true },
+        'white+yellow':     { name: 'くりーむ',       hex: '#FEF08A', emoji: '🍦', mission: true },
+        'blue+red+yellow':  { name: 'ちゃいろ',       hex: '#8D5524', emoji: '🍫', mission: true },
+        'red+white+yellow': { name: 'ぴーち',         hex: '#FFB07C', emoji: '🌸', mission: true },
+        'blue+white+yellow':{ name: 'みんと',         hex: '#6EE7B7', emoji: '🌿', mission: true },
+        'blue+red+white':   { name: 'らべんだー',     hex: '#C4B5FD', emoji: '🪻', mission: true },
+        'blue+red+white+yellow': { name: 'みるくてぃ', hex: '#C69C72', emoji: '🧸', mission: true }
+      };
+
+      class ColorMixGame {
+        constructor(container, app) {
+          this.container = container;
+          this.app = app;
+          this.sound = app.sound;
+          this.drops = new Set();
+          this.missionKeys = Object.keys(COLOR_RECIPES).filter((k) => COLOR_RECIPES[k].mission);
+          this.missionIndex = 0;
+          this.missionCleared = false;
+        }
+
+        mount() {
+          this.app.setGameBackground('#7C6AEF');
+          this.container.innerHTML = `
+            <div class="cm-root">
+              <div class="lb-title-area" style="margin-top:4px;">
+                <h2 class="lb-circuit-name"><ruby>COLOR MIX<rt>いろの まほう</rt></ruby></h2>
+                <p class="lb-circuit-tip">いろを まぜて あたらしい いろを つくろう！</p>
+              </div>
+
+              <div class="cm-mission-bar" id="cm-mission-bar"></div>
+
+              <div class="cm-stage">
+                <div class="cm-cauldron-wrap">
+                  <div class="cm-bowl" id="cm-bowl">
+                    <div class="cm-liquid" id="cm-liquid">
+                      <div class="cm-result-emoji" id="cm-emoji">✨</div>
+                      <div class="cm-result-name" id="cm-name">いろを いれてね</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="cm-formula" id="cm-formula"></div>
+              </div>
+
+              <div class="cm-palette" id="cm-palette">
+                ${Object.values(COLOR_PAINTS).map((p) => `
+                  <button class="cm-paint-btn" type="button" data-paint="${p.id}"
+                          style="--p-bg:${p.hex}; --p-shadow:${p.shadow}; --p-fg:${p.fg};">
+                    <span>${p.name}</span>
+                  </button>
+                `).join('')}
+                <button class="cm-paint-btn" type="button" data-paint="clear"
+                        style="--p-bg:#475569; --p-shadow:#1E293B; --p-fg:#FFFFFF;">
+                  <span>あらう</span>
+                </button>
+              </div>
+            </div>
+          `;
+
+          this.bowlEl = this.container.querySelector('#cm-bowl');
+          this.liquidEl = this.container.querySelector('#cm-liquid');
+          this.emojiEl = this.container.querySelector('#cm-emoji');
+          this.nameEl = this.container.querySelector('#cm-name');
+          this.formulaEl = this.container.querySelector('#cm-formula');
+          this.missionBarEl = this.container.querySelector('#cm-mission-bar');
+
+          this.container.querySelectorAll('.cm-paint-btn').forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              const id = btn.dataset.paint;
+              if (id === 'clear') {
+                this.drops.clear();
+                this.missionCleared = false;
+                this.sound.playPageTurn(-1);
+                this.updateUI(true);
+                return;
+              }
+              if (this.drops.has(id)) {
+                this.drops.delete(id);
+              } else {
+                this.drops.add(id);
+              }
+              this.sound.playSplash(COLOR_PAINTS[id].pitch);
+              this.updateUI(true);
+            });
+          });
+
+          this.updateUI(false);
+        }
+
+        unmount() {
+          this.container.innerHTML = '';
+        }
+
+        getRecipeKey() {
+          return Array.from(this.drops).sort().join('+');
+        }
+
+        updateUI(animate) {
+          const key = this.getRecipeKey();
+          const result = COLOR_RECIPES[key] || COLOR_RECIPES[''];
+
+          this.liquidEl.style.backgroundColor = result.hex;
+          this.emojiEl.textContent = result.emoji;
+          this.nameEl.textContent = result.name;
+
+          if (animate) {
+            this.bowlEl.classList.remove('is-splash');
+            void this.bowlEl.offsetWidth;
+            this.bowlEl.classList.add('is-splash');
+          }
+
+          // Render formula pills
+          if (this.drops.size === 0) {
+            this.formulaEl.innerHTML = '<span class="cm-drop-pill">したの いろを おしてね！</span>';
+          } else {
+            const list = Array.from(this.drops).map((id) => {
+              const p = COLOR_PAINTS[id];
+              return `<span class="cm-drop-pill"><span class="cm-mission-dot" style="width:16px;height:16px;background:${p.hex};"></span>${p.name}</span>`;
+            });
+            this.formulaEl.innerHTML = list.join('<span style="color:#fff;font-weight:900;font-size:20px;">＋</span>');
+          }
+
+          // Mission check
+          const targetKey = this.missionKeys[this.missionIndex];
+          const target = COLOR_RECIPES[targetKey];
+          if (key === targetKey && !this.missionCleared) {
+            this.missionCleared = true;
+            this.sound.playSuccessFanfare();
+          }
+
+          this.missionBarEl.innerHTML = `
+            <span class="cm-mission-dot" style="background:${target.hex};"></span>
+            <span>${this.missionCleared ? `やったね！「${target.name}」できたよ！🎉` : `おだい：「${target.name}」を つくろう！`}</span>
+            <button class="cm-mission-btn" type="button" id="cm-next-mission">${this.missionCleared ? 'つぎへ ▶' : 'かえる'}</button>
+          `;
+
+          const nextBtn = this.missionBarEl.querySelector('#cm-next-mission');
+          nextBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            this.sound.unlock();
+            this.missionIndex = (this.missionIndex + 1) % this.missionKeys.length;
+            this.missionCleared = false;
+            this.drops.clear();
+            this.sound.playPageTurn(1);
+            this.updateUI(true);
+          });
+        }
+      }
+
+      /* =========================================================================
+         2D. GAME 4: SOUND MAGIC (おとの まほう)
+         ========================================================================= */
+      const SOUND_KEYS = [
+        { label: 'ド', freq: 523.25, bg: '#FF595E', shadow: '#C92A30', h: '94%' },
+        { label: 'レ', freq: 587.33, bg: '#FF924C', shadow: '#CC5E1B', h: '90%' },
+        { label: 'ミ', freq: 659.25, bg: '#FFCA3A', shadow: '#C99608', h: '86%' },
+        { label: 'ファ', freq: 698.46, bg: '#8AC926', shadow: '#5D8F0E', h: '82%' },
+        { label: 'ソ', freq: 783.99, bg: '#2EC4B6', shadow: '#178A7F', h: '78%' },
+        { label: 'ラ', freq: 880.00, bg: '#3A86FF', shadow: '#1858C4', h: '74%' },
+        { label: 'シ', freq: 987.77, bg: '#8338EC', shadow: '#5719B0', h: '70%' },
+        { label: 'ド', freq: 1046.50, bg: '#FF5D8F', shadow: '#C42B5B', h: '66%' }
+      ];
+
+      const SOUND_SONGS = [
+        { name: 'きらきらぼし', notes: [0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0] },
+        { name: 'かえるのうた', notes: [0, 1, 2, 3, 2, 1, 0, 2, 3, 4, 5, 4, 3, 2] },
+        { name: 'ちょうちょう', notes: [4, 2, 2, 3, 1, 1, 0, 1, 2, 3, 4, 4, 4] }
+      ];
+
+      class SoundMagicGame {
+        constructor(container, app) {
+          this.container = container;
+          this.app = app;
+          this.sound = app.sound;
+          this.instrument = 'marimba';
+          this.songIndex = -1; // -1 = free play
+          this.songStep = 0;
+        }
+
+        mount() {
+          this.app.setGameBackground('#3A86FF');
+          this.container.innerHTML = `
+            <div class="sm-root">
+              <div class="lb-title-area" style="margin-top:4px;">
+                <h2 class="lb-circuit-name"><ruby>SOUND MAGIC<rt>おとの まほう</rt></ruby></h2>
+                <p class="lb-circuit-tip" id="sm-tip">すきな おとを ぽんぽん たたいてみよう！</p>
+              </div>
+
+              <div class="sm-controls" id="sm-inst-bar">
+                <button class="sm-inst-btn is-active" type="button" data-inst="marimba">🪵 もっきん</button>
+                <button class="sm-inst-btn" type="button" data-inst="piano">🎹 ぴあの</button>
+                <button class="sm-inst-btn" type="button" data-inst="sparkle">✨ きらきら</button>
+                <button class="sm-inst-btn" type="button" data-inst="drum">🥁 たいこ</button>
+                <button class="sm-inst-btn" type="button" id="sm-song-btn" style="background:#FFD12E;color:#4D3300;border-color:#FFFFFF;">🎵 まねっこ：オフ</button>
+              </div>
+
+              <div class="sm-pads-wrap" id="sm-pads">
+                ${SOUND_KEYS.map((k, idx) => `
+                  <button class="sm-key" type="button" data-idx="${idx}"
+                          style="--k-bg:${k.bg}; --k-shadow:${k.shadow}; --key-h:${k.h};">
+                    <span class="sm-key-dot"></span>
+                    <span class="sm-key-label">${k.label}</span>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `;
+
+          this.tipEl = this.container.querySelector('#sm-tip');
+          this.songBtn = this.container.querySelector('#sm-song-btn');
+          this.keyEls = Array.from(this.container.querySelectorAll('.sm-key'));
+
+          // Instrument switcher
+          this.container.querySelectorAll('[data-inst]').forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              this.instrument = btn.dataset.inst;
+              this.container.querySelectorAll('[data-inst]').forEach((b) => b.classList.toggle('is-active', b === btn));
+              this.sound.playInstrumentNote(this.instrument, 523.25, 0);
+            });
+          });
+
+          // Follow-along song mode toggle
+          this.songBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            this.sound.unlock();
+            this.songIndex = (this.songIndex + 1);
+            if (this.songIndex >= SOUND_SONGS.length) {
+              this.songIndex = -1;
+            }
+            this.songStep = 0;
+            this.sound.playPageTurn(1);
+            this.updateSongGuide();
+          });
+
+          // Multi-touch playable keys
+          this.keyEls.forEach((keyEl) => {
+            const idx = Number(keyEl.dataset.idx);
+            const activePointers = new Set();
+
+            keyEl.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              try { keyEl.setPointerCapture(e.pointerId); } catch (_) {}
+              activePointers.add(e.pointerId);
+              keyEl.classList.add('is-pressed');
+
+              this.sound.playInstrumentNote(this.instrument, SOUND_KEYS[idx].freq, idx);
+              this.spawnFloatingNote(keyEl);
+
+              if (this.songIndex >= 0) {
+                const song = SOUND_SONGS[this.songIndex];
+                if (song.notes[this.songStep] === idx) {
+                  this.songStep++;
+                  if (this.songStep >= song.notes.length) {
+                    this.songStep = 0;
+                    setTimeout(() => this.sound.playSuccessFanfare(), 240);
+                    this.tipEl.textContent = `すごい！「${song.name}」ひけたよ！🎉`;
+                  }
+                  this.updateSongGuide(true);
+                }
+              }
+            });
+
+            const release = (e) => {
+              activePointers.delete(e.pointerId);
+              if (activePointers.size === 0) {
+                keyEl.classList.remove('is-pressed');
+              }
+            };
+            keyEl.addEventListener('pointerup', release);
+            keyEl.addEventListener('pointercancel', release);
+            keyEl.addEventListener('lostpointercapture', release);
+          });
+
+          this.updateSongGuide();
+        }
+
+        unmount() {
+          this.container.innerHTML = '';
+        }
+
+        spawnFloatingNote(keyEl) {
+          const note = document.createElement('span');
+          note.className = 'sm-float-note';
+          note.textContent = ['🎵', '🎶', '⭐', '✨'][Math.floor(Math.random() * 4)];
+          keyEl.appendChild(note);
+          setTimeout(() => note.remove(), 760);
+        }
+
+        updateSongGuide(keepSuccessTip = false) {
+          this.keyEls.forEach((el) => el.classList.remove('is-guide'));
+          if (this.songIndex < 0) {
+            this.songBtn.textContent = '🎵 まねっこ：オフ';
+            if (!keepSuccessTip) this.tipEl.textContent = 'すきな おとを ぽんぽん たたいてみよう！';
+            return;
+          }
+          const song = SOUND_SONGS[this.songIndex];
+          this.songBtn.textContent = `🎵 ${song.name}`;
+          if (!keepSuccessTip) {
+            this.tipEl.textContent = `ひかっている けんばん を おして「${song.name}」を ひこう！`;
+          }
+          const targetIdx = song.notes[this.songStep];
+          if (this.keyEls[targetIdx]) {
+            this.keyEls[targetIdx].classList.add('is-guide');
+          }
+        }
+      }
+
+      /* =========================================================================
+         2E. GAME 5: PLUS MAGIC (たしざん の まほう — 3 Modes)
+            Mode 1: 'concept' (概念を覚える)
+            Mode 2: 'step'    (徐々に難易度が上がる)
+            Mode 3: 'random'  (ランダム出題)
+         ========================================================================= */
+      const PLUS_THEMES = ['🍎', '🍓', '🍊', '⭐', '🐥'];
+
+      class PlusMagicGame {
+        constructor(container, app) {
+          this.container = container;
+          this.app = app;
+          this.sound = app.sound;
+          this.mode = 'concept'; // 'concept' | 'step' | 'random'
+
+          // Concept mode state
+          this.cA = 2;
+          this.cB = 3;
+          this.cMerged = false;
+          this.cCountTimer = null;
+
+          // Step mode state (level 1..3)
+          this.stepLevel = 1;
+          this.stepStreak = 0;
+
+          // Random mode state
+          this.randMax = 10; // 10 or 20
+          this.randHint = true;
+          this.randScore = 0;
+
+          // Active quiz question
+          this.qA = 1;
+          this.qB = 1;
+          this.qChoices = [];
+          this.qSolved = false;
+          this.qEmoji = '🍎';
+        }
+
+        mount() {
+          this.app.setGameBackground('#22A06B');
+          this.container.innerHTML = `
+            <div class="pm-root">
+              <div class="lb-title-area" style="margin-top:2px;">
+                <h2 class="lb-circuit-name"><ruby>PLUS MAGIC<rt>たしざん の まほう</rt></ruby></h2>
+                <p class="lb-circuit-tip" id="pm-tip">あわせると いくつに なるかな？</p>
+              </div>
+
+              <div class="pm-mode-tabs" id="pm-tabs">
+                <button class="pm-tab-btn is-active" type="button" data-mode="concept">① わかる</button>
+                <button class="pm-tab-btn" type="button" data-mode="step">② ステップ</button>
+                <button class="pm-tab-btn" type="button" data-mode="random">③ ランダム</button>
+              </div>
+
+              <div class="pm-board" id="pm-board"></div>
+            </div>
+          `;
+
+          this.tipEl = this.container.querySelector('#pm-tip');
+          this.boardEl = this.container.querySelector('#pm-board');
+          this.tabBtns = Array.from(this.container.querySelectorAll('.pm-tab-btn'));
+
+          this.tabBtns.forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              this.switchMode(btn.dataset.mode);
+            });
+          });
+
+          this.switchMode('concept');
+        }
+
+        unmount() {
+          clearTimeout(this.cCountTimer);
+          this.container.innerHTML = '';
+        }
+
+        switchMode(mode) {
+          clearTimeout(this.cCountTimer);
+          this.mode = mode;
+          this.tabBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.mode === mode));
+          this.sound.playPageTurn(1);
+
+          if (mode === 'concept') {
+            this.app.setGameBackground('#22A06B');
+            this.cMerged = false;
+            this.tipEl.textContent = 'りんごを ふやして「あわせる！」を おしてみよう！';
+            this.renderConcept();
+          } else if (mode === 'step') {
+            this.app.setGameBackground('#0EA5E9');
+            this.tipEl.textContent = '3もん せいかい で つぎの レベルへ ステップアップ！';
+            this.generateQuestion();
+            this.renderQuiz();
+          } else {
+            this.app.setGameBackground('#F59E0B');
+            this.tipEl.textContent = 'いろんな たしざん に ちょうせん しよう！';
+            this.generateQuestion();
+            this.renderQuiz();
+          }
+        }
+
+        renderConcept() {
+          const sum = this.cA + this.cB;
+          const itemsA = Array.from({ length: this.cA }, () => `<span class="pm-item">🍎</span>`).join('');
+          const itemsB = Array.from({ length: this.cB }, () => `<span class="pm-item">🍏</span>`).join('');
+          const mergedItems = Array.from({ length: sum }, (_, i) =>
+            `<span class="pm-item" data-count-idx="${i}">${i < this.cA ? '🍎' : '🍏'}</span>`
+          ).join('');
+
+          this.boardEl.innerHTML = `
+            <div class="pm-equation-card">
+              <div class="pm-visual-groups">
+                ${this.cMerged ? `
+                  <div class="pm-basket is-merged" id="pm-merged-basket">${mergedItems}</div>
+                ` : `
+                  <div class="pm-basket">${itemsA}</div>
+                  <span style="font-size:34px;font-weight:900;color:#64748B;">＋</span>
+                  <div class="pm-basket is-right">${itemsB}</div>
+                `}
+              </div>
+
+              <div class="pm-eq-text">
+                <span class="pm-num-a">${this.cA}</span>
+                <span>＋</span>
+                <span class="pm-num-b">${this.cB}</span>
+                <span>＝</span>
+                <span class="pm-num-ans ${this.cMerged ? 'is-correct' : ''}" id="pm-concept-ans">${this.cMerged ? sum : '？'}</span>
+              </div>
+            </div>
+
+            <div class="pm-concept-controls">
+              <div class="pm-stepper">
+                <span style="font-weight:900;color:#FF5722;">🍎</span>
+                <button class="pm-step-btn" type="button" data-act="a-dec" style="--s-bg:#FF7043;--s-sh:#D84315;">−</button>
+                <span style="font-size:24px;font-weight:900;min-width:28px;text-align:center;">${this.cA}</span>
+                <button class="pm-step-btn" type="button" data-act="a-inc" style="--s-bg:#FF7043;--s-sh:#D84315;">＋</button>
+              </div>
+
+              <button class="pm-merge-btn" type="button" data-act="toggle-merge">
+                ${this.cMerged ? 'もういっかい わける' : 'あわせる！✨'}
+              </button>
+
+              <div class="pm-stepper">
+                <span style="font-weight:900;color:#0284C7;">🍏</span>
+                <button class="pm-step-btn" type="button" data-act="b-dec" style="--s-bg:#0EA5E9;--s-sh:#0369A1;">−</button>
+                <span style="font-size:24px;font-weight:900;min-width:28px;text-align:center;">${this.cB}</span>
+                <button class="pm-step-btn" type="button" data-act="b-inc" style="--s-bg:#0EA5E9;--s-sh:#0369A1;">＋</button>
+              </div>
+            </div>
+          `;
+
+          this.boardEl.querySelectorAll('[data-act]').forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              clearTimeout(this.cCountTimer);
+              const act = btn.dataset.act;
+              if (act === 'a-dec' && this.cA > 1) { this.cA--; this.cMerged = false; this.sound.playButtonDown('red'); }
+              if (act === 'a-inc' && this.cA < 5) { this.cA++; this.cMerged = false; this.sound.playButtonDown('red'); }
+              if (act === 'b-dec' && this.cB > 1) { this.cB--; this.cMerged = false; this.sound.playButtonDown('yellow'); }
+              if (act === 'b-inc' && this.cB < 5) { this.cB++; this.cMerged = false; this.sound.playButtonDown('yellow'); }
+              if (act === 'toggle-merge') {
+                this.cMerged = !this.cMerged;
+                this.renderConcept();
+                if (this.cMerged) {
+                  this.animateCountUp(this.cA + this.cB);
+                } else {
+                  this.sound.playPageTurn(-1);
+                }
+                return;
+              }
+              this.renderConcept();
+            });
+          });
+        }
+
+        animateCountUp(total) {
+          let i = 0;
+          const step = () => {
+            const el = this.boardEl.querySelector(`[data-count-idx="${i}"]`);
+            if (el) {
+              el.classList.add('is-pop');
+              setTimeout(() => el.classList.remove('is-pop'), 220);
+            }
+            this.sound.playCountPip(i);
+            i++;
+            if (i < total) {
+              this.cCountTimer = setTimeout(step, 180);
+            } else {
+              this.cCountTimer = setTimeout(() => this.sound.playSuccessFanfare(), 200);
+            }
+          };
+          step();
+        }
+
+        generateQuestion() {
+          this.qSolved = false;
+          this.qEmoji = PLUS_THEMES[Math.floor(Math.random() * PLUS_THEMES.length)];
+
+          let a = 1, b = 1;
+          if (this.mode === 'step') {
+            if (this.stepLevel === 1) {
+              // Level 1: sum up to 5
+              const sum = 2 + Math.floor(Math.random() * 4); // 2..5
+              a = 1 + Math.floor(Math.random() * (sum - 1));
+              b = sum - a;
+            } else if (this.stepLevel === 2) {
+              // Level 2: sum 5..10
+              const sum = 5 + Math.floor(Math.random() * 6); // 5..10
+              a = 1 + Math.floor(Math.random() * (sum - 1));
+              b = sum - a;
+            } else {
+              // Level 3: carry-over, sum 10..15
+              a = 5 + Math.floor(Math.random() * 5); // 5..9
+              b = Math.max(2, 10 - a) + Math.floor(Math.random() * Math.min(6, 16 - a));
+              if (a + b > 15) b = 15 - a;
+            }
+          } else {
+            // Random mode (up to randMax: 10 or 20)
+            const maxSum = this.randMax;
+            const sum = 2 + Math.floor(Math.random() * (maxSum - 1));
+            a = 1 + Math.floor(Math.random() * (sum - 1));
+            b = sum - a;
+          }
+
+          this.qA = a;
+          this.qB = b;
+
+          // Build 4 unique choices including the correct answer
+          const ans = a + b;
+          const set = new Set([ans]);
+          const deltas = [-2, -1, 1, 2, 3, -3];
+          while (set.size < 4) {
+            const d = deltas[Math.floor(Math.random() * deltas.length)];
+            const cand = ans + d;
+            if (cand >= 1 && cand <= 20) set.add(cand);
+          }
+          this.qChoices = Array.from(set).sort(() => Math.random() - 0.5);
+        }
+
+        renderQuiz() {
+          const ans = this.qA + this.qB;
+          const showVisuals = this.mode === 'step' || this.randHint;
+          const itemsA = Array.from({ length: this.qA }, () => `<span class="pm-item">${this.qEmoji}</span>`).join('');
+          const itemsB = Array.from({ length: this.qB }, () => `<span class="pm-item">${this.qEmoji}</span>`).join('');
+
+          const statusHtml = this.mode === 'step' ? `
+            <div class="pm-status-row">
+              <span class="pm-pill">レベル ${this.stepLevel} / 3</span>
+              <span class="pm-pill">${'⭐'.repeat(this.stepStreak)}${'☆'.repeat(Math.max(0, 3 - this.stepStreak))}</span>
+            </div>
+          ` : `
+            <div class="pm-status-row">
+              <span class="pm-pill">⭐ ${this.randScore} もん せいかい</span>
+              <button class="pm-toggle-pill ${this.randMax === 20 ? 'is-on' : ''}" type="button" data-qact="toggle-max">
+                ${this.randMax === 10 ? '10 まで' : '20 まで'}
+              </button>
+              <button class="pm-toggle-pill ${this.randHint ? 'is-on' : ''}" type="button" data-qact="toggle-hint">
+                えをみる：${this.randHint ? 'ON' : 'OFF'}
+              </button>
+            </div>
+          `;
+
+          this.boardEl.innerHTML = `
+            ${statusHtml}
+            <div class="pm-equation-card">
+              ${showVisuals ? `
+                <div class="pm-visual-groups">
+                  <div class="pm-basket">${itemsA}</div>
+                  <span style="font-size:32px;font-weight:900;color:#64748B;">＋</span>
+                  <div class="pm-basket is-right">${itemsB}</div>
+                </div>
+              ` : ''}
+              <div class="pm-eq-text">
+                <span class="pm-num-a">${this.qA}</span>
+                <span>＋</span>
+                <span class="pm-num-b">${this.qB}</span>
+                <span>＝</span>
+                <span class="pm-num-ans ${this.qSolved ? 'is-correct' : ''}">${this.qSolved ? ans : '？'}</span>
+              </div>
+            </div>
+
+            <div class="pm-choices">
+              ${this.qChoices.map((n) => `
+                <button class="pm-choice-btn ${this.qSolved && n === ans ? 'is-correct' : ''}" type="button" data-choice="${n}">${n}</button>
+              `).join('')}
+            </div>
+          `;
+
+          this.boardEl.querySelectorAll('[data-qact]').forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              if (btn.dataset.qact === 'toggle-max') {
+                this.randMax = this.randMax === 10 ? 20 : 10;
+                this.generateQuestion();
+              } else {
+                this.randHint = !this.randHint;
+              }
+              this.sound.playButtonDown('yellow');
+              this.renderQuiz();
+            });
+          });
+
+          this.boardEl.querySelectorAll('[data-choice]').forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              if (this.qSolved) return;
+              this.sound.unlock();
+              const picked = Number(btn.dataset.choice);
+              if (picked === ans) {
+                this.qSolved = true;
+                this.sound.playSuccessFanfare();
+                if (this.mode === 'step') {
+                  this.stepStreak++;
+                  if (this.stepStreak >= 3 && this.stepLevel < 3) {
+                    this.stepLevel++;
+                    this.stepStreak = 0;
+                    this.tipEl.textContent = `すごい！レベル ${this.stepLevel} に ステップアップ！🎉`;
+                  } else {
+                    this.tipEl.textContent = `せいかい！ ${this.qA} ＋ ${this.qB} ＝ ${ans} だよ！🌟`;
+                  }
+                } else {
+                  this.randScore++;
+                  this.tipEl.textContent = `せいかい！ ${this.qA} ＋ ${this.qB} ＝ ${ans} だよ！🌟`;
+                }
+                this.renderQuiz();
+                this.cCountTimer = setTimeout(() => {
+                  this.generateQuestion();
+                  this.renderQuiz();
+                }, 1150);
+              } else {
+                this.sound.playGentleNudge();
+                btn.classList.remove('is-wrong');
+                void btn.offsetWidth;
+                btn.classList.add('is-wrong');
+                this.tipEl.textContent = 'おしい！ もういっかい かぞえてみよう！';
+              }
+            });
+          });
+        }
+      }
+
+      /* =========================================================================
          3. EXTENSIBLE GAME REGISTRY
             Add future games here — they automatically appear in the Home Menu!
          ========================================================================= */
@@ -3170,20 +4610,75 @@
           create: (container, app) => new BigBabiesGame(container, app)
         },
         {
-          id: 'coming-color-mix',
+          id: 'color-mix',
           title: 'COLOR MIX',
           ruby: 'いろの まほう',
           desc: 'いろを まぜて あたらしい いろ！',
-          badge: 'もうすぐ！',
-          cta: 'じゅんびちゅう',
+          badge: 'あそべるよ！',
+          cta: 'あそぶ',
           bg: '#8E7CF6',
           shadow: '#6351CC',
-          available: false,
+          available: true,
           iconSvg: `
             <svg width="74" height="74" viewBox="0 0 80 80" fill="none">
               <circle cx="32" cy="34" r="16" fill="#FF6B8B" stroke="#FFFFFF" stroke-width="4"/>
               <circle cx="50" cy="38" r="16" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4" opacity="0.92"/>
               <circle cx="38" cy="50" r="15" fill="#4DD0E1" stroke="#FFFFFF" stroke-width="4" opacity="0.92"/>
+            </svg>
+          `,
+          create: (container, app) => new ColorMixGame(container, app)
+        },
+        {
+          id: 'sound-magic',
+          title: 'SOUND MAGIC',
+          ruby: 'おとの まほう',
+          desc: '4つの がっきと まねっこ えんそう！',
+          badge: 'あそべるよ！',
+          cta: 'あそぶ',
+          bg: '#3A86FF',
+          shadow: '#1D5FD1',
+          available: true,
+          iconSvg: `
+            <svg width="74" height="74" viewBox="0 0 80 80" fill="none">
+              <path d="M32 54V22L60 16V48" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="24" cy="54" r="9" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4"/>
+              <circle cx="52" cy="48" r="9" fill="#FF85A1" stroke="#FFFFFF" stroke-width="4"/>
+            </svg>
+          `,
+          create: (container, app) => new SoundMagicGame(container, app)
+        },
+        {
+          id: 'plus-magic',
+          title: 'PLUS MAGIC',
+          ruby: 'たしざん の まほう',
+          desc: 'わかる・ステップ・ランダムの 3モード！',
+          badge: 'あそべるよ！',
+          cta: 'あそぶ',
+          bg: '#F59E0B',
+          shadow: '#C27403',
+          available: true,
+          iconSvg: `
+            <svg width="74" height="74" viewBox="0 0 80 80" fill="none">
+              <rect x="14" y="14" width="52" height="52" rx="16" fill="rgba(255,255,255,0.24)" stroke="#FFFFFF" stroke-width="4"/>
+              <line x1="40" y1="25" x2="40" y2="55" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+              <line x1="25" y1="40" x2="55" y2="40" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+            </svg>
+          `,
+          create: (container, app) => new PlusMagicGame(container, app)
+        },
+        {
+          id: 'coming-next',
+          title: 'NEXT GAME',
+          ruby: 'つぎの あそび',
+          desc: 'たのしい あそびを じゅんびちゅう！',
+          badge: 'もうすぐ！',
+          cta: 'じゅんびちゅう',
+          bg: '#EC4899',
+          shadow: '#BE185D',
+          available: false,
+          iconSvg: `
+            <svg width="72" height="72" viewBox="0 0 80 80" fill="none">
+              <path d="M40 16L46.5 31.5L63 33L50.5 44L54.2 60.5L40 52L25.8 60.5L29.5 44L17 33L33.5 31.5L40 16Z" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
             </svg>
           `
         }
@@ -3280,8 +4775,8 @@
               </span>
             `;
 
-            card.addEventListener('pointerdown', (e) => {
-              e.preventDefault();
+            // Use 'click' so vertical touch-scrolling on iPad/iPhone never triggers accidental launches
+            card.addEventListener('click', () => {
               this.sound.unlock();
               if (item.available) {
                 card.classList.add('is-pressed');
@@ -3289,7 +4784,7 @@
                 setTimeout(() => {
                   card.classList.remove('is-pressed');
                   this.launchGame(item);
-                }, 140);
+                }, 120);
               } else {
                 this.sound.playBoing();
                 card.classList.remove('is-boing');
