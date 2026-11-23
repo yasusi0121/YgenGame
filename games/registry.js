@@ -141,6 +141,29 @@ export const GAME_REGISTRY = [
     load: () => import('./gear-machine.js').then((m) => m.default)
   },
   {
+    id: 'typing-pc',
+    title: 'TYPING PC',
+    ruby: 'パソコン タイピング',
+    desc: 'にほんご キーボードで ローマ字にゅうりょく！',
+    badge: 'あそべるよ！',
+    cta: 'あそぶ',
+    bg: '#334155',
+    shadow: '#1E293B',
+    available: true,
+    iconSvg: `
+      <svg width="76" height="76" viewBox="0 0 80 80" fill="none">
+        <rect x="12" y="14" width="56" height="36" rx="8" fill="#F8FAFC" stroke="#FFFFFF" stroke-width="4"/>
+        <circle cx="40" cy="32" r="9" fill="#38BDF8"/>
+        <rect x="8" y="54" width="64" height="14" rx="5" fill="#CBD5E1" stroke="#FFFFFF" stroke-width="3"/>
+        <rect x="16" y="59" width="8" height="4" rx="1.5" fill="#334155"/>
+        <rect x="28" y="59" width="8" height="4" rx="1.5" fill="#334155"/>
+        <rect x="40" y="59" width="8" height="4" rx="1.5" fill="#334155"/>
+        <rect x="52" y="59" width="12" height="4" rx="1.5" fill="#FF7043"/>
+      </svg>
+    `,
+    load: () => import('./typing-pc.js').then((m) => m.default)
+  },
+  {
     id: 'coming-next',
     title: 'NEXT GAME',
     ruby: 'つぎの あそび',

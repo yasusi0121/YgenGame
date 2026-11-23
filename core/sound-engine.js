@@ -629,4 +629,34 @@ export class SoundEngine {
     osc.connect(g); g.connect(this.dryBus);
     osc.start(now); osc.stop(now + 0.09);
   }
+
+  /** Crisp, satisfying computer keyboard keystroke click */
+  playKeyClick(isSpecial = false) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(isSpecial ? 1900 : 3100 + Math.random() * 400, now);
+    bp.Q.value = 2.6;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(isSpecial ? 0.28 : 0.22, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+    noise.connect(bp); bp.connect(ng); ng.connect(this.dryBus);
+    noise.start(now); noise.stop(now + 0.024);
+
+    const thock = ctx.createOscillator();
+    thock.type = 'triangle';
+    const base = isSpecial ? 170 : 240 + Math.random() * 25;
+    thock.frequency.setValueAtTime(base, now);
+    thock.frequency.exponentialRampToValueAtTime(base * 0.45, now + 0.028);
+    const tg = ctx.createGain();
+    tg.gain.setValueAtTime(0.16, now);
+    tg.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
+    thock.connect(tg); tg.connect(this.dryBus);
+    thock.start(now); thock.stop(now + 0.036);
+  }
 }
