@@ -218,16 +218,46 @@ export default class GearMachineGame {
     window.addEventListener('pointerup', this.onPointerUp);
     window.addEventListener('pointercancel', this.onPointerUp);
 
-    this.generatePuzzle();
+    this.gearElMap = new Map();
+    this.goalElCache = {};
+    this.paused = false;
 
+    this.generatePuzzle();
+    this.startLoop();
+  }
+
+  startLoop() {
+    if (this.rafId) cancelAnimationFrame(this.rafId);
     this.lastFrame = performance.now();
+    const MIN_FRAME_MS = 32; // ~30fps cap to prevent 120Hz iPad thermal throttling
     const loop = (now) => {
-      const dt = Math.min(0.05, (now - this.lastFrame) / 1000);
-      this.lastFrame = now;
-      this.tickAnimation(dt);
+      if (this.paused) {
+        this.rafId = null;
+        return;
+      }
+      const elapsed = now - this.lastFrame;
+      if (elapsed >= MIN_FRAME_MS) {
+        const dt = Math.min(0.06, elapsed / 1000);
+        this.lastFrame = now;
+        this.tickAnimation(dt);
+      }
       this.rafId = requestAnimationFrame(loop);
     };
     this.rafId = requestAnimationFrame(loop);
+  }
+
+  onPause() {
+    this.paused = true;
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+  }
+
+  onResume() {
+    if (!this.paused) return;
+    this.paused = false;
+    this.startLoop();
   }
 
   setLevel(lv) {
@@ -238,7 +268,9 @@ export default class GearMachineGame {
   }
 
   unmount() {
+    this.paused = true;
     cancelAnimationFrame(this.rafId);
+    this.rafId = null;
     clearTimeout(this.solveTimer);
     this.cleanupDrag();
     window.removeEventListener('pointermove', this.onPointerMove);
@@ -805,52 +837,64 @@ export default class GearMachineGame {
       });
     });
 
-    this.applyGearTransforms();
+    // Cache SVG elements to eliminate per-frame querySelector overhead
+    this.gearElMap = new Map();
+    this.svgEl.querySelectorAll('[data-gear-id]').forEach((el) => {
+      this.gearElMap.set(el.dataset.gearId, el);
+    });
+    this.goalElCache = {
+      clockH: this.svgEl.querySelector('#gm-clock-h'),
+      clockM: this.svgEl.querySelector('#gm-clock-m'),
+      sigR: this.svgEl.querySelector('#gm-sig-r'),
+      sigY: this.svgEl.querySelector('#gm-sig-y'),
+      sigG: this.svgEl.querySelector('#gm-sig-g'),
+      fan: this.svgEl.querySelector('#gm-fan-blades'),
+      note: this.svgEl.querySelector('#gm-music-note')
+    };
+    this.lastSignalIdx = -1;
+
+    this.applyGearTransforms(true);
   }
 
-  applyGearTransforms() {
+  applyGearTransforms(forceAll = false) {
     for (const g of this.gears) {
-      const el = this.svgEl.querySelector(`[data-gear-id="${g.id}"]`);
+      if (!forceAll && g.omega === 0) continue;
+      const el = this.gearElMap.get(g.id);
       if (!el) continue;
       const angleRad = g.phase + g.omega * this.simTime;
       const angleDeg = (angleRad * 180) / Math.PI;
-      el.setAttribute('transform', `rotate(${angleDeg.toFixed(2)})`);
+      el.setAttribute('transform', `rotate(${angleDeg.toFixed(1)})`);
     }
   }
 
   tickAnimation(dt) {
     this.simTime += dt;
-    this.applyGearTransforms();
+    this.applyGearTransforms(false);
     if (!this.goalPowered) return;
 
     const m = this.machine.id;
+    const c = this.goalElCache;
     if (m === 'clock') {
-      const hEl = this.svgEl.querySelector('#gm-clock-h');
-      const mEl = this.svgEl.querySelector('#gm-clock-m');
-      if (hEl && mEl) {
-        mEl.setAttribute('transform', `rotate(${((this.simTime * 190) % 360).toFixed(1)} 785 240)`);
-        hEl.setAttribute('transform', `rotate(${((this.simTime * 28) % 360).toFixed(1)} 785 240)`);
+      if (c.clockH && c.clockM) {
+        c.clockM.setAttribute('transform', `rotate(${((this.simTime * 190) % 360).toFixed(1)} 785 240)`);
+        c.clockH.setAttribute('transform', `rotate(${((this.simTime * 28) % 360).toFixed(1)} 785 240)`);
       }
     } else if (m === 'signal') {
       const idx = Math.floor(this.simTime * 2.2) % 3;
-      const rEl = this.svgEl.querySelector('#gm-sig-r');
-      const yEl = this.svgEl.querySelector('#gm-sig-y');
-      const gEl = this.svgEl.querySelector('#gm-sig-g');
-      if (rEl && yEl && gEl) {
-        rEl.setAttribute('fill', idx === 0 ? '#FF4757' : '#475569');
-        yEl.setAttribute('fill', idx === 1 ? '#FFD32A' : '#475569');
-        gEl.setAttribute('fill', idx === 2 ? '#2ED573' : '#475569');
+      if (idx !== this.lastSignalIdx && c.sigR && c.sigY && c.sigG) {
+        this.lastSignalIdx = idx;
+        c.sigR.setAttribute('fill', idx === 0 ? '#FF4757' : '#475569');
+        c.sigY.setAttribute('fill', idx === 1 ? '#FFD32A' : '#475569');
+        c.sigG.setAttribute('fill', idx === 2 ? '#2ED573' : '#475569');
       }
     } else if (m === 'fan') {
-      const fEl = this.svgEl.querySelector('#gm-fan-blades');
-      if (fEl) {
-        fEl.setAttribute('transform', `translate(785, 240) rotate(${((this.simTime * 420) % 360).toFixed(1)})`);
+      if (c.fan) {
+        c.fan.setAttribute('transform', `translate(785, 240) rotate(${((this.simTime * 420) % 360).toFixed(1)})`);
       }
     } else if (m === 'musicbox') {
-      const nEl = this.svgEl.querySelector('#gm-music-note');
-      if (nEl) {
+      if (c.note) {
         const bob = Math.sin(this.simTime * 7) * 9;
-        nEl.setAttribute('transform', `translate(785, ${(240 + bob).toFixed(1)})`);
+        c.note.setAttribute('transform', `translate(785, ${(240 + bob).toFixed(1)})`);
       }
     }
   }

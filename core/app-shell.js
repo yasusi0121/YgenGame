@@ -14,10 +14,30 @@ export class AppShell {
     this.reloadBtn = document.getElementById('app-reload-btn');
 
     this.initTouchGuards();
+    this.initVisibilityGuards();
     this.initSoundButtons();
     this.initReloadButton();
     this.initCloseButton();
     this.renderMenu();
+  }
+
+  initVisibilityGuards() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.sound.suspend();
+        if (this.activeGame && typeof this.activeGame.onPause === 'function') {
+          this.activeGame.onPause();
+        }
+      } else if (this.activeGame && typeof this.activeGame.onResume === 'function') {
+        this.activeGame.onResume();
+      }
+    });
+    window.addEventListener('pagehide', () => {
+      this.sound.suspend();
+      if (this.activeGame && typeof this.activeGame.onPause === 'function') {
+        this.activeGame.onPause();
+      }
+    });
   }
 
   initReloadButton() {

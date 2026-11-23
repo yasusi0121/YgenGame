@@ -7,13 +7,36 @@ export class SoundEngine {
     this.noiseBuffer = null;
     this.muted = false;
     this.unlocked = false;
+    this.idleSuspendTimer = null;
+  }
+
+  scheduleIdleSuspend(delayMs = 4500) {
+    if (this.idleSuspendTimer) clearTimeout(this.idleSuspendTimer);
+    this.idleSuspendTimer = setTimeout(() => {
+      this.idleSuspendTimer = null;
+      if (this.ctx && this.ctx.state === 'running') {
+        this.ctx.suspend().catch(() => {});
+      }
+    }, delayMs);
+  }
+
+  suspend() {
+    if (this.idleSuspendTimer) {
+      clearTimeout(this.idleSuspendTimer);
+      this.idleSuspendTimer = null;
+    }
+    if (this.ctx && this.ctx.state === 'running') {
+      this.ctx.suspend().catch(() => {});
+    }
   }
 
   ensureContext() {
+    if (this.muted) return null;
     if (this.ctx) {
       if (this.ctx.state === 'suspended') {
         this.ctx.resume().catch(() => {});
       }
+      this.scheduleIdleSuspend();
       return this.ctx;
     }
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -39,9 +62,9 @@ export class SoundEngine {
     const wetBus = ctx.createGain();
     wetBus.gain.value = 0.28;
 
-    // Procedural warm studio room reverb (impulse response)
+    // Compact warm studio room reverb (0.55s IR halves convolution CPU load)
     const convolver = ctx.createConvolver();
-    convolver.buffer = this.createReverbIR(ctx, 1.15, 2.8);
+    convolver.buffer = this.createReverbIR(ctx, 0.55, 2.8);
 
     dryBus.connect(comp);
     wetBus.connect(convolver);
@@ -53,11 +76,13 @@ export class SoundEngine {
     this.dryBus = dryBus;
     this.wetBus = wetBus;
     this.noiseBuffer = this.createNoiseBuffer(ctx, 0.5);
+    this.scheduleIdleSuspend();
 
     return ctx;
   }
 
   unlock() {
+    if (this.muted) return;
     const ctx = this.ensureContext();
     if (!ctx || this.unlocked) return;
     if (ctx.state === 'suspended') {
@@ -107,6 +132,9 @@ export class SoundEngine {
     this.muted = muted;
     if (this.master && this.ctx) {
       this.master.gain.setTargetAtTime(muted ? 0 : 0.9, this.ctx.currentTime, 0.02);
+    }
+    if (muted) {
+      this.suspend();
     }
   }
 

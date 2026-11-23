@@ -149,7 +149,6 @@ export default class WatchMakerGame {
       .wm-svg {
         width: 100%; height: 100%;
         max-height: 410px;
-        filter: drop-shadow(0 12px 24px rgba(0,0,0,0.42));
       }
       .wm-tray {
         width: 100%; max-width: 1040px;
@@ -192,7 +191,6 @@ export default class WatchMakerGame {
       .wm-ghost {
         position: fixed; pointer-events: none; z-index: 9999;
         transform: translate(-50%, -50%) scale(1.12);
-        filter: drop-shadow(0 10px 18px rgba(0,0,0,0.45));
       }
       .wm-target-pulse { animation: wmPulseRing 1.15s ease-in-out infinite; }
       .wm-done-actions {
@@ -222,8 +220,8 @@ export default class WatchMakerGame {
         50% { transform: translateY(-4px); }
       }
       @keyframes wmPulseRing {
-        0%, 100% { opacity: 0.95; stroke-width: 4; }
-        50% { opacity: 0.4; stroke-width: 2; }
+        0%, 100% { opacity: 0.95; }
+        50% { opacity: 0.35; }
       }
     `;
     document.head.appendChild(style);
@@ -300,6 +298,7 @@ export default class WatchMakerGame {
       this.skeletonBtn.textContent = this.skeletonMode ? 'もじばん を もどす' : 'なかを みる';
       this.sound.playButtonDown('yellow');
       this.renderWatchSvg();
+      if (this.completed) this.startWatchAnimation();
     });
 
     window.addEventListener('pointermove', this.boundMove);
@@ -719,13 +718,50 @@ export default class WatchMakerGame {
     this.lastFrameTime = performance.now();
     this.lastRealSec = -1;
 
+    // Cache SVG elements once to eliminate per-frame querySelector overhead
+    this.partEls = new Map();
+    for (const p of this.stageParts) {
+      const el = this.svgEl && this.svgEl.querySelector(`#wm-part-${p.id}`);
+      if (el) this.partEls.set(p.id, el);
+    }
+    this.cuckooPopEl = this.svgEl && this.svgEl.querySelector('#wm-cuckoo-pop');
+    this.radioWaveEl = this.svgEl && this.svgEl.querySelector('#wm-radio-waves');
+
+    const clock = this.getClock();
+    const dc = clock.dialCenter;
+    const hasSpinningGears = this.stageParts.some((p) => p.speed && this.installed.has(p.id));
+    const isStepOnly = !hasSpinningGears && clock.animType === 'quartz-step';
+
+    // Step-only exterior quartz clocks only need 1Hz updates (zero continuous rAF!)
+    if (isStepOnly) {
+      const stepCheck = () => {
+        if (document.hidden) return;
+        const realSec = new Date().getSeconds();
+        if (realSec !== this.lastRealSec) {
+          this.lastRealSec = realSec;
+          this.sound.playWatchTick(realSec % 2 === 1);
+          this.syncHandsToNow(dc, false);
+        }
+      };
+      stepCheck();
+      this.stepTimer = setInterval(stepCheck, 250);
+      return;
+    }
+
+    const MIN_FRAME_MS = 32; // ~30fps cap to prevent 120Hz iPad thermal throttling
     const tick = (now) => {
-      const dt = Math.min((now - this.lastFrameTime) / 1000, 0.05);
+      if (this.paused) {
+        this.rafId = null;
+        return;
+      }
+      const elapsed = now - this.lastFrameTime;
+      if (elapsed < MIN_FRAME_MS) {
+        this.rafId = requestAnimationFrame(tick);
+        return;
+      }
+      const dt = Math.min(elapsed / 1000, 0.06);
       this.lastFrameTime = now;
       this.runTime += dt;
-
-      const clock = this.getClock();
-      const dc = clock.dialCenter;
 
       // Rotate all installed gear parts smoothly
       for (const p of this.stageParts) {
@@ -738,11 +774,9 @@ export default class WatchMakerGame {
       const secChanged = realSec !== this.lastRealSec;
 
       if (clock.animType === 'sweep') {
-        // Smooth continuous silent sweep synced to real current time!
         this.syncHandsToNow(dc, true);
         this.lastRealSec = realSec;
       } else if (clock.animType === 'tuning-fork') {
-        // High-frequency smooth tuning-fork glide synced to real current time
         this.syncHandsToNow(dc, true);
         if (secChanged) {
           this.lastRealSec = realSec;
@@ -751,7 +785,6 @@ export default class WatchMakerGame {
         const hum = Math.sin(this.runTime * 36) * 1.4;
         this.updatePartTransform('fork', 336, 254, hum);
       } else if (clock.animType === 'pendulum') {
-        // 1-second pendulum swing synced with real-time step hands
         const phase = this.runTime * 0.5 * Math.PI * 2;
         const swing = Math.sin(phase) * 18;
         if (secChanged) {
@@ -770,9 +803,8 @@ export default class WatchMakerGame {
           this.syncHandsToNow(dc, false);
         }
         const bob = Math.sin(this.runTime * 7) * 4;
-        const popEl = this.svgEl && this.svgEl.querySelector('#wm-cuckoo-pop');
-        if (popEl) popEl.setAttribute('transform', `translate(0, ${(2 + bob).toFixed(1)})`);
-        const belEl = this.svgEl && this.svgEl.querySelector('#wm-part-bellows');
+        if (this.cuckooPopEl) this.cuckooPopEl.setAttribute('transform', `translate(0, ${(2 + bob).toFixed(1)})`);
+        const belEl = this.partEls.get('bellows');
         if (belEl) belEl.setAttribute('transform', `translate(224 172) scale(${(1 + Math.sin(this.runTime * 6) * 0.08).toFixed(3)}, 1)`);
       } else if (clock.animType === 'steampunk') {
         if (secChanged) {
@@ -783,15 +815,13 @@ export default class WatchMakerGame {
         const sectorAng = Math.sin(this.runTime * 4) * 9;
         this.updatePartTransform('sector', 254, 224, sectorAng);
       } else {
-        // Quartz step / radio clock synced to real 1Hz second steps
         if (secChanged) {
           this.lastRealSec = realSec;
           this.sound.playWatchTick(realSec % 2 === 1);
           this.syncHandsToNow(dc, false);
         }
-        if (clock.animType === 'radio') {
-          const waveEl = this.svgEl && this.svgEl.querySelector('#wm-radio-waves');
-          if (waveEl) waveEl.setAttribute('opacity', (0.35 + 0.65 * Math.abs(Math.sin(this.runTime * 4))).toFixed(2));
+        if (clock.animType === 'radio' && this.radioWaveEl) {
+          this.radioWaveEl.setAttribute('opacity', (0.35 + 0.65 * Math.abs(Math.sin(this.runTime * 4))).toFixed(2));
         }
       }
 
@@ -801,10 +831,23 @@ export default class WatchMakerGame {
     this.rafId = requestAnimationFrame(tick);
   }
 
+  onPause() {
+    this.paused = true;
+    this.stopAnimation();
+  }
+
+  onResume() {
+    if (!this.paused) return;
+    this.paused = false;
+    if (this.completed) {
+      this.startWatchAnimation();
+    }
+  }
+
   updatePartTransform(partId, x, y, angle) {
-    const el = this.svgEl && this.svgEl.querySelector(`#wm-part-${partId}`);
+    const el = (this.partEls && this.partEls.get(partId)) || (this.svgEl && this.svgEl.querySelector(`#wm-part-${partId}`));
     if (el) {
-      el.setAttribute('transform', `translate(${x} ${y}) rotate(${angle.toFixed(2)})`);
+      el.setAttribute('transform', `translate(${x} ${y}) rotate(${angle.toFixed(1)})`);
     }
   }
 
@@ -812,6 +855,10 @@ export default class WatchMakerGame {
     if (this.rafId) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
+    }
+    if (this.stepTimer) {
+      clearInterval(this.stepTimer);
+      this.stepTimer = null;
     }
   }
 }
