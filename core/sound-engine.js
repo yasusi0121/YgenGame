@@ -659,4 +659,53 @@ export class SoundEngine {
     thock.connect(tg); tg.connect(this.dryBus);
     thock.start(now); thock.stop(now + 0.036);
   }
+
+  /** Realistic mechanical watch escapement tick-tock (high precision metallic impulse) */
+  playWatchTick(isTock = false) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(isTock ? 4200 : 5100, now);
+    bp.Q.value = 6.5;
+
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.24, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.014);
+
+    noise.connect(bp); bp.connect(ng); ng.connect(this.dryBus);
+    noise.start(now); noise.stop(now + 0.018);
+
+    const ping = ctx.createOscillator();
+    ping.type = 'sine';
+    ping.frequency.setValueAtTime(isTock ? 2250 : 2650, now);
+    const pg = ctx.createGain();
+    pg.gain.setValueAtTime(0.08, now);
+    pg.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+    ping.connect(pg); pg.connect(this.dryBus);
+    ping.start(now); ping.stop(now + 0.02);
+  }
+
+  /** Precision metal watch-part snap sound */
+  playMetalClick() {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+
+    [1760, 2637].forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, now + i * 0.012);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.14, now + i * 0.012);
+      g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.012 + 0.07);
+      osc.connect(g); g.connect(this.dryBus); g.connect(this.wetBus);
+      osc.start(now + i * 0.012);
+      osc.stop(now + i * 0.012 + 0.08);
+    });
+  }
 }

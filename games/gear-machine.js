@@ -137,6 +137,7 @@ export default class GearMachineGame {
     this.app = app;
     this.sound = app.sound;
 
+    this.level = 1;     // 1..5 progressive complexity
     this.pegs = [];     // { id, x, y, role: 'start'|'goal'|'slot'|'decoy', expectedSize? }
     this.gears = [];    // { id, pegId, x, y, size, fixed, role, omega, phase }
     this.tray = [];     // { uid, size }
@@ -151,7 +152,7 @@ export default class GearMachineGame {
     this.solveTimer = null;
 
     // Drag state
-    this.drag = null; // { pointerId, source: 'tray'|'board', uid, size, originPegId, ghostEl, snapPeg, canSnap }
+    this.drag = null;
     this.onPointerMove = this.handlePointerMove.bind(this);
     this.onPointerUp = this.handlePointerUp.bind(this);
   }
@@ -165,6 +166,14 @@ export default class GearMachineGame {
         <div class="lb-title-area" style="margin-top:2px;">
           <h2 class="lb-circuit-name"><ruby>GEAR MACHINE<rt>はぐるま マシン</rt></ruby></h2>
           <p class="lb-circuit-tip" id="gm-tip">はぐるま を ひっぱって はめよう！</p>
+        </div>
+
+        <div class="pm-mode-tabs" id="gm-levels" style="padding:4px 6px;">
+          <button class="pm-tab-btn is-active" type="button" data-glv="1">Lv.1</button>
+          <button class="pm-tab-btn" type="button" data-glv="2">Lv.2</button>
+          <button class="pm-tab-btn" type="button" data-glv="3">Lv.3</button>
+          <button class="pm-tab-btn" type="button" data-glv="4">Lv.4</button>
+          <button class="pm-tab-btn" type="button" data-glv="5">Lv.5</button>
         </div>
 
         <div class="gm-viewport">
@@ -188,6 +197,15 @@ export default class GearMachineGame {
     this.boardEl = this.container.querySelector('#gm-board');
     this.svgEl = this.container.querySelector('#gm-svg');
     this.traySlotsEl = this.container.querySelector('#gm-tray-slots');
+    this.levelBtns = Array.from(this.container.querySelectorAll('[data-glv]'));
+
+    this.levelBtns.forEach((btn) => {
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.sound.unlock();
+        this.setLevel(Number(btn.dataset.glv));
+      });
+    });
 
     this.container.querySelector('#gm-new-btn').addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -212,6 +230,13 @@ export default class GearMachineGame {
     this.rafId = requestAnimationFrame(loop);
   }
 
+  setLevel(lv) {
+    this.level = Math.max(1, Math.min(5, lv));
+    this.levelBtns.forEach((b) => b.classList.toggle('is-active', Number(b.dataset.glv) === this.level));
+    this.sound.playPageTurn(1);
+    this.generatePuzzle();
+  }
+
   unmount() {
     cancelAnimationFrame(this.rafId);
     clearTimeout(this.solveTimer);
@@ -223,9 +248,12 @@ export default class GearMachineGame {
   }
 
   /**
-   * Generate a guaranteed-solvable chain puzzle with mixed S / M / L sizes.
-   * Adjacent pegs in the solution chain are placed at exact distance (R_i + R_{i+1})
-   * so only the matching size combination meshes cleanly without overlap.
+   * Generate a guaranteed-solvable chain puzzle scaling across 5 levels:
+   *   Lv.1: 3 middle gears
+   *   Lv.2: 4 middle gears (zigzag)
+   *   Lv.3: 5 middle gears + 1 decoy peg
+   *   Lv.4: 6 middle gears + 2 decoy pegs + 1 extra decoy tray gear
+   *   Lv.5: 7 middle gears (serpentine) + 2 decoy pegs + 2 extra decoy tray gears
    */
   generatePuzzle() {
     clearTimeout(this.solveTimer);
@@ -237,28 +265,32 @@ export default class GearMachineGame {
     const candidates = GM_MACHINES.filter((m) => m.id !== this.machine.id);
     this.machine = candidates[Math.floor(Math.random() * candidates.length)];
 
-    // Curated size-mix templates (always include S and L so sizes truly matter!)
-    const templates = [
-      ['M', 'S', 'L', 'S', 'M'],
-      ['S', 'L', 'S', 'M', 'L'],
-      ['L', 'S', 'L', 'M', 'S'],
-      ['M', 'L', 'S', 'L', 'M'],
-      ['S', 'M', 'L', 'S', 'M'],
-      ['L', 'S', 'M', 'L', 'S']
-    ];
+    const levelCfg = {
+      1: { middleCount: 3, decoyPegs: 0, extraTray: 0 },
+      2: { middleCount: 4, decoyPegs: 0, extraTray: 0 },
+      3: { middleCount: 5, decoyPegs: 1, extraTray: 0 },
+      4: { middleCount: 6, decoyPegs: 2, extraTray: 1 },
+      5: { middleCount: 7, decoyPegs: 2, extraTray: 2 }
+    }[this.level];
+
+    const totalLen = levelCfg.middleCount + 2; // start + middle + goal
+    const sizesPool = ['S', 'M', 'L'];
 
     let built = null;
-    for (let attempt = 0; attempt < 40; attempt++) {
-      const seq = templates[Math.floor(Math.random() * templates.length)];
-      const nodes = [];
-      const startR = GM_SPECS[seq[0]].r;
-      nodes.push({
-        size: seq[0],
-        x: 110,
-        y: 150 + Math.random() * 180
-      });
+    for (let attempt = 0; attempt < 90; attempt++) {
+      // Build a size sequence guaranteed to include S, M, and L
+      const seq = [];
+      for (let i = 0; i < totalLen; i++) {
+        seq.push(sizesPool[Math.floor(Math.random() * sizesPool.length)]);
+      }
+      if (!seq.includes('S') || !seq.includes('L')) {
+        seq[1] = 'S';
+        seq[2] = 'L';
+      }
 
+      const nodes = [{ size: seq[0], x: 96, y: 120 + Math.random() * 240 }];
       let ok = true;
+
       for (let i = 1; i < seq.length; i++) {
         const prev = nodes[i - 1];
         const rPrev = GM_SPECS[prev.size].r;
@@ -266,25 +298,24 @@ export default class GearMachineGame {
         const dist = rPrev + rCur;
 
         let placed = null;
-        for (let t = 0; t < 24; t++) {
-          // Bias angle toward right (+X) with fun vertical zigzag
-          const angle = (Math.random() - 0.5) * 1.15; // roughly -33..+33 deg
+        // Allow steeper serpentine turns for longer chains (Lv.3..5)
+        const angleSpread = totalLen >= 7 ? 2.15 : (totalLen >= 6 ? 1.75 : 1.25);
+
+        for (let t = 0; t < 36; t++) {
+          let angle = (Math.random() - 0.5) * angleSpread;
+          // On final step, prefer heading rightward toward the goal machine
+          if (i === seq.length - 1) angle *= 0.45;
           const nx = prev.x + Math.cos(angle) * dist;
           const ny = prev.y + Math.sin(angle) * dist;
 
-          // Keep strictly inside safe pegboard bounds (leaving room for goal machine on right)
-          if (nx < 100 || nx > 625 || ny < 86 || ny > 394) continue;
+          if (nx < 88 || nx > 632 || ny < 74 || ny > 406) continue;
 
-          // Ensure no accidental overlap or unintended meshing with non-adjacent nodes
           let conflict = false;
           for (let j = 0; j < nodes.length - 1; j++) {
             const other = nodes[j];
             const dOther = Math.hypot(nx - other.x, ny - other.y);
-            const minClear = rCur + GM_SPECS[other.size].r + 16;
-            if (dOther < minClear) {
-              conflict = true;
-              break;
-            }
+            const minClear = rCur + GM_SPECS[other.size].r + 14;
+            if (dOther < minClear) { conflict = true; break; }
           }
           if (!conflict) {
             placed = { size: seq[i], x: Math.round(nx), y: Math.round(ny) };
@@ -295,28 +326,33 @@ export default class GearMachineGame {
         nodes.push(placed);
       }
 
-      if (ok && nodes[nodes.length - 1].x >= 470) {
+      if (ok && nodes[nodes.length - 1].x >= 460) {
         built = nodes;
         break;
       }
     }
 
-    // Fallback deterministic layout if random placement somehow fails
+    // Guaranteed serpentine fallback if random placement didn't converge
     if (!built) {
-      built = [
-        { size: 'M', x: 116, y: 240 },
-        { size: 'S', x: 196, y: 240 },
-        { size: 'L', x: 292, y: 240 },
-        { size: 'S', x: 388, y: 240 },
-        { size: 'M', x: 468, y: 240 }
-      ];
+      const fbSizes = ['M', 'S', 'L', 'S', 'M', 'L', 'S', 'M', 'S'].slice(0, totalLen);
+      built = [{ size: fbSizes[0], x: 96, y: 240 }];
+      for (let i = 1; i < fbSizes.length; i++) {
+        const prev = built[i - 1];
+        const d = GM_SPECS[prev.size].r + GM_SPECS[fbSizes[i]].r;
+        const ang = i % 2 === 1 ? -0.68 : 0.68;
+        built.push({
+          size: fbSizes[i],
+          x: Math.round(prev.x + Math.cos(ang) * d),
+          y: Math.round(prev.y + Math.sin(ang) * d)
+        });
+      }
     }
 
-    // Center horizontally between x=105 and x=615
-    const minX = built[0].x;
-    const maxX = built[built.length - 1].x;
-    const shiftX = Math.round(((110 + 600) - (minX + maxX)) / 2);
-    built.forEach((n) => { n.x += shiftX; });
+    // Center horizontally in pegboard area (x: 92..624)
+    const minX = Math.min(...built.map((n) => n.x));
+    const maxX = Math.max(...built.map((n) => n.x));
+    const shiftX = Math.round(((96 + 616) - (minX + maxX)) / 2);
+    built.forEach((n) => { n.x = Math.max(84, Math.min(634, n.x + shiftX)); });
 
     this.pegs = built.map((n, idx) => ({
       id: idx === 0 ? 'peg_start' : (idx === built.length - 1 ? 'peg_goal' : `peg_${idx}`),
@@ -326,23 +362,39 @@ export default class GearMachineGame {
       expectedSize: n.size
     }));
 
+    // Add decoy pegs for Lv.3..5 (placed safely away from existing pegs)
+    for (let d = 0; d < levelCfg.decoyPegs; d++) {
+      for (let t = 0; t < 30; t++) {
+        const dx = 150 + Math.round(Math.random() * 420);
+        const dy = 86 + Math.round(Math.random() * 308);
+        const tooClose = this.pegs.some((p) => Math.hypot(p.x - dx, p.y - dy) < 88);
+        if (!tooClose) {
+          this.pegs.push({ id: `peg_decoy_${d}`, x: dx, y: dy, role: 'slot', isDecoy: true });
+          break;
+        }
+      }
+    }
+
     // Fixed start and goal gears
     const first = this.pegs[0];
-    const last = this.pegs[this.pegs.length - 1];
+    const last = this.pegs[built.length - 1];
     this.gears = [
       { id: 'start', pegId: first.id, x: first.x, y: first.y, size: first.expectedSize, fixed: true, role: 'start', omega: 1.5, phase: 0 },
       { id: 'goal',  pegId: last.id,  x: last.x,  y: last.y,  size: last.expectedSize,  fixed: true, role: 'goal',  omega: 0,   phase: 0 }
     ];
 
-    // Build shuffled Tetris-like tray from middle pieces
-    const middleSizes = this.pegs.slice(1, -1).map((p) => p.expectedSize);
-    for (let i = middleSizes.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [middleSizes[i], middleSizes[j]] = [middleSizes[j], middleSizes[i]];
+    // Build shuffled tray from required middle pieces + optional extra decoy gears (Lv.4..5)
+    const traySizes = built.slice(1, -1).map((n) => n.size);
+    for (let ex = 0; ex < levelCfg.extraTray; ex++) {
+      traySizes.push(sizesPool[Math.floor(Math.random() * sizesPool.length)]);
     }
-    this.tray = middleSizes.map((size, idx) => ({ uid: `piece_${Date.now()}_${idx}`, size }));
+    for (let i = traySizes.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [traySizes[i], traySizes[j]] = [traySizes[j], traySizes[i]];
+    }
+    this.tray = traySizes.map((size, idx) => ({ uid: `piece_${Date.now()}_${idx}`, size }));
 
-    this.tipEl.textContent = `はぐるま を ひっぱって「${this.machine.name}」を うごかそう！`;
+    this.tipEl.textContent = `Lv.${this.level}：「${this.machine.name}」を うごかそう！`;
     this.solveNetwork();
     this.renderAll();
   }
@@ -734,7 +786,7 @@ export default class GearMachineGame {
       `;
     }).join('');
 
-    const goalPeg = this.pegs[this.pegs.length - 1] || { x: 600, y: 240 };
+    const goalPeg = this.pegs.find((p) => p.role === 'goal') || { x: 600, y: 240 };
 
     this.svgEl.innerHTML = `
       ${pegsHtml}

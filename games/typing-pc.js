@@ -499,6 +499,54 @@ function ensureTypingStyles() {
       background: #FFD12E;
       color: #4D3300;
     }
+    .tp-gojuon-col {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .tp-gojuon-lcd {
+      flex-shrink: 0;
+      height: clamp(32px, 4.4vh, 42px);
+      background: #0F172A;
+      border: 3px solid #334155;
+      border-radius: 10px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+    }
+    .tp-gojuon-lcd-text {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: clamp(16px, 2.2vw, 22px);
+      font-weight: 900;
+      color: #4ADE80;
+      letter-spacing: 0.1em;
+      text-align: left;
+    }
+    .tp-gojuon-lcd-buf {
+      color: #FFD12E;
+      text-decoration: underline;
+    }
+    .tp-lcd-clear {
+      border: none;
+      border-radius: 999px;
+      background: #334155;
+      color: #E2E8F0;
+      font-family: var(--font-rounded);
+      font-size: 11px;
+      font-weight: 900;
+      padding: 3px 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -520,6 +568,7 @@ export default class TypingPCGame {
     this.gojuonIdx = 0;
     this.gojuonCharIdx = 0;
     this.gojuonDone = new Set();
+    this.gojuonTypedText = '';
 
     // Chunked prompt state (vowels / syllables / words)
     this.current = LEVEL_WORDS[0];
@@ -979,7 +1028,27 @@ export default class TypingPCGame {
         }
       }
 
-      this.screenEl.innerHTML = `<div class="tp-gojuon-wrap">${cellsHtml}</div>`;
+      const bufStr = this.gojuonIdx >= 0 ? GOJUON_SEQ[this.gojuonIdx].r.slice(0, this.gojuonCharIdx) : '';
+      const lcdDisplay = (this.gojuonTypedText || bufStr)
+        ? `${this.gojuonTypedText}<span class="tp-gojuon-lcd-buf">${bufStr}</span><span class="tp-cursor" style="background:#4ADE80;"></span>`
+        : `<span style="color:#64748B;">にゅうりょくした もじが ここに でるよ</span>`;
+
+      this.screenEl.innerHTML = `
+        <div class="tp-gojuon-col">
+          <div class="tp-gojuon-lcd">
+            <div class="tp-gojuon-lcd-text">${lcdDisplay}</div>
+            <button class="tp-lcd-clear" type="button" id="tp-lcd-clear">けす</button>
+          </div>
+          <div class="tp-gojuon-wrap" style="flex:1;min-height:0;">${cellsHtml}</div>
+        </div>
+      `;
+      this.screenEl.querySelector('#tp-lcd-clear').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.sound.unlock();
+        this.gojuonTypedText = '';
+        this.sound.playPageTurn(-1);
+        this.renderScreen();
+      });
       this.screenEl.querySelectorAll('[data-gidx]').forEach((btn) => {
         btn.addEventListener('pointerdown', (e) => {
           e.preventDefault();

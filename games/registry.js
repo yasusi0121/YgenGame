@@ -164,6 +164,30 @@ export const GAME_REGISTRY = [
     load: () => import('./typing-pc.js').then((m) => m.default)
   },
   {
+    id: 'watch-maker',
+    title: 'WATCH MAKER',
+    ruby: 'とけい しょくにん',
+    desc: 'ほんもの の とけい を くみたてよう！',
+    badge: 'あそべるよ！',
+    cta: 'あそぶ',
+    bg: '#1E3A5F',
+    shadow: '#0F2540',
+    available: true,
+    iconSvg: `
+      <svg width="76" height="76" viewBox="0 0 80 80" fill="none">
+        <rect x="30" y="6" width="20" height="10" rx="3" fill="#CBD5E1"/>
+        <rect x="30" y="64" width="20" height="10" rx="3" fill="#CBD5E1"/>
+        <rect x="64" y="34" width="7" height="12" rx="2.5" fill="#F59E0B"/>
+        <circle cx="40" cy="40" r="26" fill="#FFFDF7" stroke="#F59E0B" stroke-width="5"/>
+        <circle cx="40" cy="40" r="20" fill="none" stroke="#CBD5E1" stroke-width="2"/>
+        <line x1="40" y1="40" x2="40" y2="25" stroke="#1E293B" stroke-width="4" stroke-linecap="round"/>
+        <line x1="40" y1="40" x2="52" y2="40" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="40" cy="40" r="4" fill="#E11D48"/>
+      </svg>
+    `,
+    load: () => import('./watch-maker.js').then((m) => m.default)
+  },
+  {
     id: 'coming-next',
     title: 'NEXT GAME',
     ruby: 'つぎの あそび',

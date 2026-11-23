@@ -26,15 +26,21 @@ export default class PlusMagicGame {
     this.qChoices = [];
     this.qSolved = false;
     this.qIconKey = 'apple';
+
+    // Concept drag state
+    this.drag = null;
+    this.onPointerMove = this.handlePointerMove.bind(this);
+    this.onPointerUp = this.handlePointerUp.bind(this);
   }
 
   mount() {
+    this.ensureConceptDragStyles();
     this.app.setGameBackground('#22A06B');
     this.container.innerHTML = `
       <div class="pm-root">
         <div class="lb-title-area" style="margin-top:2px;">
           <h2 class="lb-circuit-name"><ruby>PLUS MAGIC<rt>たしざん の まほう</rt></ruby></h2>
-          <p class="lb-circuit-tip" id="pm-tip">あわせると いくつ？</p>
+          <p class="lb-circuit-tip" id="pm-tip">りんご を カゴ に いれたり だしたり しよう！</p>
         </div>
 
         <div class="pm-mode-tabs" id="pm-tabs">
@@ -59,16 +65,69 @@ export default class PlusMagicGame {
       });
     });
 
+    window.addEventListener('pointermove', this.onPointerMove, { passive: false });
+    window.addEventListener('pointerup', this.onPointerUp);
+    window.addEventListener('pointercancel', this.onPointerUp);
+
     this.switchMode('concept');
+  }
+
+  ensureConceptDragStyles() {
+    if (document.getElementById('pm-drag-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'pm-drag-styles';
+    style.textContent = `
+      .pm-supply-tray {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.94);
+        border: 4px solid var(--tr-border, #FFE0A3);
+        border-radius: 26px;
+        padding: 10px 18px;
+        box-shadow: 0 7px 0 rgba(0, 0, 0, 0.14);
+        cursor: grab;
+        touch-action: none;
+        transition: transform 0.12s ease;
+      }
+      .pm-supply-tray:active { cursor: grabbing; transform: scale(0.95); }
+      .pm-supply-label {
+        font-size: 14px;
+        font-weight: 900;
+        color: #475569;
+        white-space: nowrap;
+      }
+      .pm-basket.is-drop-hover {
+        transform: scale(1.06);
+        box-shadow: 0 0 0 6px #FFD12E;
+      }
+      .pm-item.is-draggable {
+        cursor: grab;
+        touch-action: none;
+      }
+      .pm-drag-ghost {
+        position: fixed;
+        pointer-events: none;
+        z-index: 95;
+        transform: translate(-50%, -50%) scale(1.25);
+        filter: drop-shadow(0 10px 14px rgba(0,0,0,0.28));
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   unmount() {
     clearTimeout(this.cCountTimer);
+    this.cleanupDrag();
+    window.removeEventListener('pointermove', this.onPointerMove);
+    window.removeEventListener('pointerup', this.onPointerUp);
+    window.removeEventListener('pointercancel', this.onPointerUp);
     this.container.innerHTML = '';
   }
 
   switchMode(mode) {
     clearTimeout(this.cCountTimer);
+    this.cleanupDrag();
     this.mode = mode;
     this.tabBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.mode === mode));
     this.sound.playPageTurn(1);
@@ -76,7 +135,7 @@ export default class PlusMagicGame {
     if (mode === 'concept') {
       this.app.setGameBackground('#22A06B');
       this.cMerged = false;
-      this.tipEl.textContent = '「あわせる！」を おしてみよう！';
+      this.tipEl.textContent = 'りんご を ひっぱって カゴ に いれたり だしたり しよう！';
       this.renderConcept();
     } else if (mode === 'step') {
       this.app.setGameBackground('#0EA5E9');
@@ -91,23 +150,121 @@ export default class PlusMagicGame {
     }
   }
 
+  startAppleDrag(e, { source, side }) {
+    if (this.cMerged) {
+      this.cMerged = false;
+      this.renderConcept();
+    }
+    e.preventDefault();
+    this.sound.unlock();
+    this.cleanupDrag();
+
+    const ghost = document.createElement('div');
+    ghost.className = 'pm-drag-ghost';
+    ghost.innerHTML = side === 'a' ? FLAT_ICONS.apple(54) : FLAT_ICONS.greenApple(54);
+    ghost.style.left = `${e.clientX}px`;
+    ghost.style.top = `${e.clientY}px`;
+    document.body.appendChild(ghost);
+
+    this.drag = { pointerId: e.pointerId, source, side, ghostEl: ghost };
+    this.sound.playButtonDown(side === 'a' ? 'red' : 'yellow');
+    this.updateBasketHover(e.clientX, e.clientY);
+  }
+
+  hitBasket(clientX, clientY, basketEl) {
+    if (!basketEl) return false;
+    const r = basketEl.getBoundingClientRect();
+    const pad = 22;
+    return clientX >= r.left - pad && clientX <= r.right + pad && clientY >= r.top - pad && clientY <= r.bottom + pad;
+  }
+
+  updateBasketHover(clientX, clientY) {
+    if (!this.drag) return;
+    this.drag.ghostEl.style.left = `${clientX}px`;
+    this.drag.ghostEl.style.top = `${clientY}px`;
+    const bA = this.boardEl.querySelector('#pm-basket-a');
+    const bB = this.boardEl.querySelector('#pm-basket-b');
+    if (bA) bA.classList.toggle('is-drop-hover', this.drag.source === 'supply' && this.hitBasket(clientX, clientY, bA));
+    if (bB) bB.classList.toggle('is-drop-hover', this.drag.source === 'supply' && this.hitBasket(clientX, clientY, bB));
+  }
+
+  handlePointerMove(e) {
+    if (!this.drag || e.pointerId !== this.drag.pointerId) return;
+    e.preventDefault();
+    this.updateBasketHover(e.clientX, e.clientY);
+  }
+
+  handlePointerUp(e) {
+    if (!this.drag || e.pointerId !== this.drag.pointerId) return;
+    const d = this.drag;
+    const bA = this.boardEl.querySelector('#pm-basket-a');
+    const bB = this.boardEl.querySelector('#pm-basket-b');
+    const inA = this.hitBasket(e.clientX, e.clientY, bA);
+    const inB = this.hitBasket(e.clientX, e.clientY, bB);
+    this.cleanupDrag();
+
+    if (d.source === 'supply') {
+      if (inA && this.cA < 6) {
+        this.cA++;
+        this.sound.playCountPip(this.cA);
+      } else if (inB && this.cB < 6) {
+        this.cB++;
+        this.sound.playCountPip(this.cB);
+      } else if (d.side === 'a' && !inB && this.cA < 6) {
+        // Gentle fallback: if user dragged upward toward basket A
+        const rA = bA && bA.getBoundingClientRect();
+        if (rA && e.clientY < rA.bottom + 50 && e.clientX < window.innerWidth / 2) {
+          this.cA++;
+          this.sound.playCountPip(this.cA);
+        }
+      } else if (d.side === 'b' && !inA && this.cB < 6) {
+        const rB = bB && bB.getBoundingClientRect();
+        if (rB && e.clientY < rB.bottom + 50 && e.clientX >= window.innerWidth / 2) {
+          this.cB++;
+          this.sound.playCountPip(this.cB);
+        }
+      }
+    } else if (d.source === 'basket') {
+      // Dragged out of its own basket -> remove 1 apple!
+      if (d.side === 'a' && !inA && this.cA > 0) {
+        this.cA--;
+        this.sound.playGearRemove();
+      } else if (d.side === 'b' && !inB && this.cB > 0) {
+        this.cB--;
+        this.sound.playGearRemove();
+      }
+    }
+
+    this.renderConcept();
+  }
+
+  cleanupDrag() {
+    if (this.drag && this.drag.ghostEl) this.drag.ghostEl.remove();
+    this.drag = null;
+    this.boardEl && this.boardEl.querySelectorAll('.is-drop-hover').forEach((el) => el.classList.remove('is-drop-hover'));
+  }
+
   renderConcept() {
     const sum = this.cA + this.cB;
-    const itemsA = Array.from({ length: this.cA }, () => `<span class="pm-item">${FLAT_ICONS.apple(38)}</span>`).join('');
-    const itemsB = Array.from({ length: this.cB }, () => `<span class="pm-item">${FLAT_ICONS.greenApple(38)}</span>`).join('');
+    const itemsA = this.cA > 0
+      ? Array.from({ length: this.cA }, () => `<span class="pm-item is-draggable" data-basket-apple="a">${FLAT_ICONS.apple(40)}</span>`).join('')
+      : `<span style="color:#CBD5E1;font-weight:900;font-size:14px;">ここに いれてね</span>`;
+    const itemsB = this.cB > 0
+      ? Array.from({ length: this.cB }, () => `<span class="pm-item is-draggable" data-basket-apple="b">${FLAT_ICONS.greenApple(40)}</span>`).join('')
+      : `<span style="color:#CBD5E1;font-weight:900;font-size:14px;">ここに いれてね</span>`;
     const mergedItems = Array.from({ length: sum }, (_, i) =>
-      `<span class="pm-item" data-count-idx="${i}">${i < this.cA ? FLAT_ICONS.apple(38) : FLAT_ICONS.greenApple(38)}</span>`
+      `<span class="pm-item" data-count-idx="${i}">${i < this.cA ? FLAT_ICONS.apple(40) : FLAT_ICONS.greenApple(40)}</span>`
     ).join('');
 
     this.boardEl.innerHTML = `
       <div class="pm-equation-card">
         <div class="pm-visual-groups">
           ${this.cMerged ? `
-            <div class="pm-basket is-merged" id="pm-merged-basket">${mergedItems}</div>
+            <div class="pm-basket is-merged" id="pm-merged-basket">${mergedItems || '<span style="color:#94A3B8;font-weight:900;">0 こ</span>'}</div>
           ` : `
-            <div class="pm-basket">${itemsA}</div>
+            <div class="pm-basket" id="pm-basket-a">${itemsA}</div>
             <span style="color:#64748B;display:inline-flex;">${FLAT_ICONS.plusSign(30)}</span>
-            <div class="pm-basket is-right">${itemsB}</div>
+            <div class="pm-basket is-right" id="pm-basket-b">${itemsB}</div>
           `}
         </div>
 
@@ -121,49 +278,52 @@ export default class PlusMagicGame {
       </div>
 
       <div class="pm-concept-controls">
-        <div class="pm-stepper">
-          ${FLAT_ICONS.apple(30)}
-          <button class="pm-step-btn" type="button" data-act="a-dec" aria-label="へらす" style="--s-bg:#FF7043;--s-sh:#D84315;">${FLAT_ICONS.minusSign(24)}</button>
-          <span style="font-size:24px;font-weight:900;min-width:26px;text-align:center;">${this.cA}</span>
-          <button class="pm-step-btn" type="button" data-act="a-inc" aria-label="ふやす" style="--s-bg:#FF7043;--s-sh:#D84315;">${FLAT_ICONS.plusSign(24)}</button>
+        <div class="pm-supply-tray" data-supply="a" style="--tr-border:#FCA5A5;">
+          ${FLAT_ICONS.apple(42)}
+          <span class="pm-supply-label">ひっぱる</span>
         </div>
 
         <button class="pm-merge-btn" type="button" data-act="toggle-merge">
           ${this.cMerged ? 'わける' : `${FLAT_ICONS.sparkle(24)}<span>あわせる！</span>`}
         </button>
 
-        <div class="pm-stepper">
-          ${FLAT_ICONS.greenApple(30)}
-          <button class="pm-step-btn" type="button" data-act="b-dec" aria-label="へらす" style="--s-bg:#0EA5E9;--s-sh:#0369A1;">${FLAT_ICONS.minusSign(24)}</button>
-          <span style="font-size:24px;font-weight:900;min-width:26px;text-align:center;">${this.cB}</span>
-          <button class="pm-step-btn" type="button" data-act="b-inc" aria-label="ふやす" style="--s-bg:#0EA5E9;--s-sh:#0369A1;">${FLAT_ICONS.plusSign(24)}</button>
+        <div class="pm-supply-tray" data-supply="b" style="--tr-border:#86EFAC;">
+          ${FLAT_ICONS.greenApple(42)}
+          <span class="pm-supply-label">ひっぱる</span>
         </div>
       </div>
     `;
 
-    this.boardEl.querySelectorAll('[data-act]').forEach((btn) => {
-      btn.addEventListener('pointerdown', (e) => {
+    // Drag from supply trays into baskets
+    this.boardEl.querySelectorAll('[data-supply]').forEach((el) => {
+      el.addEventListener('pointerdown', (e) => {
+        this.startAppleDrag(e, { source: 'supply', side: el.dataset.supply });
+      });
+    });
+
+    // Drag apples out of baskets to remove them
+    this.boardEl.querySelectorAll('[data-basket-apple]').forEach((el) => {
+      el.addEventListener('pointerdown', (e) => {
+        this.startAppleDrag(e, { source: 'basket', side: el.dataset.basketApple });
+      });
+    });
+
+    const mergeBtn = this.boardEl.querySelector('[data-act="toggle-merge"]');
+    if (mergeBtn) {
+      mergeBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         this.sound.unlock();
         clearTimeout(this.cCountTimer);
-        const act = btn.dataset.act;
-        if (act === 'a-dec' && this.cA > 1) { this.cA--; this.cMerged = false; this.sound.playButtonDown('red'); }
-        if (act === 'a-inc' && this.cA < 5) { this.cA++; this.cMerged = false; this.sound.playButtonDown('red'); }
-        if (act === 'b-dec' && this.cB > 1) { this.cB--; this.cMerged = false; this.sound.playButtonDown('yellow'); }
-        if (act === 'b-inc' && this.cB < 5) { this.cB++; this.cMerged = false; this.sound.playButtonDown('yellow'); }
-        if (act === 'toggle-merge') {
-          this.cMerged = !this.cMerged;
-          this.renderConcept();
-          if (this.cMerged) {
-            this.animateCountUp(this.cA + this.cB);
-          } else {
-            this.sound.playPageTurn(-1);
-          }
-          return;
-        }
+        this.cMerged = !this.cMerged;
         this.renderConcept();
+        if (this.cMerged) {
+          if (this.cA + this.cB > 0) this.animateCountUp(this.cA + this.cB);
+          else this.sound.playCountPip(0);
+        } else {
+          this.sound.playPageTurn(-1);
+        }
       });
-    });
+    }
   }
 
   animateCountUp(total) {
