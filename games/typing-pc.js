@@ -3,12 +3,12 @@ import { showCelebrationOverlay } from '../core/celebration.js';
 
 /* =========================================================================
    TYPING PC — Realistic Computer Display + JIS Japanese Layout Keyboard
-   4 progressive levels for preschool -> kindergarten typing readiness:
-     1. あいうえお (Vowels: A, I, U, E, O)
-     2. ローマ字   (Single kana syllables: KA, SA, TA, NA...)
-     3. ことば     (Familiar words with custom flat SVG illustrations)
-     4. じゆう     (Free romaji-to-hiragana live IME playground)
-   Supports both iPad touch AND physical Bluetooth/USB keyboards!
+   5 progressive modes:
+     1. ごじゅうおん (50-on table with romaji furigana; auto-advances on correct input)
+     2. あいうえお   (Vowels A I U E O)
+     3. ローマ字     (Single kana syllables KA, SA, TA...)
+     4. ことば       (Words with syllable-by-syllable kana highlight as you type!)
+     5. じゆう       (Free romaji-to-hiragana live IME playground)
    ========================================================================= */
 
 const VOWELS = new Set(['A', 'I', 'U', 'E', 'O']);
@@ -20,44 +20,87 @@ const JIS_ROWS = [
   ['Z','X','C','V','B','N','M',',','.','/']
 ];
 
-const LEVEL_1_VOWELS = [
-  { kana: 'あ', romaji: 'A', icon: 'apple' },
-  { kana: 'い', romaji: 'I', icon: 'strawberry' },
-  { kana: 'う', romaji: 'U', icon: 'whale' },
-  { kana: 'え', romaji: 'E', icon: 'sparkle' },
-  { kana: 'お', romaji: 'O', icon: 'orange' }
+/* 10 columns (あ..わ) x 5 rows (あ段..お段), ordered left-to-right for kids' learning */
+const GOJUON_COLUMNS = [
+  [
+    { k: 'あ', r: 'A' }, { k: 'い', r: 'I' }, { k: 'う', r: 'U' }, { k: 'え', r: 'E' }, { k: 'お', r: 'O' }
+  ],
+  [
+    { k: 'か', r: 'KA' }, { k: 'き', r: 'KI' }, { k: 'く', r: 'KU' }, { k: 'け', r: 'KE' }, { k: 'こ', r: 'KO' }
+  ],
+  [
+    { k: 'さ', r: 'SA' }, { k: 'し', r: 'SHI' }, { k: 'す', r: 'SU' }, { k: 'せ', r: 'SE' }, { k: 'そ', r: 'SO' }
+  ],
+  [
+    { k: 'た', r: 'TA' }, { k: 'ち', r: 'CHI' }, { k: 'つ', r: 'TSU' }, { k: 'て', r: 'TE' }, { k: 'と', r: 'TO' }
+  ],
+  [
+    { k: 'な', r: 'NA' }, { k: 'に', r: 'NI' }, { k: 'ぬ', r: 'NU' }, { k: 'ね', r: 'NE' }, { k: 'の', r: 'NO' }
+  ],
+  [
+    { k: 'は', r: 'HA' }, { k: 'ひ', r: 'HI' }, { k: 'ふ', r: 'FU' }, { k: 'へ', r: 'HE' }, { k: 'ほ', r: 'HO' }
+  ],
+  [
+    { k: 'ま', r: 'MA' }, { k: 'み', r: 'MI' }, { k: 'む', r: 'MU' }, { k: 'め', r: 'ME' }, { k: 'も', r: 'MO' }
+  ],
+  [
+    { k: 'や', r: 'YA' }, null, { k: 'ゆ', r: 'YU' }, null, { k: 'よ', r: 'YO' }
+  ],
+  [
+    { k: 'ら', r: 'RA' }, { k: 'り', r: 'RI' }, { k: 'る', r: 'RU' }, { k: 'れ', r: 'RE' }, { k: 'ろ', r: 'RO' }
+  ],
+  [
+    { k: 'わ', r: 'WA' }, null, { k: 'を', r: 'WO' }, null, { k: 'ん', r: 'NN' }
+  ]
 ];
 
-const LEVEL_2_SYLLABLES = [
-  { kana: 'か', romaji: 'KA', icon: 'star' },
-  { kana: 'き', romaji: 'KI', icon: 'leaf' },
-  { kana: 'く', romaji: 'KU', icon: 'cloud' },
-  { kana: 'け', romaji: 'KE', icon: 'sparkle' },
-  { kana: 'こ', romaji: 'KO', icon: 'bear' },
-  { kana: 'さ', romaji: 'SA', icon: 'flower' },
-  { kana: 'す', romaji: 'SU', icon: 'dolphin' },
-  { kana: 'た', romaji: 'TA', icon: 'star' },
-  { kana: 'な', romaji: 'NA', icon: 'clover' },
-  { kana: 'は', romaji: 'HA', icon: 'flower' },
-  { kana: 'ま', romaji: 'MA', icon: 'peach' },
-  { kana: 'ら', romaji: 'RA', icon: 'lavender' }
+const GOJUON_SEQ = [];
+GOJUON_COLUMNS.forEach((col, cIdx) => {
+  col.forEach((cell, rIdx) => {
+    if (cell) {
+      GOJUON_SEQ.push({ ...cell, col: cIdx, row: rIdx, idx: GOJUON_SEQ.length });
+    }
+  });
+});
+
+const LEVEL_VOWELS = [
+  { icon: 'apple',      chunks: [{ k: 'あ', r: 'A' }] },
+  { icon: 'strawberry', chunks: [{ k: 'い', r: 'I' }] },
+  { icon: 'whale',      chunks: [{ k: 'う', r: 'U' }] },
+  { icon: 'sparkle',    chunks: [{ k: 'え', r: 'E' }] },
+  { icon: 'orange',     chunks: [{ k: 'お', r: 'O' }] }
 ];
 
-const LEVEL_3_WORDS = [
-  { kana: 'くま',     romaji: 'KUMA',    icon: 'bear' },
-  { kana: 'くも',     romaji: 'KUMO',    icon: 'cloud' },
-  { kana: 'もも',     romaji: 'MOMO',    icon: 'peach' },
-  { kana: 'ほし',     romaji: 'HOSHI',   icon: 'star' },
-  { kana: 'はな',     romaji: 'HANA',    icon: 'flower' },
-  { kana: 'りんご',   romaji: 'RINGO',   icon: 'apple' },
-  { kana: 'みかん',   romaji: 'MIKANN',  icon: 'orange' },
-  { kana: 'れもん',   romaji: 'REMONN',  icon: 'lemon' },
-  { kana: 'ぶどう',   romaji: 'BUDOU',   icon: 'grape' },
-  { kana: 'いちご',   romaji: 'ICHIGO',  icon: 'strawberry' },
-  { kana: 'いるか',   romaji: 'IRUKA',   icon: 'dolphin' },
-  { kana: 'くじら',   romaji: 'KUJIRA',  icon: 'whale' },
-  { kana: 'ひよこ',   romaji: 'HIYOKO',  icon: 'chick' },
-  { kana: 'あいす',   romaji: 'AISU',    icon: 'icecream' }
+const LEVEL_SYLLABLES = [
+  { icon: 'star',     chunks: [{ k: 'か', r: 'KA' }] },
+  { icon: 'leaf',     chunks: [{ k: 'き', r: 'KI' }] },
+  { icon: 'cloud',    chunks: [{ k: 'く', r: 'KU' }] },
+  { icon: 'sparkle',  chunks: [{ k: 'け', r: 'KE' }] },
+  { icon: 'bear',     chunks: [{ k: 'こ', r: 'KO' }] },
+  { icon: 'flower',   chunks: [{ k: 'さ', r: 'SA' }] },
+  { icon: 'dolphin',  chunks: [{ k: 'す', r: 'SU' }] },
+  { icon: 'star',     chunks: [{ k: 'た', r: 'TA' }] },
+  { icon: 'clover',   chunks: [{ k: 'な', r: 'NA' }] },
+  { icon: 'flower',   chunks: [{ k: 'は', r: 'HA' }] },
+  { icon: 'peach',    chunks: [{ k: 'ま', r: 'MA' }] },
+  { icon: 'lavender', chunks: [{ k: 'ら', r: 'RA' }] }
+];
+
+const LEVEL_WORDS = [
+  { icon: 'bear',       chunks: [{ k: 'く', r: 'KU' }, { k: 'ま', r: 'MA' }] },
+  { icon: 'cloud',      chunks: [{ k: 'く', r: 'KU' }, { k: 'も', r: 'MO' }] },
+  { icon: 'peach',      chunks: [{ k: 'も', r: 'MO' }, { k: 'も', r: 'MO' }] },
+  { icon: 'star',       chunks: [{ k: 'ほ', r: 'HO' }, { k: 'し', r: 'SHI' }] },
+  { icon: 'flower',     chunks: [{ k: 'は', r: 'HA' }, { k: 'な', r: 'NA' }] },
+  { icon: 'grape',      chunks: [{ k: 'ぶ', r: 'BU' }, { k: 'ど', r: 'DO' }, { k: 'う', r: 'U' }] },
+  { icon: 'apple',      chunks: [{ k: 'り', r: 'RI' }, { k: 'ん', r: 'NN' }, { k: 'ご', r: 'GO' }] },
+  { icon: 'orange',     chunks: [{ k: 'み', r: 'MI' }, { k: 'か', r: 'KA' }, { k: 'ん', r: 'NN' }] },
+  { icon: 'lemon',      chunks: [{ k: 'れ', r: 'RE' }, { k: 'も', r: 'MO' }, { k: 'ん', r: 'NN' }] },
+  { icon: 'strawberry', chunks: [{ k: 'い', r: 'I'  }, { k: 'ち', r: 'CHI'}, { k: 'ご', r: 'GO' }] },
+  { icon: 'dolphin',    chunks: [{ k: 'い', r: 'I'  }, { k: 'る', r: 'RU' }, { k: 'か', r: 'KA' }] },
+  { icon: 'whale',      chunks: [{ k: 'く', r: 'KU' }, { k: 'じ', r: 'JI' }, { k: 'ら', r: 'RA' }] },
+  { icon: 'chick',      chunks: [{ k: 'ひ', r: 'HI' }, { k: 'よ', r: 'YO' }, { k: 'こ', r: 'KO' }] },
+  { icon: 'icecream',   chunks: [{ k: 'あ', r: 'A'  }, { k: 'い', r: 'I'  }, { k: 'す', r: 'SU' }] }
 ];
 
 const ROMAJI_TABLE = {
@@ -90,9 +133,11 @@ const ROMAJI_TABLE = {
 };
 
 function ensureTypingStyles() {
-  if (document.getElementById('tp-styles')) return;
+  if (document.getElementById('tp-styles-v2')) return;
+  const old = document.getElementById('tp-styles');
+  if (old) old.remove();
   const style = document.createElement('style');
-  style.id = 'tp-styles';
+  style.id = 'tp-styles-v2';
   style.textContent = `
     .tp-root {
       position: relative;
@@ -109,24 +154,24 @@ function ensureTypingStyles() {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
-      padding: 0 64px;
+      padding: 0 60px;
       z-index: 15;
     }
     /* Upper half: Realistic Computer Monitor */
     .tp-monitor {
-      width: min(96vw, 940px);
+      width: min(96vw, 960px);
       flex: 1;
-      min-height: 138px;
-      max-height: 280px;
+      min-height: 165px;
+      max-height: 315px;
       background: #1E293B;
       border-radius: 26px 26px 18px 18px;
-      padding: 12px 14px 14px;
+      padding: 10px 12px 12px;
       box-shadow: 0 10px 0 #0F172A, 0 16px 30px rgba(0,0,0,0.28);
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       position: relative;
     }
     .tp-monitor-bar {
@@ -140,8 +185,8 @@ function ensureTypingStyles() {
       gap: 7px;
     }
     .tp-dots-win span {
-      width: 11px;
-      height: 11px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
     }
     .tp-cam-led {
@@ -156,11 +201,11 @@ function ensureTypingStyles() {
       min-height: 0;
       background: #F8FAFC;
       border-radius: 14px;
-      padding: 10px 18px;
+      padding: 8px 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: clamp(14px, 3vw, 32px);
+      gap: clamp(12px, 2.5vw, 28px);
       color: #1E293B;
       box-shadow: inset 0 4px 10px rgba(15, 23, 42, 0.1);
       overflow: hidden;
@@ -179,31 +224,61 @@ function ensureTypingStyles() {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
-    .tp-kana-word {
-      font-size: clamp(32px, 5.2vw, 56px);
+    /* Syllable-mapped kana & romaji groups */
+    .tp-chunk-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: clamp(10px, 2vw, 20px);
+      flex-wrap: wrap;
+    }
+    .tp-chunk {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .tp-kana-pill {
+      font-size: clamp(32px, 5vw, 52px);
       font-weight: 900;
-      letter-spacing: 0.12em;
-      color: #1E293B;
-      line-height: 1.1;
+      line-height: 1.05;
+      padding: 4px 14px;
+      border-radius: 18px;
+      color: #475569;
+      background: transparent;
+      border: 4px solid transparent;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    }
+    .tp-kana-pill.is-active {
+      background: #FEF9C3;
+      border-color: #F59E0B;
+      color: #92400E;
+      transform: translateY(-2px);
+    }
+    .tp-kana-pill.is-done {
+      background: #22C55E;
+      border-color: #16A34A;
+      color: #FFFFFF;
+      transform: scale(1.08);
+      box-shadow: 0 5px 0 #15803D;
     }
     .tp-romaji-slots {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 5px;
       justify-content: center;
     }
     .tp-slot {
-      min-width: clamp(34px, 4.4vw, 48px);
-      height: clamp(40px, 5.4vh, 52px);
-      padding: 0 8px;
-      border-radius: 12px;
+      min-width: clamp(30px, 3.8vw, 44px);
+      height: clamp(34px, 4.6vh, 46px);
+      padding: 0 6px;
+      border-radius: 11px;
       border: 3px solid #CBD5E1;
       background: #FFFFFF;
       color: #64748B;
-      font-size: clamp(20px, 2.8vw, 28px);
+      font-size: clamp(18px, 2.4vw, 25px);
       font-weight: 900;
       display: grid;
       place-items: center;
@@ -220,6 +295,62 @@ function ensureTypingStyles() {
       color: #92400E;
       transform: scale(1.1);
     }
+
+    /* Gojuon (50-on) Table inside Computer Monitor */
+    .tp-gojuon-wrap {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      grid-template-rows: repeat(5, minmax(0, 1fr));
+      gap: clamp(3px, 0.5vw, 6px);
+    }
+    .tp-gcell {
+      border: 2px solid #E2E8F0;
+      border-radius: 10px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      cursor: pointer;
+      padding: 1px;
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.14s ease, border-color 0.14s ease;
+    }
+    .tp-gcell.is-empty {
+      background: transparent;
+      border-color: transparent;
+      pointer-events: none;
+    }
+    .tp-gcell-r {
+      font-size: clamp(9px, 1.1vw, 12px);
+      font-weight: 900;
+      color: #64748B;
+      letter-spacing: 0.02em;
+    }
+    .tp-gcell-k {
+      font-size: clamp(14px, 2vw, 22px);
+      font-weight: 900;
+      color: #1E293B;
+      margin-top: 1px;
+    }
+    .tp-gcell.is-done {
+      background: #DCFCE7;
+      border-color: #4ADE80;
+    }
+    .tp-gcell.is-done .tp-gcell-k { color: #15803D; }
+    .tp-gcell.is-done .tp-gcell-r { color: #16A34A; }
+    .tp-gcell.is-active {
+      background: #FFD12E;
+      border-color: #D97706;
+      transform: scale(1.12);
+      z-index: 4;
+      box-shadow: 0 4px 10px rgba(217, 119, 6, 0.35);
+    }
+    .tp-gcell.is-active .tp-gcell-k { color: #4D3300; }
+    .tp-gcell.is-active .tp-gcell-r { color: #92400E; }
+
     /* Free typing notepad mode */
     .tp-free-pad {
       width: 100%;
@@ -261,11 +392,11 @@ function ensureTypingStyles() {
       background: #CBD5E1;
       border: 5px solid #FFFFFF;
       border-radius: 24px;
-      padding: clamp(8px, 1.3vw, 14px);
+      padding: clamp(7px, 1.2vw, 13px);
       box-shadow: 0 10px 0 #94A3B8, 0 16px 26px rgba(0,0,0,0.22);
       display: flex;
       flex-direction: column;
-      gap: clamp(5px, 0.9vh, 8px);
+      gap: clamp(5px, 0.85vh, 8px);
     }
     .tp-kbd-row {
       display: flex;
@@ -277,7 +408,7 @@ function ensureTypingStyles() {
       position: relative;
       flex: 1 1 0;
       min-width: 0;
-      height: clamp(42px, 6.4vh, 58px);
+      height: clamp(40px, 6.2vh, 56px);
       border: none;
       border-radius: 11px;
       background: #FFFFFF;
@@ -307,12 +438,11 @@ function ensureTypingStyles() {
     }
     .tp-key.is-space {
       flex: 0 1 46%;
-      height: clamp(36px, 5.2vh, 48px);
+      height: clamp(34px, 4.8vh, 46px);
       background: #F1F5F9;
       color: #64748B;
       font-size: clamp(12px, 1.4vw, 15px);
     }
-    /* Home-row tactile bumps on F and J */
     .tp-key.is-home::after {
       content: "";
       position: absolute;
@@ -355,13 +485,21 @@ export default class TypingPCGame {
     this.app = app;
     this.sound = app.sound;
 
-    this.level = 1; // 1: vowels, 2: syllables, 3: words, 4: free IME
+    this.mode = 'gojuon'; // 'gojuon' | 'vowels' | 'syllables' | 'words' | 'free'
     this.hintOn = true;
-    this.streak = 0;
     this.score = 0;
-    this.current = LEVEL_1_VOWELS[0];
-    this.charIdx = 0;
+    this.streak = 0;
     this.locked = false;
+
+    // Gojuon state
+    this.gojuonIdx = 0;
+    this.gojuonCharIdx = 0;
+    this.gojuonDone = new Set();
+
+    // Chunked prompt state (vowels / syllables / words)
+    this.current = LEVEL_WORDS[0];
+    this.chunkIdx = 0;
+    this.charInChunk = 0;
 
     // Free IME state
     this.freeText = '';
@@ -378,10 +516,11 @@ export default class TypingPCGame {
       <div class="tp-root" id="tp-root">
         <div class="tp-top-controls">
           <div class="pm-mode-tabs" id="tp-levels">
-            <button class="pm-tab-btn is-active" type="button" data-lv="1">1. あいうえお</button>
-            <button class="pm-tab-btn" type="button" data-lv="2">2. ローマ字</button>
-            <button class="pm-tab-btn" type="button" data-lv="3">3. ことば</button>
-            <button class="pm-tab-btn" type="button" data-lv="4">4. じゆう</button>
+            <button class="pm-tab-btn is-active" type="button" data-mode="gojuon">1. ごじゅうおん</button>
+            <button class="pm-tab-btn" type="button" data-mode="vowels">2. あいうえお</button>
+            <button class="pm-tab-btn" type="button" data-mode="syllables">3. ローマ字</button>
+            <button class="pm-tab-btn" type="button" data-mode="words">4. ことば</button>
+            <button class="pm-tab-btn" type="button" data-mode="free">5. じゆう</button>
           </div>
           <button class="pm-toggle-pill is-on" type="button" id="tp-hint-btn">ひんと：ON</button>
           <span class="pm-pill" id="tp-score">${FLAT_ICONS.star(20)}<span>0</span></span>
@@ -396,7 +535,7 @@ export default class TypingPCGame {
               <span style="background:#27C93F;"></span>
             </div>
             <div class="tp-cam-led" aria-hidden="true"></div>
-            <span style="color:#94A3B8;font-size:12px;font-weight:900;letter-spacing:0.08em;">KIDS PC</span>
+            <span id="tp-monitor-status" style="color:#94A3B8;font-size:12px;font-weight:900;letter-spacing:0.08em;">KIDS PC</span>
           </div>
           <div class="tp-screen" id="tp-screen"></div>
         </div>
@@ -423,16 +562,17 @@ export default class TypingPCGame {
 
     this.rootEl = this.container.querySelector('#tp-root');
     this.screenEl = this.container.querySelector('#tp-screen');
+    this.monitorStatusEl = this.container.querySelector('#tp-monitor-status');
     this.scoreEl = this.container.querySelector('#tp-score');
     this.hintBtn = this.container.querySelector('#tp-hint-btn');
-    this.levelBtns = Array.from(this.container.querySelectorAll('[data-lv]'));
+    this.modeBtns = Array.from(this.container.querySelectorAll('[data-mode]'));
     this.keyBtns = Array.from(this.container.querySelectorAll('.tp-key'));
 
-    this.levelBtns.forEach((btn) => {
+    this.modeBtns.forEach((btn) => {
       btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         this.sound.unlock();
-        this.switchLevel(Number(btn.dataset.lv));
+        this.switchMode(btn.dataset.mode);
       });
     });
 
@@ -455,7 +595,7 @@ export default class TypingPCGame {
     });
 
     window.addEventListener('keydown', this.onPhysicalKeyDown);
-    this.switchLevel(1);
+    this.switchMode('gojuon');
   }
 
   unmount() {
@@ -480,14 +620,18 @@ export default class TypingPCGame {
     }
   }
 
-  switchLevel(lv) {
-    this.level = lv;
+  switchMode(mode) {
+    this.mode = mode;
     this.locked = false;
     this.streak = 0;
-    this.levelBtns.forEach((b) => b.classList.toggle('is-active', Number(b.dataset.lv) === lv));
+    this.modeBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.mode === mode));
     this.sound.playPageTurn(1);
 
-    if (lv === 4) {
+    if (mode === 'gojuon') {
+      this.gojuonCharIdx = 0;
+      this.renderScreen();
+      this.updateGuideKey();
+    } else if (mode === 'free') {
       this.freeText = '';
       this.romajiBuf = '';
       this.renderScreen();
@@ -499,8 +643,9 @@ export default class TypingPCGame {
 
   nextQuestion() {
     this.locked = false;
-    this.charIdx = 0;
-    const pool = this.level === 1 ? LEVEL_1_VOWELS : (this.level === 2 ? LEVEL_2_SYLLABLES : LEVEL_3_WORDS);
+    this.chunkIdx = 0;
+    this.charInChunk = 0;
+    const pool = this.mode === 'vowels' ? LEVEL_VOWELS : (this.mode === 'syllables' ? LEVEL_SYLLABLES : LEVEL_WORDS);
     let next = pool[Math.floor(Math.random() * pool.length)];
     if (pool.length > 1 && next === this.current) {
       next = pool[(pool.indexOf(next) + 1) % pool.length];
@@ -510,51 +655,37 @@ export default class TypingPCGame {
     this.updateGuideKey();
   }
 
+  getExpectedKey() {
+    if (this.mode === 'free' || this.locked) return null;
+    if (this.mode === 'gojuon') {
+      const target = GOJUON_SEQ[this.gojuonIdx];
+      return target ? target.r[this.gojuonCharIdx] : null;
+    }
+    const chunk = this.current.chunks[this.chunkIdx];
+    return chunk ? chunk.r[this.charInChunk] : null;
+  }
+
   pressKey(key, btnEl) {
     if (this.locked) return;
 
-    // Visual key press animation
     if (btnEl) {
       btnEl.classList.add('is-pressed');
       setTimeout(() => btnEl.classList.remove('is-pressed'), 130);
     }
 
-    if (this.level === 4) {
+    if (this.mode === 'free') {
       this.handleFreeInput(key);
       return;
     }
 
-    const expected = this.current.romaji[this.charIdx];
+    const expected = this.getExpectedKey();
     if (key === expected) {
       this.sound.playKeyClick(false);
-      this.sound.playCountPip(this.charIdx + 4);
-      this.charIdx++;
 
-      if (this.charIdx >= this.current.romaji.length) {
-        this.locked = true;
-        this.score++;
-        this.streak++;
-        this.scoreEl.innerHTML = `${FLAT_ICONS.star(20)}<span>${this.score}</span>`;
-        this.renderScreen();
-        this.updateGuideKey();
-
-        setTimeout(() => {
-          const canLevelUp = this.streak >= 4 && this.level < 3;
-          showCelebrationOverlay(this.rootEl, {
-            title: canLevelUp ? 'レベルアップ！' : 'せいかい！',
-            subtitle: `「${this.current.kana}」が うてたよ！`,
-            centerHtml: FLAT_ICONS[this.current.icon](62),
-            btnLabel: canLevelUp ? 'つぎの レベルへ' : 'つぎへ',
-            sound: this.sound,
-            onNext: () => {
-              if (canLevelUp) this.switchLevel(this.level + 1);
-              else this.nextQuestion();
-            }
-          });
-        }, 220);
+      if (this.mode === 'gojuon') {
+        this.handleGojuonCorrect();
       } else {
-        this.renderScreen();
-        this.updateGuideKey();
+        this.handleChunkCorrect();
       }
     } else if (key.length === 1 && /[A-Z]/.test(key)) {
       this.sound.playGentleNudge();
@@ -568,7 +699,102 @@ export default class TypingPCGame {
     }
   }
 
-  /** Real-time Romaji -> Hiragana IME for Level 4 (Free Play) */
+  /** Gojuon mode: auto-advance to next kana cleanly on completion */
+  handleGojuonCorrect() {
+    const target = GOJUON_SEQ[this.gojuonIdx];
+    this.gojuonCharIdx++;
+    if (this.gojuonCharIdx >= target.r.length) {
+      this.gojuonDone.add(this.gojuonIdx);
+      this.score++;
+      this.scoreEl.innerHTML = `${FLAT_ICONS.star(20)}<span>${this.score}</span>`;
+      this.sound.playCountPip((this.gojuonIdx % 12) + 2);
+
+      // Advance automatically to next character
+      const nextIdx = this.gojuonIdx + 1;
+      this.gojuonCharIdx = 0;
+
+      if (nextIdx >= GOJUON_SEQ.length) {
+        this.locked = true;
+        this.renderScreen();
+        this.updateGuideKey();
+        setTimeout(() => {
+          showCelebrationOverlay(this.rootEl, {
+            title: 'ぜんぶ できた！',
+            subtitle: 'あ〜ん まで マスターしたよ！',
+            centerHtml: FLAT_ICONS.star(64),
+            btnLabel: 'もういっかい',
+            sound: this.sound,
+            onNext: () => {
+              this.gojuonIdx = 0;
+              this.gojuonCharIdx = 0;
+              this.gojuonDone.clear();
+              this.locked = false;
+              this.renderScreen();
+              this.updateGuideKey();
+            }
+          });
+        }, 200);
+      } else {
+        // Every completed column (5 chars) plays a mini fanfare
+        if (GOJUON_SEQ[nextIdx].col !== target.col) {
+          this.sound.playSuccessFanfare();
+        }
+        this.gojuonIdx = nextIdx;
+        this.renderScreen();
+        this.updateGuideKey();
+      }
+    } else {
+      this.sound.playCountPip(this.gojuonCharIdx + 2);
+      this.renderScreen();
+      this.updateGuideKey();
+    }
+  }
+
+  /** Vowels / Syllables / Words mode: highlights each kana chunk as its romaji completes! */
+  handleChunkCorrect() {
+    const chunk = this.current.chunks[this.chunkIdx];
+    this.charInChunk++;
+
+    if (this.charInChunk >= chunk.r.length) {
+      // Completed this kana syllable (e.g., BU -> 'ぶ' turns bright green!)
+      this.sound.playCountPip(this.chunkIdx + 5);
+      this.chunkIdx++;
+      this.charInChunk = 0;
+
+      if (this.chunkIdx >= this.current.chunks.length) {
+        this.locked = true;
+        this.score++;
+        this.streak++;
+        this.scoreEl.innerHTML = `${FLAT_ICONS.star(20)}<span>${this.score}</span>`;
+        this.renderScreen();
+        this.updateGuideKey();
+
+        const fullKana = this.current.chunks.map((c) => c.k).join('');
+        setTimeout(() => {
+          const nextModeMap = { vowels: 'syllables', syllables: 'words', words: null };
+          const canLevelUp = this.streak >= 4 && nextModeMap[this.mode];
+          showCelebrationOverlay(this.rootEl, {
+            title: canLevelUp ? 'レベルアップ！' : 'せいかい！',
+            subtitle: `「${fullKana}」が うてたよ！`,
+            centerHtml: FLAT_ICONS[this.current.icon](62),
+            btnLabel: canLevelUp ? 'つぎの レベルへ' : 'つぎへ',
+            sound: this.sound,
+            onNext: () => {
+              if (canLevelUp) this.switchMode(nextModeMap[this.mode]);
+              else this.nextQuestion();
+            }
+          });
+        }, 260);
+        return;
+      }
+    } else {
+      this.sound.playCountPip(this.chunkIdx + 2);
+    }
+
+    this.renderScreen();
+    this.updateGuideKey();
+  }
+
   handleFreeInput(key) {
     if (key === 'BS') {
       this.sound.playKeyClick(true);
@@ -606,13 +832,11 @@ export default class TypingPCGame {
     this.sound.playKeyClick(false);
     this.romajiBuf += key;
 
-    // Handle small tsu (っ) on doubled consonants like KK, TT, PP, SS
     if (this.romajiBuf.length === 2 && this.romajiBuf[0] === this.romajiBuf[1] && !VOWELS.has(this.romajiBuf[0]) && this.romajiBuf[0] !== 'N') {
       this.freeText += 'っ';
       this.romajiBuf = this.romajiBuf[1];
     }
 
-    // Handle single N followed by non-vowel/non-Y/non-N -> ん
     if (this.romajiBuf.length === 2 && this.romajiBuf[0] === 'N' && !VOWELS.has(this.romajiBuf[1]) && this.romajiBuf[1] !== 'Y' && this.romajiBuf[1] !== 'N') {
       this.freeText += 'ん';
       this.romajiBuf = this.romajiBuf[1];
@@ -623,7 +847,6 @@ export default class TypingPCGame {
       this.romajiBuf = '';
       this.sound.playCountPip(this.freeText.length % 12);
     } else if (this.romajiBuf.length >= 3) {
-      // Check if any valid romaji starts with current buffer
       const hasPrefix = Object.keys(ROMAJI_TABLE).some((k) => k.startsWith(this.romajiBuf));
       if (!hasPrefix) {
         this.romajiBuf = key;
@@ -641,7 +864,51 @@ export default class TypingPCGame {
   }
 
   renderScreen() {
-    if (this.level === 4) {
+    if (this.mode === 'gojuon') {
+      const target = GOJUON_SEQ[this.gojuonIdx];
+      const typedPart = target.r.slice(0, this.gojuonCharIdx);
+      const restPart = target.r.slice(this.gojuonCharIdx);
+      this.monitorStatusEl.textContent = `いま：「${target.k}」  ${typedPart}[${restPart[0] || ''}]${restPart.slice(1)}`;
+
+      // Render 5 rows x 10 columns (left to right: あ -> わ)
+      let cellsHtml = '';
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 10; c++) {
+          const item = GOJUON_COLUMNS[c][r];
+          if (!item) {
+            cellsHtml += `<div class="tp-gcell is-empty"></div>`;
+            continue;
+          }
+          const seqItem = GOJUON_SEQ.find((s) => s.col === c && s.row === r);
+          const isActive = seqItem.idx === this.gojuonIdx;
+          const isDone = this.gojuonDone.has(seqItem.idx);
+          cellsHtml += `
+            <button class="tp-gcell ${isActive ? 'is-active' : ''} ${isDone && !isActive ? 'is-done' : ''}"
+                    type="button" data-gidx="${seqItem.idx}">
+              <span class="tp-gcell-r">${item.r}</span>
+              <span class="tp-gcell-k">${item.k}</span>
+            </button>
+          `;
+        }
+      }
+
+      this.screenEl.innerHTML = `<div class="tp-gojuon-wrap">${cellsHtml}</div>`;
+      this.screenEl.querySelectorAll('[data-gidx]').forEach((btn) => {
+        btn.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          this.sound.unlock();
+          this.gojuonIdx = Number(btn.dataset.gidx);
+          this.gojuonCharIdx = 0;
+          this.sound.playButtonDown('yellow');
+          this.renderScreen();
+          this.updateGuideKey();
+        });
+      });
+      return;
+    }
+
+    if (this.mode === 'free') {
+      this.monitorStatusEl.textContent = 'じゆう にゅうりょく';
       this.screenEl.innerHTML = `
         <div class="tp-free-pad">
           <div class="tp-free-text">
@@ -662,25 +929,39 @@ export default class TypingPCGame {
       return;
     }
 
-    const chars = this.current.romaji.split('');
-    const slotsHtml = chars.map((ch, idx) => {
-      const cls = idx < this.charIdx ? 'is-done' : (idx === this.charIdx ? 'is-current' : '');
-      return `<span class="tp-slot ${cls}">${ch}</span>`;
+    // Vowels / Syllables / Words: syllable-by-syllable paired kana + romaji highlight!
+    this.monitorStatusEl.textContent = 'KIDS PC';
+    const chunksHtml = this.current.chunks.map((ch, cIdx) => {
+      const isChunkDone = cIdx < this.chunkIdx;
+      const isChunkActive = cIdx === this.chunkIdx;
+      const slotsHtml = ch.r.split('').map((letter, lIdx) => {
+        let cls = '';
+        if (isChunkDone || (isChunkActive && lIdx < this.charInChunk)) cls = 'is-done';
+        else if (isChunkActive && lIdx === this.charInChunk) cls = 'is-current';
+        return `<span class="tp-slot ${cls}">${letter}</span>`;
+      }).join('');
+
+      return `
+        <div class="tp-chunk">
+          <div class="tp-kana-pill ${isChunkDone ? 'is-done' : (isChunkActive ? 'is-active' : '')}">${ch.k}</div>
+          <div class="tp-romaji-slots">${slotsHtml}</div>
+        </div>
+      `;
     }).join('');
 
     this.screenEl.innerHTML = `
       <div class="tp-icon-box">${FLAT_ICONS[this.current.icon](64)}</div>
       <div class="tp-prompt-col">
-        <div class="tp-kana-word">${this.current.kana}</div>
-        <div class="tp-romaji-slots">${slotsHtml}</div>
+        <div class="tp-chunk-row">${chunksHtml}</div>
       </div>
     `;
   }
 
   updateGuideKey() {
     this.keyBtns.forEach((b) => b.classList.remove('is-guide'));
-    if (this.level === 4 || !this.hintOn || this.locked) return;
-    const expected = this.current.romaji[this.charIdx];
+    if (this.mode === 'free' || !this.hintOn || this.locked) return;
+    const expected = this.getExpectedKey();
+    if (!expected) return;
     const targetBtn = this.container.querySelector(`.tp-key[data-key="${expected}"]`);
     if (targetBtn) targetBtn.classList.add('is-guide');
   }
