@@ -600,7 +600,12 @@ export default class WatchMakerGame {
 
     if (dist <= snapRadius) {
       this.installed.add(part.id);
-      this.gearAngles[part.id] = part.initAngle ?? 0;
+      if (part.id === 'hour' || part.id === 'minute' || part.id === 'second') {
+        const nowAngles = this.getCurrentTimeAngles(false);
+        this.gearAngles[part.id] = nowAngles[part.id];
+      } else {
+        this.gearAngles[part.id] = part.initAngle ?? 0;
+      }
       this.sound.playMetalClick();
 
       // Celebrate Phase 1 -> Phase 2 transition in 3. ほんもの!
@@ -635,15 +640,52 @@ export default class WatchMakerGame {
     };
   }
 
+  getCurrentTimeAngles(smooth = false) {
+    const now = new Date();
+    const sec = now.getSeconds() + (smooth ? now.getMilliseconds() / 1000 : 0);
+    const min = now.getMinutes() + sec / 60;
+    const hr = (now.getHours() % 12) + min / 60;
+    return {
+      hour: hr * 30,
+      minute: min * 6,
+      second: sec * 6,
+      rawSec: now.getSeconds()
+    };
+  }
+
+  syncHandsToNow(dc, smooth = false) {
+    const a = this.getCurrentTimeAngles(smooth);
+    if (this.installed.has('second')) {
+      this.gearAngles.second = a.second;
+      this.updatePartTransform('second', dc.x, dc.y, a.second);
+    }
+    if (this.installed.has('minute')) {
+      this.gearAngles.minute = a.minute;
+      this.updatePartTransform('minute', dc.x, dc.y, a.minute);
+    }
+    if (this.installed.has('hour')) {
+      this.gearAngles.hour = a.hour;
+      this.updatePartTransform('hour', dc.x, dc.y, a.hour);
+    }
+    return a.rawSec;
+  }
+
   onStageComplete() {
     this.completed = true;
     this.runTime = 0;
     this.lastBeatIndex = -1;
+    this.lastRealSec = -1;
     this.cuckooPlayed = false;
+
+    const clock = this.getClock();
+    const nowAngles = this.getCurrentTimeAngles(false);
+    if (this.installed.has('hour')) this.gearAngles.hour = nowAngles.hour;
+    if (this.installed.has('minute')) this.gearAngles.minute = nowAngles.minute;
+    if (this.installed.has('second')) this.gearAngles.second = nowAngles.second;
+
     this.renderAll();
     this.startWatchAnimation();
 
-    const clock = this.getClock();
     const hasNextLevel = this.levelIndex < LEVELS.length - 1;
 
     if (clock.id === 'cuckoo-white') {
@@ -675,6 +717,7 @@ export default class WatchMakerGame {
   startWatchAnimation() {
     this.stopAnimation();
     this.lastFrameTime = performance.now();
+    this.lastRealSec = -1;
 
     const tick = (now) => {
       const dt = Math.min((now - this.lastFrameTime) / 1000, 0.05);
@@ -691,63 +734,60 @@ export default class WatchMakerGame {
         this.updatePartTransform(p.id, p.x, p.y, this.gearAngles[p.id]);
       }
 
-      if (clock.animType === 'pendulum') {
-        const phase = this.runTime * 1.15 * Math.PI * 2;
+      const realSec = new Date().getSeconds();
+      const secChanged = realSec !== this.lastRealSec;
+
+      if (clock.animType === 'sweep') {
+        // Smooth continuous silent sweep synced to real current time!
+        this.syncHandsToNow(dc, true);
+        this.lastRealSec = realSec;
+      } else if (clock.animType === 'tuning-fork') {
+        // High-frequency smooth tuning-fork glide synced to real current time
+        this.syncHandsToNow(dc, true);
+        if (secChanged) {
+          this.lastRealSec = realSec;
+          this.sound.playWatchTick(realSec % 2 === 1);
+        }
+        const hum = Math.sin(this.runTime * 36) * 1.4;
+        this.updatePartTransform('fork', 336, 254, hum);
+      } else if (clock.animType === 'pendulum') {
+        // 1-second pendulum swing synced with real-time step hands
+        const phase = this.runTime * 0.5 * Math.PI * 2;
         const swing = Math.sin(phase) * 18;
-        const beat = Math.floor(this.runTime * 2.3);
-        if (beat !== this.lastBeatIndex) {
-          this.lastBeatIndex = beat;
-          this.sound.playPendulumTick(beat % 2 === 1);
+        if (secChanged) {
+          this.lastRealSec = realSec;
+          this.sound.playPendulumTick(realSec % 2 === 1);
           this.escapeStepAngle = (this.escapeStepAngle + 12) % 360;
-          this.advanceHands(dc, 6);
+          this.syncHandsToNow(dc, false);
         }
         this.updatePartTransform('pendulum', 280, 226, swing);
         this.updatePartTransform('anchor', 280, 112, swing * 0.55);
         this.updatePartTransform('escape', 280, 146, this.escapeStepAngle);
-      } else if (clock.animType === 'sweep') {
-        // Smooth continuous silent sweep second hand!
-        this.gearAngles.second = ((this.gearAngles.second ?? 38) + 28 * dt) % 360;
-        this.gearAngles.minute = ((this.gearAngles.minute ?? -150) + 0.5 * dt) % 360;
-        this.updatePartTransform('second', dc.x, dc.y, this.gearAngles.second);
-        this.updatePartTransform('minute', dc.x, dc.y, this.gearAngles.minute);
       } else if (clock.animType === 'cuckoo') {
-        const beat = Math.floor(this.runTime * 2);
-        if (beat !== this.lastBeatIndex) {
-          this.lastBeatIndex = beat;
-          this.sound.playWatchTick(beat % 2 === 1);
-          this.advanceHands(dc, 6);
+        if (secChanged) {
+          this.lastRealSec = realSec;
+          this.sound.playWatchTick(realSec % 2 === 1);
+          this.syncHandsToNow(dc, false);
         }
-        // Gentle bob for cuckoo bird and bellows
         const bob = Math.sin(this.runTime * 7) * 4;
         const popEl = this.svgEl && this.svgEl.querySelector('#wm-cuckoo-pop');
         if (popEl) popEl.setAttribute('transform', `translate(0, ${(2 + bob).toFixed(1)})`);
         const belEl = this.svgEl && this.svgEl.querySelector('#wm-part-bellows');
         if (belEl) belEl.setAttribute('transform', `translate(224 172) scale(${(1 + Math.sin(this.runTime * 6) * 0.08).toFixed(3)}, 1)`);
       } else if (clock.animType === 'steampunk') {
-        const beat = Math.floor(this.runTime * 2.2);
-        if (beat !== this.lastBeatIndex) {
-          this.lastBeatIndex = beat;
-          this.sound.playWatchTick(beat % 2 === 1);
-          this.advanceHands(dc, 6);
+        if (secChanged) {
+          this.lastRealSec = realSec;
+          this.sound.playWatchTick(realSec % 2 === 1);
+          this.syncHandsToNow(dc, false);
         }
         const sectorAng = Math.sin(this.runTime * 4) * 9;
         this.updatePartTransform('sector', 254, 224, sectorAng);
-      } else if (clock.animType === 'tuning-fork') {
-        const beat = Math.floor(this.runTime * 4);
-        if (beat !== this.lastBeatIndex) {
-          this.lastBeatIndex = beat;
-          if (beat % 2 === 0) this.sound.playWatchTick(beat % 4 === 2);
-          this.advanceHands(dc, 3);
-        }
-        const hum = Math.sin(this.runTime * 36) * 1.4;
-        this.updatePartTransform('fork', 336, 254, hum);
       } else {
-        // Quartz step / radio clock
-        const beat = Math.floor(this.runTime * 1.6);
-        if (beat !== this.lastBeatIndex) {
-          this.lastBeatIndex = beat;
-          this.sound.playWatchTick(beat % 2 === 1);
-          this.advanceHands(dc, 6);
+        // Quartz step / radio clock synced to real 1Hz second steps
+        if (secChanged) {
+          this.lastRealSec = realSec;
+          this.sound.playWatchTick(realSec % 2 === 1);
+          this.syncHandsToNow(dc, false);
         }
         if (clock.animType === 'radio') {
           const waveEl = this.svgEl && this.svgEl.querySelector('#wm-radio-waves');
@@ -759,21 +799,6 @@ export default class WatchMakerGame {
     };
 
     this.rafId = requestAnimationFrame(tick);
-  }
-
-  advanceHands(dc, secStep) {
-    if (this.installed.has('second')) {
-      this.gearAngles.second = ((this.gearAngles.second ?? 0) + secStep) % 360;
-      this.updatePartTransform('second', dc.x, dc.y, this.gearAngles.second);
-    }
-    if (this.installed.has('minute')) {
-      this.gearAngles.minute = ((this.gearAngles.minute ?? 0) + secStep * 0.08) % 360;
-      this.updatePartTransform('minute', dc.x, dc.y, this.gearAngles.minute);
-    }
-    if (this.installed.has('hour')) {
-      this.gearAngles.hour = ((this.gearAngles.hour ?? 0) + secStep * 0.01) % 360;
-      this.updatePartTransform('hour', dc.x, dc.y, this.gearAngles.hour);
-    }
   }
 
   updatePartTransform(partId, x, y, angle) {
