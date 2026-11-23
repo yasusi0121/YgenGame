@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FF8A50"/>
+      <stop offset="100%" stop-color="#FF5722"/>
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#A8320D" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+
+  <!-- Full-bleed vibrant flat background (iOS applies rounded mask automatically) -->
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
+
+  <!-- Soft geometric background circles -->
+  <circle cx="88" cy="96" r="68" fill="#FFD12E" opacity="0.22"/>
+  <circle cx="436" cy="420" r="84" fill="#4ADE80" opacity="0.22"/>
+  <circle cx="430" cy="90" r="46" fill="#FFFFFF" opacity="0.16"/>
+
+  <!-- White rounded toy board -->
+  <rect x="64" y="96" width="384" height="320" rx="68" fill="#FFFDF7" filter="url(#softShadow)"/>
+  <rect x="64" y="388" width="384" height="28" rx="14" fill="#F0E4D2"/>
+
+  <!-- Circuit wire connecting button and lamp -->
+  <line x1="176" y1="226" x2="338" y2="226" stroke="#CBD5E1" stroke-width="20" stroke-linecap="round"/>
+  <line x1="176" y1="226" x2="338" y2="226" stroke="#FFD12E" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Left tactile yellow push button -->
+  <circle cx="176" cy="236" r="62" fill="#D69600"/>
+  <circle cx="176" cy="222" r="62" fill="#FFD32A" stroke="#FFFFFF" stroke-width="10"/>
+  <ellipse cx="156" cy="198" rx="18" ry="10" transform="rotate(-26 156 198)" fill="#FFFFFF" opacity="0.58"/>
+
+  <!-- Right glowing green LED lamp -->
+  <g stroke="#4ADE80" stroke-width="10" stroke-linecap="round">
+    <line x1="338" y1="138" x2="338" y2="156"/>
+    <line x1="338" y1="296" x2="338" y2="314"/>
+    <line x1="408" y1="226" x2="426" y2="226"/>
+    <line x1="388" y1="176" x2="401" y2="163"/>
+    <line x1="388" y1="276" x2="401" y2="289"/>
+  </g>
+  <circle cx="338" cy="226" r="48" fill="#4ADE80" stroke="#FFFFFF" stroke-width="10"/>
+  <ellipse cx="324" cy="210" rx="13" ry="8" transform="rotate(-28 324 210)" fill="#FFFFFF" opacity="0.65"/>
+
+  <!-- Cute rainbow toy bar accent at bottom of board -->
+  <rect x="128" y="328" width="48" height="34" rx="14" fill="#FF595E"/>
+  <rect x="192" y="328" width="48" height="34" rx="14" fill="#FFCA3A"/>
+  <rect x="256" y="328" width="48" height="34" rx="14" fill="#3A86FF"/>
+  <rect x="320" y="328" width="48" height="34" rx="14" fill="#8E7CF6"/>
+
+  <!-- Sparkle star in top center -->
+  <path d="M256 122 L265 144 L288 148 L270 163 L275 186 L256 174 L237 186 L242 163 L224 148 L247 144 Z" fill="#FFD12E" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round"/>
+</svg>

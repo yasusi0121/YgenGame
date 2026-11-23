@@ -1,0 +1,20 @@
+{
+  "name": "ちいく あそびば",
+  "short_name": "あそびば",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFF7E8",
+  "theme_color": "#FF7043",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "./apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

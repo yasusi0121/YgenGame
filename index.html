@@ -6,6 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="あそびば" />
+  <meta name="theme-color" content="#FF7043" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
   <title>ちいく あそびば — LOGIC BOOK</title>
   <style>
     :root {
@@ -1144,9 +1148,23 @@
       filter: drop-shadow(0 4px 0 rgba(0,0,0,0.14));
     }
 
+    .flat-ic {
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    .cm-result-icon {
+      width: clamp(68px, 11vh, 98px);
+      height: clamp(68px, 11vh, 98px);
+      display: grid;
+      place-items: center;
+      filter: drop-shadow(0 5px 0 rgba(0,0,0,0.14));
+    }
+
     .cm-result-name {
-      margin-top: 6px;
-      background: rgba(255, 255, 255, 0.92);
+      margin-top: 4px;
+      background: rgba(255, 255, 255, 0.94);
       color: #2D3436;
       font-size: clamp(18px, 2.5vw, 24px);
       font-weight: 900;
@@ -1158,44 +1176,40 @@
     .cm-formula {
       display: flex;
       align-items: center;
-      gap: 8px;
-      min-height: 36px;
+      gap: 10px;
+      min-height: 44px;
       flex-wrap: wrap;
       justify-content: center;
     }
 
-    .cm-drop-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.92);
-      color: #2D3436;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 900;
-      box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+    .cm-drop-orb {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 4px solid #FFFFFF;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.18);
+      display: inline-block;
     }
 
     .cm-palette {
       width: 100%;
-      max-width: 760px;
+      max-width: 780px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: clamp(10px, 2vw, 20px);
+      gap: clamp(12px, 2.2vw, 22px);
       flex-wrap: wrap;
     }
 
     .cm-paint-btn {
-      width: clamp(74px, 12vw, 108px);
-      height: clamp(74px, 12vw, 108px);
-      border-radius: 28px;
+      width: clamp(76px, 12vw, 110px);
+      height: clamp(76px, 12vw, 110px);
+      border-radius: 30px;
       border: 5px solid #FFFFFF;
       background: var(--p-bg);
       color: var(--p-fg, #FFFFFF);
       font-family: var(--font-rounded);
-      font-size: clamp(14px, 1.8vw, 18px);
+      font-size: clamp(13px, 1.6vw, 16px);
       font-weight: 900;
       box-shadow: 0 8px 0 var(--p-shadow), 0 12px 18px rgba(0,0,0,0.14);
       cursor: pointer;
@@ -1203,8 +1217,14 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      gap: 3px;
+      padding: 0;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, outline 0.15s ease;
+    }
+
+    .cm-paint-btn.is-picked {
+      transform: translateY(-4px) scale(1.06);
+      box-shadow: 0 0 0 5px #FFF04D, 0 10px 0 var(--p-shadow);
     }
 
     .cm-paint-btn:active {
@@ -1213,7 +1233,7 @@
     }
 
     /* ============================================================
-       GAME 4: SOUND MAGIC (おとの まほう)
+       GAME 4: SOUND MAGIC (おとの まほう — Real Piano Keyboard G3..E5)
        ============================================================ */
     .sm-root {
       position: relative;
@@ -1223,7 +1243,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: calc(16px + var(--safe-top)) calc(18px + var(--safe-right)) calc(18px + var(--safe-bottom)) calc(18px + var(--safe-left));
+      padding: calc(14px + var(--safe-top)) calc(14px + var(--safe-right)) calc(18px + var(--safe-bottom)) calc(14px + var(--safe-left));
       gap: 10px;
     }
 
@@ -1231,20 +1251,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       z-index: 10;
     }
 
     .sm-inst-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       border: 4px solid rgba(255,255,255,0.65);
       border-radius: 20px;
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.24);
       color: #FFFFFF;
       font-family: var(--font-rounded);
-      font-size: clamp(13px, 1.7vw, 17px);
+      font-size: clamp(13px, 1.6vw, 16px);
       font-weight: 900;
-      padding: 8px 16px;
+      padding: 7px 14px;
       cursor: pointer;
       box-shadow: 0 5px 0 rgba(0,0,0,0.14);
       transition: transform 0.1s ease, background 0.15s ease;
@@ -1257,81 +1280,128 @@
       transform: translateY(-2px);
     }
 
-    .sm-pads-wrap {
+    /* Piano chassis */
+    .sm-piano-frame {
       flex: 1;
       min-height: 0;
       width: 100%;
-      max-width: 980px;
-      display: grid;
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-      gap: clamp(8px, 1.4vw, 16px);
-      align-items: end;
-      padding: 12px 4px;
+      max-width: 1060px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 0;
     }
 
-    @media (max-width: 680px) {
-      .sm-pads-wrap {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        align-items: stretch;
+    .sm-piano-scroll {
+      width: 100%;
+      height: min(100%, 340px);
+      min-height: 200px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      display: flex;
+      justify-content: center;
+      padding: 12px 10px 18px;
+      background: #1E293B;
+      border: 6px solid #FFFFFF;
+      border-radius: 30px;
+      box-shadow: 0 12px 0 rgba(0, 0, 0, 0.22), 0 18px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 740px) {
+      .sm-piano-scroll {
+        justify-content: flex-start;
       }
     }
 
-    .sm-key {
+    .sm-piano {
       position: relative;
-      height: var(--key-h, 86%);
-      min-height: 110px;
-      border: 5px solid #FFFFFF;
-      border-radius: 28px;
-      background: var(--k-bg);
-      color: #FFFFFF;
-      box-shadow: 0 10px 0 var(--k-shadow), 0 14px 20px rgba(0,0,0,0.16);
+      display: flex;
+      height: 100%;
+      width: 100%;
+      min-width: 720px;
+      gap: 4px;
+    }
+
+    .piano-white-key {
+      position: relative;
+      flex: 1 0 0;
+      height: 100%;
+      border: none;
+      border-radius: 0 0 18px 18px;
+      background: #FFFFFF;
+      box-shadow: 0 9px 0 #CBD5E1, inset 0 -10px 0 var(--key-accent, #E2E8F0);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 14px 6px;
+      justify-content: flex-end;
+      padding: 0 2px 14px;
+      gap: 4px;
       cursor: pointer;
       touch-action: none;
-      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.1s ease;
+      transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
     }
 
-    .sm-key.is-pressed {
-      transform: translateY(7px) scale(0.97);
-      box-shadow: 0 3px 0 var(--k-shadow);
-      filter: brightness(1.12);
+    .piano-white-key.is-pressed {
+      transform: translateY(6px);
+      background: #FFFBEB;
+      box-shadow: 0 3px 0 #94A3B8, inset 0 -14px 0 var(--key-accent, #FFD12E);
     }
 
-    .sm-key.is-guide {
-      box-shadow: 0 0 0 7px #FFF04D, 0 10px 0 var(--k-shadow);
-      animation: cardBoing 0.6s ease infinite;
+    .piano-white-key.is-guide {
+      background: #FEF9C3;
+      box-shadow: 0 0 0 5px #FFD12E inset, 0 9px 0 #D97706;
     }
 
-    .sm-key-dot {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.55);
-    }
-
-    .sm-key-label {
-      font-size: clamp(20px, 2.8vw, 30px);
+    .piano-key-name {
+      font-family: var(--font-rounded);
+      font-size: clamp(14px, 1.8vw, 20px);
       font-weight: 900;
-      text-shadow: 0 3px 0 rgba(0,0,0,0.15);
+      color: #334155;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .piano-white-key.is-c-key .piano-key-name {
+      color: #E11D48;
+    }
+
+    .piano-black-key {
+      position: absolute;
+      top: 0;
+      height: 58%;
+      transform: translateX(-50%);
+      border: none;
+      border-radius: 0 0 14px 14px;
+      background: linear-gradient(180deg, #334155 0%, #0F172A 100%);
+      box-shadow: 0 8px 0 #020617, inset 0 -5px 0 rgba(255, 255, 255, 0.14);
+      z-index: 6;
+      cursor: pointer;
+      touch-action: none;
+      padding: 0;
+      transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+    }
+
+    .piano-black-key.is-pressed {
+      transform: translateX(-50%) translateY(5px);
+      background: linear-gradient(180deg, #475569 0%, #1E293B 100%);
+      box-shadow: 0 3px 0 #020617;
     }
 
     .sm-float-note {
       position: absolute;
-      top: 10%;
+      top: 8%;
       left: 50%;
       transform: translate(-50%, 0);
-      font-size: 32px;
       pointer-events: none;
-      animation: floatNoteUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      z-index: 20;
+      animation: floatNoteUp 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @keyframes floatNoteUp {
-      0% { opacity: 1; transform: translate(-50%, 0) scale(0.7); }
-      100% { opacity: 0; transform: translate(-50%, -90px) scale(1.35); }
+      0% { opacity: 1; transform: translate(-50%, 0) scale(0.75); }
+      100% { opacity: 0; transform: translate(-50%, -84px) scale(1.3); }
     }
 
     /* ============================================================
@@ -1400,6 +1470,9 @@
     }
 
     .pm-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       background: rgba(255,255,255,0.92);
       color: #2D3436;
       font-weight: 900;
@@ -1459,7 +1532,7 @@
       flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s ease;
     }
 
@@ -1475,10 +1548,11 @@
     }
 
     .pm-item {
-      font-size: clamp(26px, 4vw, 38px);
-      line-height: 1;
+      width: clamp(32px, 4.4vw, 44px);
+      height: clamp(32px, 4.4vw, 44px);
       transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-      display: inline-block;
+      display: inline-grid;
+      place-items: center;
     }
 
     .pm-item.is-pop {
@@ -1533,14 +1607,17 @@
     }
 
     .pm-step-btn {
-      width: 48px;
-      height: 48px;
+      width: 50px;
+      height: 50px;
+      padding: 0;
       border: none;
       border-radius: 16px;
       background: var(--s-bg, #FF7043);
       color: #FFFFFF;
-      font-size: 28px;
-      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
       box-shadow: 0 4px 0 var(--s-sh, #D84315);
       cursor: pointer;
     }
@@ -1548,6 +1625,9 @@
     .pm-step-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--s-sh, #D84315); }
 
     .pm-merge-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       border: 5px solid #FFFFFF;
       border-radius: 999px;
       background: #FFD12E;
@@ -1555,7 +1635,7 @@
       font-family: var(--font-rounded);
       font-size: clamp(18px, 2.3vw, 24px);
       font-weight: 900;
-      padding: 12px 32px;
+      padding: 12px 30px;
       box-shadow: 0 7px 0 #D69600;
       cursor: pointer;
     }
@@ -3888,7 +3968,234 @@
       }
 
       /* =========================================================================
-         2C. GAME 3: COLOR MIX (いろの まほう)
+         2.5 CUSTOM FLAT-DESIGN SVG ICON LIBRARY (Zero Unicode Emojis)
+         ========================================================================= */
+      const FLAT_ICONS = {
+        svg(inner, size = 36) {
+          return `<svg class="flat-ic" width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" aria-hidden="true">${inner}</svg>`;
+        },
+        apple(size = 38) {
+          return this.svg(`
+            <path d="M32 18 C22 14, 12 22, 13 36 C14 48, 22 56, 32 54 C42 56, 50 48, 51 36 C52 22, 42 14, 32 18 Z" fill="#FF4D5A" stroke="#FFFFFF" stroke-width="3.5"/>
+            <path d="M32 18 C32 12, 35 8, 39 8" stroke="#8D5524" stroke-width="4.5" stroke-linecap="round"/>
+            <ellipse cx="41" cy="14" rx="7" ry="4" transform="rotate(-24 41 14)" fill="#4ADE80"/>
+            <ellipse cx="23" cy="29" rx="4" ry="7" transform="rotate(-18 23 29)" fill="#FFFFFF" opacity="0.45"/>
+          `, size);
+        },
+        greenApple(size = 38) {
+          return this.svg(`
+            <path d="M32 18 C22 14, 12 22, 13 36 C14 48, 22 56, 32 54 C42 56, 50 48, 51 36 C52 22, 42 14, 32 18 Z" fill="#4ADE80" stroke="#FFFFFF" stroke-width="3.5"/>
+            <path d="M32 18 C32 12, 35 8, 39 8" stroke="#8D5524" stroke-width="4.5" stroke-linecap="round"/>
+            <ellipse cx="41" cy="14" rx="7" ry="4" transform="rotate(-24 41 14)" fill="#16A34A"/>
+            <ellipse cx="23" cy="29" rx="4" ry="7" transform="rotate(-18 23 29)" fill="#FFFFFF" opacity="0.48"/>
+          `, size);
+        },
+        strawberry(size = 38) {
+          return this.svg(`
+            <path d="M32 55 C20 50, 14 36, 17 24 C19 17, 26 16, 32 18 C38 16, 45 17, 47 24 C50 36, 44 50, 32 55 Z" fill="#FF4769" stroke="#FFFFFF" stroke-width="3.5"/>
+            <path d="M22 19 L32 24 L42 19 L37 13 L32 17 L27 13 Z" fill="#2ED573"/>
+            <circle cx="25" cy="30" r="2.2" fill="#FFF3B0"/>
+            <circle cx="39" cy="30" r="2.2" fill="#FFF3B0"/>
+            <circle cx="32" cy="37" r="2.2" fill="#FFF3B0"/>
+            <circle cx="27" cy="44" r="2.2" fill="#FFF3B0"/>
+            <circle cx="37" cy="44" r="2.2" fill="#FFF3B0"/>
+          `, size);
+        },
+        orange(size = 38) {
+          return this.svg(`
+            <circle cx="32" cy="35" r="20" fill="#FF8C1A" stroke="#FFFFFF" stroke-width="3.5"/>
+            <ellipse cx="38" cy="14" rx="8" ry="4.5" transform="rotate(-22 38 14)" fill="#2ED573"/>
+            <circle cx="24" cy="28" r="4" fill="#FFFFFF" opacity="0.45"/>
+          `, size);
+        },
+        lemon(size = 38) {
+          return this.svg(`
+            <ellipse cx="32" cy="34" rx="22" ry="16" transform="rotate(-18 32 34)" fill="#FFD32A" stroke="#FFFFFF" stroke-width="3.5"/>
+            <ellipse cx="26" cy="27" rx="7" ry="3.5" transform="rotate(-22 26 27)" fill="#FFFFFF" opacity="0.5"/>
+          `, size);
+        },
+        grape(size = 38) {
+          return this.svg(`
+            <path d="M32 12 V20" stroke="#8D5524" stroke-width="4" stroke-linecap="round"/>
+            <ellipse cx="39" cy="14" rx="7" ry="4" transform="rotate(-15 39 14)" fill="#4ADE80"/>
+            <circle cx="24" cy="26" r="8" fill="#9B59B6" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="40" cy="26" r="8" fill="#9B59B6" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="32" cy="26" r="8" fill="#A855F7" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="27" cy="37" r="8" fill="#9B59B6" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="37" cy="37" r="8" fill="#9B59B6" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="32" cy="47" r="8" fill="#A855F7" stroke="#FFFFFF" stroke-width="2.5"/>
+          `, size);
+        },
+        peach(size = 38) {
+          return this.svg(`
+            <path d="M32 54 C18 50, 12 36, 16 24 C20 15, 29 15, 32 22 C35 15, 44 15, 48 24 C52 36, 46 50, 32 54 Z" fill="#FF85B3" stroke="#FFFFFF" stroke-width="3.5"/>
+            <ellipse cx="42" cy="14" rx="8" ry="4" transform="rotate(-25 42 14)" fill="#4ADE80"/>
+            <circle cx="24" cy="29" r="4" fill="#FFFFFF" opacity="0.45"/>
+          `, size);
+        },
+        clover(size = 38) {
+          return this.svg(`
+            <path d="M32 34 Q32 48 26 56" stroke="#16A34A" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="24" cy="24" r="10" fill="#2ED573" stroke="#FFFFFF" stroke-width="2.8"/>
+            <circle cx="40" cy="24" r="10" fill="#2ED573" stroke="#FFFFFF" stroke-width="2.8"/>
+            <circle cx="24" cy="38" r="10" fill="#2ED573" stroke="#FFFFFF" stroke-width="2.8"/>
+            <circle cx="40" cy="38" r="10" fill="#2ED573" stroke="#FFFFFF" stroke-width="2.8"/>
+          `, size);
+        },
+        whale(size = 38) {
+          return this.svg(`
+            <path d="M12 38 C12 24, 24 18, 38 20 C48 22, 52 30, 52 38 C52 44, 46 48, 34 48 L22 48 C15 48, 12 44, 12 38 Z" fill="#1E90FF" stroke="#FFFFFF" stroke-width="3.2"/>
+            <path d="M14 38 C8 34, 8 28, 14 26" stroke="#1E90FF" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="40" cy="33" r="3" fill="#FFFFFF"/>
+            <circle cx="41" cy="33" r="1.4" fill="#1E293B"/>
+            <path d="M34 18 Q34 10 29 10 M34 18 Q34 10 39 10" stroke="#67E8F9" stroke-width="3.5" stroke-linecap="round"/>
+          `, size);
+        },
+        cloud(size = 38) {
+          return this.svg(`
+            <path d="M18 46 H47 C53 46, 56 41, 56 36 C56 31, 52 27, 46 27 C45 19, 38 15, 31 16 C24 17, 20 22, 19 28 C13 28, 10 33, 10 38 C10 43, 13 46, 18 46 Z" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="3.5"/>
+          `, size);
+        },
+        dolphin(size = 38) {
+          return this.svg(`
+            <path d="M14 42 C16 24, 30 16, 44 22 C50 25, 54 32, 54 36 C48 38, 42 36, 36 40 C28 46, 20 48, 14 42 Z" fill="#38BDF8" stroke="#FFFFFF" stroke-width="3.2"/>
+            <circle cx="44" cy="29" r="2.6" fill="#0F172A"/>
+          `, size);
+        },
+        icecream(size = 38) {
+          return this.svg(`
+            <polygon points="22,34 42,34 32,56" fill="#F59E0B" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
+            <circle cx="32" cy="26" r="13" fill="#FEF08A" stroke="#FFFFFF" stroke-width="3"/>
+            <circle cx="32" cy="13" r="4" fill="#FF4757"/>
+          `, size);
+        },
+        choco(size = 38) {
+          return this.svg(`
+            <rect x="16" y="12" width="32" height="40" rx="7" fill="#8D5524" stroke="#FFFFFF" stroke-width="3.2"/>
+            <line x1="32" y1="14" x2="32" y2="50" stroke="#6B3E17" stroke-width="3"/>
+            <line x1="18" y1="26" x2="46" y2="26" stroke="#6B3E17" stroke-width="3"/>
+            <line x1="18" y1="38" x2="46" y2="38" stroke="#6B3E17" stroke-width="3"/>
+          `, size);
+        },
+        flower(size = 38) {
+          return this.svg(`
+            <circle cx="32" cy="18" r="9" fill="#FFB07C" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="45" cy="28" r="9" fill="#FFB07C" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="40" cy="43" r="9" fill="#FFB07C" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="24" cy="43" r="9" fill="#FFB07C" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="19" cy="28" r="9" fill="#FFB07C" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="32" cy="32" r="9" fill="#FFD32A"/>
+          `, size);
+        },
+        leaf(size = 38) {
+          return this.svg(`
+            <path d="M16 48 C16 24, 34 14, 50 14 C50 32, 40 48, 16 48 Z" fill="#6EE7B7" stroke="#FFFFFF" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M16 48 L40 24" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+          `, size);
+        },
+        lavender(size = 38) {
+          return this.svg(`
+            <line x1="32" y1="20" x2="32" y2="54" stroke="#4ADE80" stroke-width="4.5" stroke-linecap="round"/>
+            <circle cx="32" cy="16" r="7" fill="#C4B5FD" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="25" cy="25" r="7" fill="#A78BFA" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="39" cy="25" r="7" fill="#A78BFA" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="26" cy="35" r="7" fill="#C4B5FD" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="38" cy="35" r="7" fill="#C4B5FD" stroke="#FFFFFF" stroke-width="2.5"/>
+          `, size);
+        },
+        bear(size = 38) {
+          return this.svg(`
+            <circle cx="18" cy="20" r="9" fill="#C69C72" stroke="#FFFFFF" stroke-width="3"/>
+            <circle cx="46" cy="20" r="9" fill="#C69C72" stroke="#FFFFFF" stroke-width="3"/>
+            <circle cx="32" cy="35" r="19" fill="#C69C72" stroke="#FFFFFF" stroke-width="3.5"/>
+            <ellipse cx="32" cy="40" rx="9" ry="7" fill="#FDE6C4"/>
+            <circle cx="25" cy="32" r="2.6" fill="#2D3436"/>
+            <circle cx="39" cy="32" r="2.6" fill="#2D3436"/>
+            <ellipse cx="32" cy="38" rx="3.5" ry="2.5" fill="#4A2E1B"/>
+          `, size);
+        },
+        chick(size = 38) {
+          return this.svg(`
+            <circle cx="32" cy="35" r="19" fill="#FFD32A" stroke="#FFFFFF" stroke-width="3.5"/>
+            <circle cx="25" cy="31" r="2.8" fill="#2D3436"/>
+            <circle cx="39" cy="31" r="2.8" fill="#2D3436"/>
+            <polygon points="28,37 36,37 32,43" fill="#FF7043"/>
+            <circle cx="19" cy="37" r="3.5" fill="#FF85B3" opacity="0.65"/>
+            <circle cx="45" cy="37" r="3.5" fill="#FF85B3" opacity="0.65"/>
+          `, size);
+        },
+        star(size = 26) {
+          return this.svg(`
+            <path d="M32 7 L39.5 23 L57 25.5 L44 37.5 L47.5 55 L32 46.5 L16.5 55 L20 37.5 L7 25.5 L24.5 23 Z" fill="#FFD12E" stroke="#FFFFFF" stroke-width="3.5" stroke-linejoin="round"/>
+          `, size);
+        },
+        starEmpty(size = 26) {
+          return this.svg(`
+            <path d="M32 7 L39.5 23 L57 25.5 L44 37.5 L47.5 55 L32 46.5 L16.5 55 L20 37.5 L7 25.5 L24.5 23 Z" fill="rgba(148,163,184,0.28)" stroke="#94A3B8" stroke-width="3.5" stroke-linejoin="round"/>
+          `, size);
+        },
+        sparkle(size = 30) {
+          return this.svg(`
+            <path d="M32 8 Q34 30 56 32 Q34 34 32 56 Q30 34 8 32 Q30 30 32 8 Z" fill="#FFD12E" stroke="#FFFFFF" stroke-width="3.2" stroke-linejoin="round"/>
+          `, size);
+        },
+        note(size = 26, color = '#FFD12E') {
+          return this.svg(`
+            <path d="M26 44 V18 L48 13 V39" stroke="${color}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="20" cy="45" r="7.5" fill="${color}" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="42" cy="40" r="7.5" fill="${color}" stroke="#FFFFFF" stroke-width="2.5"/>
+          `, size);
+        },
+        drop(size = 34, fill = '#FFFFFF', stroke = 'rgba(0,0,0,0.14)') {
+          return this.svg(`
+            <path d="M32 8 C32 8, 50 28, 50 40 C50 50, 42 56, 32 56 C22 56, 14 50, 14 40 C14 28, 32 8, 32 8 Z" fill="${fill}" stroke="${stroke}" stroke-width="3.5"/>
+            <ellipse cx="25" cy="38" rx="3.5" ry="7" transform="rotate(-15 25 38)" fill="#FFFFFF" opacity="0.55"/>
+          `, size);
+        },
+        wash(size = 34) {
+          return this.svg(`
+            <path d="M22 14 C22 14, 30 24, 30 30 C30 35, 26 38, 22 38 C18 38, 14 35, 14 30 C14 24, 22 14, 22 14 Z" fill="#38BDF8" stroke="#FFFFFF" stroke-width="3"/>
+            <path d="M42 24 C42 24, 50 34, 50 40 C50 45, 46 48, 42 48 C38 48, 34 45, 34 40 C34 34, 42 24, 42 24 Z" fill="#67E8F9" stroke="#FFFFFF" stroke-width="3"/>
+          `, size);
+        },
+        marimba(size = 22) {
+          return this.svg(`
+            <rect x="8"  y="12" width="10" height="40" rx="5" fill="#FF595E"/>
+            <rect x="21" y="16" width="10" height="34" rx="5" fill="#FFCA3A"/>
+            <rect x="34" y="20" width="10" height="28" rx="5" fill="#4ADE80"/>
+            <rect x="47" y="24" width="10" height="22" rx="5" fill="#38BDF8"/>
+          `, size);
+        },
+        piano(size = 22) {
+          return this.svg(`
+            <rect x="8" y="14" width="48" height="36" rx="7" fill="#FFFFFF" stroke="#334155" stroke-width="4"/>
+            <line x1="24" y1="14" x2="24" y2="50" stroke="#CBD5E1" stroke-width="3"/>
+            <line x1="40" y1="14" x2="40" y2="50" stroke="#CBD5E1" stroke-width="3"/>
+            <rect x="19" y="14" width="10" height="21" rx="3" fill="#1E293B"/>
+            <rect x="35" y="14" width="10" height="21" rx="3" fill="#1E293B"/>
+          `, size);
+        },
+        drum(size = 22) {
+          return this.svg(`
+            <ellipse cx="32" cy="24" rx="22" ry="9" fill="#FEF3C7" stroke="#D97706" stroke-width="4"/>
+            <path d="M10 24 V42 C10 47, 20 52, 32 52 C44 52, 54 47, 54 42 V24" fill="#FF595E" stroke="#B91C1C" stroke-width="4"/>
+          `, size);
+        },
+        plusSign(size = 26) {
+          return this.svg(`
+            <line x1="32" y1="14" x2="32" y2="50" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+            <line x1="14" y1="32" x2="50" y2="32" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+          `, size);
+        },
+        minusSign(size = 26) {
+          return this.svg(`
+            <line x1="14" y1="32" x2="50" y2="32" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+          `, size);
+        }
+      };
+
+      /* =========================================================================
+         2C. GAME 3: COLOR MIX (いろの まほう — Intuitive Visual Mixing)
          ========================================================================= */
       const COLOR_PAINTS = {
         red:    { id: 'red',    name: 'あか',   hex: '#FF4757', shadow: '#C81E2B', fg: '#FFFFFF', pitch: 0 },
@@ -3898,22 +4205,22 @@
       };
 
       const COLOR_RECIPES = {
-        '':                 { name: 'いろを いれてね', hex: '#F1F5F9', emoji: '✨' },
-        'red':              { name: 'あか',           hex: '#FF4757', emoji: '🍎' },
-        'yellow':           { name: 'きいろ',         hex: '#FFD32A', emoji: '🍋' },
-        'blue':             { name: 'あお',           hex: '#1E90FF', emoji: '🐳' },
-        'white':            { name: 'しろ',           hex: '#FFFFFF', emoji: '☁️' },
-        'red+yellow':       { name: 'おれんじ',       hex: '#FF8C1A', emoji: '🍊', mission: true },
-        'blue+yellow':      { name: 'みどり',         hex: '#2ED573', emoji: '🍀', mission: true },
-        'blue+red':         { name: 'むらさき',       hex: '#9B59B6', emoji: '🍇', mission: true },
-        'red+white':        { name: 'ぴんく',         hex: '#FF85B3', emoji: '🍑', mission: true },
-        'blue+white':       { name: 'みずいろ',       hex: '#67E8F9', emoji: '🐬', mission: true },
-        'white+yellow':     { name: 'くりーむ',       hex: '#FEF08A', emoji: '🍦', mission: true },
-        'blue+red+yellow':  { name: 'ちゃいろ',       hex: '#8D5524', emoji: '🍫', mission: true },
-        'red+white+yellow': { name: 'ぴーち',         hex: '#FFB07C', emoji: '🌸', mission: true },
-        'blue+white+yellow':{ name: 'みんと',         hex: '#6EE7B7', emoji: '🌿', mission: true },
-        'blue+red+white':   { name: 'らべんだー',     hex: '#C4B5FD', emoji: '🪻', mission: true },
-        'blue+red+white+yellow': { name: 'みるくてぃ', hex: '#C69C72', emoji: '🧸', mission: true }
+        '':                      { name: 'まぜてね',   hex: '#F1F5F9', icon: 'sparkle' },
+        'red':                   { name: 'あか',       hex: '#FF4757', icon: 'apple' },
+        'yellow':                { name: 'きいろ',     hex: '#FFD32A', icon: 'lemon' },
+        'blue':                  { name: 'あお',       hex: '#1E90FF', icon: 'whale' },
+        'white':                 { name: 'しろ',       hex: '#FFFFFF', icon: 'cloud' },
+        'red+yellow':            { name: 'おれんじ',   hex: '#FF8C1A', icon: 'orange',    mission: true },
+        'blue+yellow':           { name: 'みどり',     hex: '#2ED573', icon: 'clover',    mission: true },
+        'blue+red':              { name: 'むらさき',   hex: '#9B59B6', icon: 'grape',     mission: true },
+        'red+white':             { name: 'ぴんく',     hex: '#FF85B3', icon: 'peach',     mission: true },
+        'blue+white':            { name: 'みずいろ',   hex: '#67E8F9', icon: 'dolphin',   mission: true },
+        'white+yellow':          { name: 'くりーむ',   hex: '#FEF08A', icon: 'icecream',  mission: true },
+        'blue+red+yellow':       { name: 'ちゃいろ',   hex: '#8D5524', icon: 'choco',     mission: true },
+        'red+white+yellow':      { name: 'ぴーち',     hex: '#FFB07C', icon: 'flower',    mission: true },
+        'blue+white+yellow':     { name: 'みんと',     hex: '#6EE7B7', icon: 'leaf',      mission: true },
+        'blue+red+white':        { name: 'らべんだー', hex: '#C4B5FD', icon: 'lavender',  mission: true },
+        'blue+red+white+yellow': { name: 'みるくてぃ', hex: '#C69C72', icon: 'bear',      mission: true }
       };
 
       class ColorMixGame {
@@ -3933,7 +4240,6 @@
             <div class="cm-root">
               <div class="lb-title-area" style="margin-top:4px;">
                 <h2 class="lb-circuit-name"><ruby>COLOR MIX<rt>いろの まほう</rt></ruby></h2>
-                <p class="lb-circuit-tip">いろを まぜて あたらしい いろを つくろう！</p>
               </div>
 
               <div class="cm-mission-bar" id="cm-mission-bar"></div>
@@ -3942,8 +4248,8 @@
                 <div class="cm-cauldron-wrap">
                   <div class="cm-bowl" id="cm-bowl">
                     <div class="cm-liquid" id="cm-liquid">
-                      <div class="cm-result-emoji" id="cm-emoji">✨</div>
-                      <div class="cm-result-name" id="cm-name">いろを いれてね</div>
+                      <div class="cm-result-icon" id="cm-icon"></div>
+                      <div class="cm-result-name" id="cm-name">まぜてね</div>
                     </div>
                   </div>
                 </div>
@@ -3954,11 +4260,13 @@
                 ${Object.values(COLOR_PAINTS).map((p) => `
                   <button class="cm-paint-btn" type="button" data-paint="${p.id}"
                           style="--p-bg:${p.hex}; --p-shadow:${p.shadow}; --p-fg:${p.fg};">
+                    ${FLAT_ICONS.drop(34, p.id === 'white' ? '#F8FAFC' : 'rgba(255,255,255,0.38)', p.id === 'white' ? '#CBD5E1' : '#FFFFFF')}
                     <span>${p.name}</span>
                   </button>
                 `).join('')}
                 <button class="cm-paint-btn" type="button" data-paint="clear"
                         style="--p-bg:#475569; --p-shadow:#1E293B; --p-fg:#FFFFFF;">
+                  ${FLAT_ICONS.wash(34)}
                   <span>あらう</span>
                 </button>
               </div>
@@ -3967,12 +4275,13 @@
 
           this.bowlEl = this.container.querySelector('#cm-bowl');
           this.liquidEl = this.container.querySelector('#cm-liquid');
-          this.emojiEl = this.container.querySelector('#cm-emoji');
+          this.iconEl = this.container.querySelector('#cm-icon');
           this.nameEl = this.container.querySelector('#cm-name');
           this.formulaEl = this.container.querySelector('#cm-formula');
           this.missionBarEl = this.container.querySelector('#cm-mission-bar');
+          this.paintBtns = Array.from(this.container.querySelectorAll('.cm-paint-btn'));
 
-          this.container.querySelectorAll('.cm-paint-btn').forEach((btn) => {
+          this.paintBtns.forEach((btn) => {
             btn.addEventListener('pointerdown', (e) => {
               e.preventDefault();
               this.sound.unlock();
@@ -4010,8 +4319,13 @@
           const result = COLOR_RECIPES[key] || COLOR_RECIPES[''];
 
           this.liquidEl.style.backgroundColor = result.hex;
-          this.emojiEl.textContent = result.emoji;
+          this.iconEl.innerHTML = FLAT_ICONS[result.icon](76);
           this.nameEl.textContent = result.name;
+
+          // Highlight currently mixed paint buttons visually
+          this.paintBtns.forEach((btn) => {
+            btn.classList.toggle('is-picked', this.drops.has(btn.dataset.paint));
+          });
 
           if (animate) {
             this.bowlEl.classList.remove('is-splash');
@@ -4019,18 +4333,17 @@
             this.bowlEl.classList.add('is-splash');
           }
 
-          // Render formula pills
+          // Pure visual color-orb formula (no sentences to read)
           if (this.drops.size === 0) {
-            this.formulaEl.innerHTML = '<span class="cm-drop-pill">したの いろを おしてね！</span>';
+            this.formulaEl.innerHTML = '';
           } else {
-            const list = Array.from(this.drops).map((id) => {
-              const p = COLOR_PAINTS[id];
-              return `<span class="cm-drop-pill"><span class="cm-mission-dot" style="width:16px;height:16px;background:${p.hex};"></span>${p.name}</span>`;
-            });
-            this.formulaEl.innerHTML = list.join('<span style="color:#fff;font-weight:900;font-size:20px;">＋</span>');
+            const orbs = Array.from(this.drops).map((id) =>
+              `<span class="cm-drop-orb" style="background:${COLOR_PAINTS[id].hex};"></span>`
+            );
+            this.formulaEl.innerHTML = orbs.join(`<span style="color:#FFFFFF;display:inline-flex;">${FLAT_ICONS.plusSign(22)}</span>`);
           }
 
-          // Mission check
+          // Compact visual mission target
           const targetKey = this.missionKeys[this.missionIndex];
           const target = COLOR_RECIPES[targetKey];
           if (key === targetKey && !this.missionCleared) {
@@ -4039,9 +4352,11 @@
           }
 
           this.missionBarEl.innerHTML = `
-            <span class="cm-mission-dot" style="background:${target.hex};"></span>
-            <span>${this.missionCleared ? `やったね！「${target.name}」できたよ！🎉` : `おだい：「${target.name}」を つくろう！`}</span>
-            <button class="cm-mission-btn" type="button" id="cm-next-mission">${this.missionCleared ? 'つぎへ ▶' : 'かえる'}</button>
+            <span class="cm-mission-dot" style="background:${target.hex};width:28px;height:28px;"></span>
+            ${FLAT_ICONS[target.icon](30)}
+            <span>${this.missionCleared ? 'できた！' : target.name}</span>
+            ${this.missionCleared ? FLAT_ICONS.star(24) : ''}
+            <button class="cm-mission-btn" type="button" id="cm-next-mission">${this.missionCleared ? 'つぎへ' : 'かえる'}</button>
           `;
 
           const nextBtn = this.missionBarEl.querySelector('#cm-next-mission');
@@ -4058,23 +4373,44 @@
       }
 
       /* =========================================================================
-         2D. GAME 4: SOUND MAGIC (おとの まほう)
+         2D. GAME 4: SOUND MAGIC (おとの まほう — Real Piano G3..E5)
+             White keys: G3, A3, B3, C4(ド), D4, E4, F4, G4, A4, B4, C5(ド), D5, E5
+             Black keys: G#3, A#3, C#4, D#4, F#4, G#4, A#4, C#5, D#5
          ========================================================================= */
-      const SOUND_KEYS = [
-        { label: 'ド', freq: 523.25, bg: '#FF595E', shadow: '#C92A30', h: '94%' },
-        { label: 'レ', freq: 587.33, bg: '#FF924C', shadow: '#CC5E1B', h: '90%' },
-        { label: 'ミ', freq: 659.25, bg: '#FFCA3A', shadow: '#C99608', h: '86%' },
-        { label: 'ファ', freq: 698.46, bg: '#8AC926', shadow: '#5D8F0E', h: '82%' },
-        { label: 'ソ', freq: 783.99, bg: '#2EC4B6', shadow: '#178A7F', h: '78%' },
-        { label: 'ラ', freq: 880.00, bg: '#3A86FF', shadow: '#1858C4', h: '74%' },
-        { label: 'シ', freq: 987.77, bg: '#8338EC', shadow: '#5719B0', h: '70%' },
-        { label: 'ド', freq: 1046.50, bg: '#FF5D8F', shadow: '#C42B5B', h: '66%' }
+      const PIANO_WHITE_KEYS = [
+        { id: 'G3', label: 'そ',   freq: 196.00, accent: '#2EC4B6' },
+        { id: 'A3', label: 'ら',   freq: 220.00, accent: '#3A86FF' },
+        { id: 'B3', label: 'し',   freq: 246.94, accent: '#8338EC' },
+        { id: 'C4', label: 'ド',   freq: 261.63, accent: '#FF595E', isC: true },
+        { id: 'D4', label: 'れ',   freq: 293.66, accent: '#FF924C' },
+        { id: 'E4', label: 'み',   freq: 329.63, accent: '#FFCA3A' },
+        { id: 'F4', label: 'ふぁ', freq: 349.23, accent: '#8AC926' },
+        { id: 'G4', label: 'そ',   freq: 392.00, accent: '#2EC4B6' },
+        { id: 'A4', label: 'ら',   freq: 440.00, accent: '#3A86FF' },
+        { id: 'B4', label: 'し',   freq: 493.88, accent: '#8338EC' },
+        { id: 'C5', label: 'ド',   freq: 523.25, accent: '#FF595E', isC: true },
+        { id: 'D5', label: 'れ',   freq: 587.33, accent: '#FF924C' },
+        { id: 'E5', label: 'み',   freq: 659.25, accent: '#FFCA3A' }
       ];
 
+      // Black keys positioned between white key index `afterWhite` and `afterWhite + 1`
+      const PIANO_BLACK_KEYS = [
+        { id: 'Gs3', afterWhite: 0,  freq: 207.65 },
+        { id: 'As3', afterWhite: 1,  freq: 233.08 },
+        { id: 'Cs4', afterWhite: 3,  freq: 277.18 },
+        { id: 'Ds4', afterWhite: 4,  freq: 311.13 },
+        { id: 'Fs4', afterWhite: 6,  freq: 369.99 },
+        { id: 'Gs4', afterWhite: 7,  freq: 415.30 },
+        { id: 'As4', afterWhite: 8,  freq: 466.16 },
+        { id: 'Cs5', afterWhite: 10, freq: 554.37 },
+        { id: 'Ds5', afterWhite: 11, freq: 622.25 }
+      ];
+
+      // Follow-along melodies using white key IDs around middle C (C4)
       const SOUND_SONGS = [
-        { name: 'きらきらぼし', notes: [0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0] },
-        { name: 'かえるのうた', notes: [0, 1, 2, 3, 2, 1, 0, 2, 3, 4, 5, 4, 3, 2] },
-        { name: 'ちょうちょう', notes: [4, 2, 2, 3, 1, 1, 0, 1, 2, 3, 4, 4, 4] }
+        { name: 'きらきらぼし', notes: ['C4', 'C4', 'G4', 'G4', 'A4', 'A4', 'G4', 'F4', 'F4', 'E4', 'E4', 'D4', 'D4', 'C4'] },
+        { name: 'かえるのうた', notes: ['C4', 'D4', 'E4', 'F4', 'E4', 'D4', 'C4', 'E4', 'F4', 'G4', 'A4', 'G4', 'F4', 'E4'] },
+        { name: 'ちょうちょう', notes: ['G4', 'E4', 'E4', 'F4', 'D4', 'D4', 'C4', 'D4', 'E4', 'F4', 'G4', 'G4', 'G4'] }
       ];
 
       class SoundMagicGame {
@@ -4082,43 +4418,63 @@
           this.container = container;
           this.app = app;
           this.sound = app.sound;
-          this.instrument = 'marimba';
-          this.songIndex = -1; // -1 = free play
+          this.instrument = 'piano';
+          this.songIndex = -1;
           this.songStep = 0;
         }
 
         mount() {
           this.app.setGameBackground('#3A86FF');
+          const whiteCount = PIANO_WHITE_KEYS.length;
+          const blackWidthPct = (100 / whiteCount) * 0.64;
+
           this.container.innerHTML = `
             <div class="sm-root">
               <div class="lb-title-area" style="margin-top:4px;">
                 <h2 class="lb-circuit-name"><ruby>SOUND MAGIC<rt>おとの まほう</rt></ruby></h2>
-                <p class="lb-circuit-tip" id="sm-tip">すきな おとを ぽんぽん たたいてみよう！</p>
+                <p class="lb-circuit-tip" id="sm-tip">ぴあのを ひいてみよう！</p>
               </div>
 
               <div class="sm-controls" id="sm-inst-bar">
-                <button class="sm-inst-btn is-active" type="button" data-inst="marimba">🪵 もっきん</button>
-                <button class="sm-inst-btn" type="button" data-inst="piano">🎹 ぴあの</button>
-                <button class="sm-inst-btn" type="button" data-inst="sparkle">✨ きらきら</button>
-                <button class="sm-inst-btn" type="button" data-inst="drum">🥁 たいこ</button>
-                <button class="sm-inst-btn" type="button" id="sm-song-btn" style="background:#FFD12E;color:#4D3300;border-color:#FFFFFF;">🎵 まねっこ：オフ</button>
+                <button class="sm-inst-btn is-active" type="button" data-inst="piano">${FLAT_ICONS.piano(22)}<span>ぴあの</span></button>
+                <button class="sm-inst-btn" type="button" data-inst="marimba">${FLAT_ICONS.marimba(22)}<span>もっきん</span></button>
+                <button class="sm-inst-btn" type="button" data-inst="sparkle">${FLAT_ICONS.sparkle(22)}<span>きらきら</span></button>
+                <button class="sm-inst-btn" type="button" data-inst="drum">${FLAT_ICONS.drum(22)}<span>たいこ</span></button>
+                <button class="sm-inst-btn" type="button" id="sm-song-btn" style="background:#FFD12E;color:#4D3300;border-color:#FFFFFF;">
+                  ${FLAT_ICONS.note(20, '#4D3300')}<span id="sm-song-label">まねっこ</span>
+                </button>
               </div>
 
-              <div class="sm-pads-wrap" id="sm-pads">
-                ${SOUND_KEYS.map((k, idx) => `
-                  <button class="sm-key" type="button" data-idx="${idx}"
-                          style="--k-bg:${k.bg}; --k-shadow:${k.shadow}; --key-h:${k.h};">
-                    <span class="sm-key-dot"></span>
-                    <span class="sm-key-label">${k.label}</span>
-                  </button>
-                `).join('')}
+              <div class="sm-piano-frame">
+                <div class="sm-piano-scroll">
+                  <div class="sm-piano" id="sm-piano">
+                    ${PIANO_WHITE_KEYS.map((k, idx) => `
+                      <button class="piano-white-key ${k.isC ? 'is-c-key' : ''}" type="button"
+                              data-note-id="${k.id}" data-freq="${k.freq}" data-idx="${idx}"
+                              style="--key-accent:${k.accent};">
+                        ${k.isC ? FLAT_ICONS.star(18) : ''}
+                        <span class="piano-key-name">${k.label}</span>
+                      </button>
+                    `).join('')}
+                    ${PIANO_BLACK_KEYS.map((bk, bIdx) => {
+                      const leftPct = ((bk.afterWhite + 1) / whiteCount) * 100;
+                      return `
+                        <button class="piano-black-key" type="button"
+                                data-note-id="${bk.id}" data-freq="${bk.freq}" data-idx="${bIdx + 3}"
+                                style="left:${leftPct}%; width:${blackWidthPct}%;"
+                                aria-label="黒鍵"></button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
               </div>
             </div>
           `;
 
           this.tipEl = this.container.querySelector('#sm-tip');
           this.songBtn = this.container.querySelector('#sm-song-btn');
-          this.keyEls = Array.from(this.container.querySelectorAll('.sm-key'));
+          this.songLabelEl = this.container.querySelector('#sm-song-label');
+          this.keyEls = Array.from(this.container.querySelectorAll('[data-note-id]'));
 
           // Instrument switcher
           this.container.querySelectorAll('[data-inst]').forEach((btn) => {
@@ -4127,7 +4483,7 @@
               this.sound.unlock();
               this.instrument = btn.dataset.inst;
               this.container.querySelectorAll('[data-inst]').forEach((b) => b.classList.toggle('is-active', b === btn));
-              this.sound.playInstrumentNote(this.instrument, 523.25, 0);
+              this.sound.playInstrumentNote(this.instrument, 261.63, 0);
             });
           });
 
@@ -4135,7 +4491,7 @@
           this.songBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             this.sound.unlock();
-            this.songIndex = (this.songIndex + 1);
+            this.songIndex = this.songIndex + 1;
             if (this.songIndex >= SOUND_SONGS.length) {
               this.songIndex = -1;
             }
@@ -4144,29 +4500,32 @@
             this.updateSongGuide();
           });
 
-          // Multi-touch playable keys
+          // Multi-touch playable piano keys (white + black)
           this.keyEls.forEach((keyEl) => {
+            const noteId = keyEl.dataset.noteId;
+            const freq = Number(keyEl.dataset.freq);
             const idx = Number(keyEl.dataset.idx);
             const activePointers = new Set();
 
             keyEl.addEventListener('pointerdown', (e) => {
               e.preventDefault();
+              e.stopPropagation();
               this.sound.unlock();
               try { keyEl.setPointerCapture(e.pointerId); } catch (_) {}
               activePointers.add(e.pointerId);
               keyEl.classList.add('is-pressed');
 
-              this.sound.playInstrumentNote(this.instrument, SOUND_KEYS[idx].freq, idx);
+              this.sound.playInstrumentNote(this.instrument, freq, idx);
               this.spawnFloatingNote(keyEl);
 
               if (this.songIndex >= 0) {
                 const song = SOUND_SONGS[this.songIndex];
-                if (song.notes[this.songStep] === idx) {
+                if (song.notes[this.songStep] === noteId) {
                   this.songStep++;
                   if (this.songStep >= song.notes.length) {
                     this.songStep = 0;
                     setTimeout(() => this.sound.playSuccessFanfare(), 240);
-                    this.tipEl.textContent = `すごい！「${song.name}」ひけたよ！🎉`;
+                    this.tipEl.textContent = `すごい！「${song.name}」ひけたよ！`;
                   }
                   this.updateSongGuide(true);
                 }
@@ -4194,66 +4553,62 @@
         spawnFloatingNote(keyEl) {
           const note = document.createElement('span');
           note.className = 'sm-float-note';
-          note.textContent = ['🎵', '🎶', '⭐', '✨'][Math.floor(Math.random() * 4)];
+          const colors = ['#FF595E', '#FFD12E', '#4ADE80', '#38BDF8', '#A78BFA'];
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          note.innerHTML = Math.random() > 0.35 ? FLAT_ICONS.note(30, col) : FLAT_ICONS.star(28);
           keyEl.appendChild(note);
-          setTimeout(() => note.remove(), 760);
+          setTimeout(() => note.remove(), 740);
         }
 
         updateSongGuide(keepSuccessTip = false) {
           this.keyEls.forEach((el) => el.classList.remove('is-guide'));
           if (this.songIndex < 0) {
-            this.songBtn.textContent = '🎵 まねっこ：オフ';
-            if (!keepSuccessTip) this.tipEl.textContent = 'すきな おとを ぽんぽん たたいてみよう！';
+            this.songLabelEl.textContent = 'まねっこ';
+            if (!keepSuccessTip) this.tipEl.textContent = 'ぴあのを ひいてみよう！';
             return;
           }
           const song = SOUND_SONGS[this.songIndex];
-          this.songBtn.textContent = `🎵 ${song.name}`;
+          this.songLabelEl.textContent = song.name;
           if (!keepSuccessTip) {
-            this.tipEl.textContent = `ひかっている けんばん を おして「${song.name}」を ひこう！`;
+            this.tipEl.textContent = `ひかる けんばん を おそう！（${song.name}）`;
           }
-          const targetIdx = song.notes[this.songStep];
-          if (this.keyEls[targetIdx]) {
-            this.keyEls[targetIdx].classList.add('is-guide');
+          const targetId = song.notes[this.songStep];
+          const targetEl = this.container.querySelector(`[data-note-id="${targetId}"]`);
+          if (targetEl) {
+            targetEl.classList.add('is-guide');
           }
         }
       }
 
       /* =========================================================================
-         2E. GAME 5: PLUS MAGIC (たしざん の まほう — 3 Modes)
-            Mode 1: 'concept' (概念を覚える)
-            Mode 2: 'step'    (徐々に難易度が上がる)
-            Mode 3: 'random'  (ランダム出題)
+         2E. GAME 5: PLUS MAGIC (たしざん の まほう — 3 Modes, Flat SVG Icons)
          ========================================================================= */
-      const PLUS_THEMES = ['🍎', '🍓', '🍊', '⭐', '🐥'];
+      const PLUS_THEME_ICONS = ['apple', 'strawberry', 'orange', 'star', 'chick'];
 
       class PlusMagicGame {
         constructor(container, app) {
           this.container = container;
           this.app = app;
           this.sound = app.sound;
-          this.mode = 'concept'; // 'concept' | 'step' | 'random'
+          this.mode = 'concept';
 
-          // Concept mode state
           this.cA = 2;
           this.cB = 3;
           this.cMerged = false;
           this.cCountTimer = null;
 
-          // Step mode state (level 1..3)
           this.stepLevel = 1;
           this.stepStreak = 0;
 
-          // Random mode state
-          this.randMax = 10; // 10 or 20
+          this.randMax = 10;
           this.randHint = true;
           this.randScore = 0;
 
-          // Active quiz question
           this.qA = 1;
           this.qB = 1;
           this.qChoices = [];
           this.qSolved = false;
-          this.qEmoji = '🍎';
+          this.qIconKey = 'apple';
         }
 
         mount() {
@@ -4262,13 +4617,13 @@
             <div class="pm-root">
               <div class="lb-title-area" style="margin-top:2px;">
                 <h2 class="lb-circuit-name"><ruby>PLUS MAGIC<rt>たしざん の まほう</rt></ruby></h2>
-                <p class="lb-circuit-tip" id="pm-tip">あわせると いくつに なるかな？</p>
+                <p class="lb-circuit-tip" id="pm-tip">あわせると いくつ？</p>
               </div>
 
               <div class="pm-mode-tabs" id="pm-tabs">
-                <button class="pm-tab-btn is-active" type="button" data-mode="concept">① わかる</button>
-                <button class="pm-tab-btn" type="button" data-mode="step">② ステップ</button>
-                <button class="pm-tab-btn" type="button" data-mode="random">③ ランダム</button>
+                <button class="pm-tab-btn is-active" type="button" data-mode="concept">1. わかる</button>
+                <button class="pm-tab-btn" type="button" data-mode="step">2. ステップ</button>
+                <button class="pm-tab-btn" type="button" data-mode="random">3. ランダム</button>
               </div>
 
               <div class="pm-board" id="pm-board"></div>
@@ -4304,16 +4659,16 @@
           if (mode === 'concept') {
             this.app.setGameBackground('#22A06B');
             this.cMerged = false;
-            this.tipEl.textContent = 'りんごを ふやして「あわせる！」を おしてみよう！';
+            this.tipEl.textContent = '「あわせる！」を おしてみよう！';
             this.renderConcept();
           } else if (mode === 'step') {
             this.app.setGameBackground('#0EA5E9');
-            this.tipEl.textContent = '3もん せいかい で つぎの レベルへ ステップアップ！';
+            this.tipEl.textContent = 'あわせて いくつに なるかな？';
             this.generateQuestion();
             this.renderQuiz();
           } else {
             this.app.setGameBackground('#F59E0B');
-            this.tipEl.textContent = 'いろんな たしざん に ちょうせん しよう！';
+            this.tipEl.textContent = 'いろんな たしざん に ちょうせん！';
             this.generateQuestion();
             this.renderQuiz();
           }
@@ -4321,10 +4676,10 @@
 
         renderConcept() {
           const sum = this.cA + this.cB;
-          const itemsA = Array.from({ length: this.cA }, () => `<span class="pm-item">🍎</span>`).join('');
-          const itemsB = Array.from({ length: this.cB }, () => `<span class="pm-item">🍏</span>`).join('');
+          const itemsA = Array.from({ length: this.cA }, () => `<span class="pm-item">${FLAT_ICONS.apple(38)}</span>`).join('');
+          const itemsB = Array.from({ length: this.cB }, () => `<span class="pm-item">${FLAT_ICONS.greenApple(38)}</span>`).join('');
           const mergedItems = Array.from({ length: sum }, (_, i) =>
-            `<span class="pm-item" data-count-idx="${i}">${i < this.cA ? '🍎' : '🍏'}</span>`
+            `<span class="pm-item" data-count-idx="${i}">${i < this.cA ? FLAT_ICONS.apple(38) : FLAT_ICONS.greenApple(38)}</span>`
           ).join('');
 
           this.boardEl.innerHTML = `
@@ -4334,7 +4689,7 @@
                   <div class="pm-basket is-merged" id="pm-merged-basket">${mergedItems}</div>
                 ` : `
                   <div class="pm-basket">${itemsA}</div>
-                  <span style="font-size:34px;font-weight:900;color:#64748B;">＋</span>
+                  <span style="color:#64748B;display:inline-flex;">${FLAT_ICONS.plusSign(30)}</span>
                   <div class="pm-basket is-right">${itemsB}</div>
                 `}
               </div>
@@ -4350,21 +4705,21 @@
 
             <div class="pm-concept-controls">
               <div class="pm-stepper">
-                <span style="font-weight:900;color:#FF5722;">🍎</span>
-                <button class="pm-step-btn" type="button" data-act="a-dec" style="--s-bg:#FF7043;--s-sh:#D84315;">−</button>
-                <span style="font-size:24px;font-weight:900;min-width:28px;text-align:center;">${this.cA}</span>
-                <button class="pm-step-btn" type="button" data-act="a-inc" style="--s-bg:#FF7043;--s-sh:#D84315;">＋</button>
+                ${FLAT_ICONS.apple(30)}
+                <button class="pm-step-btn" type="button" data-act="a-dec" aria-label="へらす" style="--s-bg:#FF7043;--s-sh:#D84315;">${FLAT_ICONS.minusSign(24)}</button>
+                <span style="font-size:24px;font-weight:900;min-width:26px;text-align:center;">${this.cA}</span>
+                <button class="pm-step-btn" type="button" data-act="a-inc" aria-label="ふやす" style="--s-bg:#FF7043;--s-sh:#D84315;">${FLAT_ICONS.plusSign(24)}</button>
               </div>
 
               <button class="pm-merge-btn" type="button" data-act="toggle-merge">
-                ${this.cMerged ? 'もういっかい わける' : 'あわせる！✨'}
+                ${this.cMerged ? 'わける' : `${FLAT_ICONS.sparkle(24)}<span>あわせる！</span>`}
               </button>
 
               <div class="pm-stepper">
-                <span style="font-weight:900;color:#0284C7;">🍏</span>
-                <button class="pm-step-btn" type="button" data-act="b-dec" style="--s-bg:#0EA5E9;--s-sh:#0369A1;">−</button>
-                <span style="font-size:24px;font-weight:900;min-width:28px;text-align:center;">${this.cB}</span>
-                <button class="pm-step-btn" type="button" data-act="b-inc" style="--s-bg:#0EA5E9;--s-sh:#0369A1;">＋</button>
+                ${FLAT_ICONS.greenApple(30)}
+                <button class="pm-step-btn" type="button" data-act="b-dec" aria-label="へらす" style="--s-bg:#0EA5E9;--s-sh:#0369A1;">${FLAT_ICONS.minusSign(24)}</button>
+                <span style="font-size:24px;font-weight:900;min-width:26px;text-align:center;">${this.cB}</span>
+                <button class="pm-step-btn" type="button" data-act="b-inc" aria-label="ふやす" style="--s-bg:#0EA5E9;--s-sh:#0369A1;">${FLAT_ICONS.plusSign(24)}</button>
               </div>
             </div>
           `;
@@ -4415,28 +4770,24 @@
 
         generateQuestion() {
           this.qSolved = false;
-          this.qEmoji = PLUS_THEMES[Math.floor(Math.random() * PLUS_THEMES.length)];
+          this.qIconKey = PLUS_THEME_ICONS[Math.floor(Math.random() * PLUS_THEME_ICONS.length)];
 
           let a = 1, b = 1;
           if (this.mode === 'step') {
             if (this.stepLevel === 1) {
-              // Level 1: sum up to 5
-              const sum = 2 + Math.floor(Math.random() * 4); // 2..5
+              const sum = 2 + Math.floor(Math.random() * 4);
               a = 1 + Math.floor(Math.random() * (sum - 1));
               b = sum - a;
             } else if (this.stepLevel === 2) {
-              // Level 2: sum 5..10
-              const sum = 5 + Math.floor(Math.random() * 6); // 5..10
+              const sum = 5 + Math.floor(Math.random() * 6);
               a = 1 + Math.floor(Math.random() * (sum - 1));
               b = sum - a;
             } else {
-              // Level 3: carry-over, sum 10..15
-              a = 5 + Math.floor(Math.random() * 5); // 5..9
+              a = 5 + Math.floor(Math.random() * 5);
               b = Math.max(2, 10 - a) + Math.floor(Math.random() * Math.min(6, 16 - a));
               if (a + b > 15) b = 15 - a;
             }
           } else {
-            // Random mode (up to randMax: 10 or 20)
             const maxSum = this.randMax;
             const sum = 2 + Math.floor(Math.random() * (maxSum - 1));
             a = 1 + Math.floor(Math.random() * (sum - 1));
@@ -4446,7 +4797,6 @@
           this.qA = a;
           this.qB = b;
 
-          // Build 4 unique choices including the correct answer
           const ans = a + b;
           const set = new Set([ans]);
           const deltas = [-2, -1, 1, 2, 3, -3];
@@ -4461,22 +4811,27 @@
         renderQuiz() {
           const ans = this.qA + this.qB;
           const showVisuals = this.mode === 'step' || this.randHint;
-          const itemsA = Array.from({ length: this.qA }, () => `<span class="pm-item">${this.qEmoji}</span>`).join('');
-          const itemsB = Array.from({ length: this.qB }, () => `<span class="pm-item">${this.qEmoji}</span>`).join('');
+          const iconHtml = FLAT_ICONS[this.qIconKey](36);
+          const itemsA = Array.from({ length: this.qA }, () => `<span class="pm-item">${iconHtml}</span>`).join('');
+          const itemsB = Array.from({ length: this.qB }, () => `<span class="pm-item">${iconHtml}</span>`).join('');
+
+          const starsHtml = Array.from({ length: 3 }, (_, i) =>
+            i < this.stepStreak ? FLAT_ICONS.star(22) : FLAT_ICONS.starEmpty(22)
+          ).join('');
 
           const statusHtml = this.mode === 'step' ? `
             <div class="pm-status-row">
               <span class="pm-pill">レベル ${this.stepLevel} / 3</span>
-              <span class="pm-pill">${'⭐'.repeat(this.stepStreak)}${'☆'.repeat(Math.max(0, 3 - this.stepStreak))}</span>
+              <span class="pm-pill">${starsHtml}</span>
             </div>
           ` : `
             <div class="pm-status-row">
-              <span class="pm-pill">⭐ ${this.randScore} もん せいかい</span>
+              <span class="pm-pill">${FLAT_ICONS.star(22)}<span>${this.randScore}</span></span>
               <button class="pm-toggle-pill ${this.randMax === 20 ? 'is-on' : ''}" type="button" data-qact="toggle-max">
                 ${this.randMax === 10 ? '10 まで' : '20 まで'}
               </button>
               <button class="pm-toggle-pill ${this.randHint ? 'is-on' : ''}" type="button" data-qact="toggle-hint">
-                えをみる：${this.randHint ? 'ON' : 'OFF'}
+                え：${this.randHint ? 'ON' : 'OFF'}
               </button>
             </div>
           `;
@@ -4487,7 +4842,7 @@
               ${showVisuals ? `
                 <div class="pm-visual-groups">
                   <div class="pm-basket">${itemsA}</div>
-                  <span style="font-size:32px;font-weight:900;color:#64748B;">＋</span>
+                  <span style="color:#64748B;display:inline-flex;">${FLAT_ICONS.plusSign(28)}</span>
                   <div class="pm-basket is-right">${itemsB}</div>
                 </div>
               ` : ''}
@@ -4536,13 +4891,13 @@
                   if (this.stepStreak >= 3 && this.stepLevel < 3) {
                     this.stepLevel++;
                     this.stepStreak = 0;
-                    this.tipEl.textContent = `すごい！レベル ${this.stepLevel} に ステップアップ！🎉`;
+                    this.tipEl.textContent = `レベル ${this.stepLevel} に ステップアップ！`;
                   } else {
-                    this.tipEl.textContent = `せいかい！ ${this.qA} ＋ ${this.qB} ＝ ${ans} だよ！🌟`;
+                    this.tipEl.textContent = `せいかい！ ${this.qA} ＋ ${this.qB} ＝ ${ans}`;
                   }
                 } else {
                   this.randScore++;
-                  this.tipEl.textContent = `せいかい！ ${this.qA} ＋ ${this.qB} ＝ ${ans} だよ！🌟`;
+                  this.tipEl.textContent = `せいかい！ ${this.qA} ＋ ${this.qB} ＝ ${ans}`;
                 }
                 this.renderQuiz();
                 this.cCountTimer = setTimeout(() => {
@@ -4554,7 +4909,7 @@
                 btn.classList.remove('is-wrong');
                 void btn.offsetWidth;
                 btn.classList.add('is-wrong');
-                this.tipEl.textContent = 'おしい！ もういっかい かぞえてみよう！';
+                this.tipEl.textContent = 'もういっかい かぞえてみよう！';
               }
             });
           });
@@ -4771,7 +5126,7 @@
                 <p class="card-desc">${item.desc}</p>
               </div>
               <span class="card-play-pill">
-                ${item.available ? '▶ ' : ''}${item.cta}
+                ${item.available ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><polygon points="3,2 14,8 3,14"/></svg>' : ''}${item.cta}
               </span>
             `;
 
