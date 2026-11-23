@@ -522,15 +522,16 @@ function ensureTypingStyles() {
     .tp-gojuon-lcd-text {
       flex: 1;
       min-width: 0;
-      overflow: hidden;
+      overflow-x: auto;
+      scrollbar-width: none;
       white-space: nowrap;
-      text-overflow: ellipsis;
       font-size: clamp(16px, 2.2vw, 22px);
       font-weight: 900;
       color: #4ADE80;
       letter-spacing: 0.1em;
       text-align: left;
     }
+    .tp-gojuon-lcd-text::-webkit-scrollbar { display: none; }
     .tp-gojuon-lcd-buf {
       color: #FFD12E;
       text-decoration: underline;
@@ -789,6 +790,25 @@ export default class TypingPCGame {
       return;
     }
 
+    if (this.mode === 'gojuon' && key === 'BS') {
+      this.sound.playKeyClick(true);
+      if (this.gojuonCharIdx > 0) {
+        this.gojuonCharIdx--;
+      } else if (this.gojuonTypedText.length > 0) {
+        this.gojuonTypedText = this.gojuonTypedText.slice(0, -1);
+      }
+      this.renderScreen();
+      this.updateGuideKey();
+      return;
+    }
+
+    if (this.mode === 'gojuon' && key === 'SPACE') {
+      this.sound.playKeyClick(true);
+      this.gojuonTypedText = (this.gojuonTypedText + '　').slice(-48);
+      this.renderScreen();
+      return;
+    }
+
     const expected = this.getExpectedKey();
     if (!expected) {
       this.sound.playKeyClick(false);
@@ -821,6 +841,7 @@ export default class TypingPCGame {
     this.gojuonCharIdx++;
     if (this.gojuonCharIdx >= target.r.length) {
       this.gojuonDone.add(this.gojuonIdx);
+      this.gojuonTypedText = (this.gojuonTypedText + target.k).slice(-48);
       this.score++;
       this.scoreEl.innerHTML = `${FLAT_ICONS.star(20)}<span>${this.score}</span>`;
       this.gojuonCharIdx = 0;
@@ -1036,12 +1057,14 @@ export default class TypingPCGame {
       this.screenEl.innerHTML = `
         <div class="tp-gojuon-col">
           <div class="tp-gojuon-lcd">
-            <div class="tp-gojuon-lcd-text">${lcdDisplay}</div>
+            <div class="tp-gojuon-lcd-text" id="tp-gojuon-lcd-text">${lcdDisplay}</div>
             <button class="tp-lcd-clear" type="button" id="tp-lcd-clear">けす</button>
           </div>
           <div class="tp-gojuon-wrap" style="flex:1;min-height:0;">${cellsHtml}</div>
         </div>
       `;
+      const lcdTextEl = this.screenEl.querySelector('#tp-gojuon-lcd-text');
+      if (lcdTextEl) lcdTextEl.scrollLeft = lcdTextEl.scrollWidth;
       this.screenEl.querySelector('#tp-lcd-clear').addEventListener('pointerdown', (e) => {
         e.preventDefault();
         this.sound.unlock();

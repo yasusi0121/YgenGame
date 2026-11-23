@@ -708,4 +708,47 @@ export class SoundEngine {
       osc.stop(now + i * 0.012 + 0.08);
     });
   }
+
+  /** Warm wooden pendulum clock tick-tock */
+  playPendulumTick(isTock = false) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    const base = isTock ? 310 : 390;
+    osc.frequency.setValueAtTime(base, now);
+    osc.frequency.exponentialRampToValueAtTime(base * 0.55, now + 0.045);
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.24, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+    osc.connect(g); g.connect(this.dryBus); g.connect(this.wetBus);
+    osc.start(now); osc.stop(now + 0.06);
+  }
+
+  /** Charming two-note wooden flute cuckoo clock call (Po-ppo!) */
+  playCuckoo() {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+
+    const notes = [
+      { freq: 783.99, start: 0.0, dur: 0.16 }, // G5
+      { freq: 659.25, start: 0.24, dur: 0.28 } // E5
+    ];
+    for (const n of notes) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(n.freq, now + n.start);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, now + n.start);
+      g.gain.linearRampToValueAtTime(0.24, now + n.start + 0.025);
+      g.gain.exponentialRampToValueAtTime(0.001, now + n.start + n.dur);
+      osc.connect(g); g.connect(this.dryBus); g.connect(this.wetBus);
+      osc.start(now + n.start);
+      osc.stop(now + n.start + n.dur + 0.02);
+    }
+  }
 }
