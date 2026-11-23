@@ -11,11 +11,28 @@ export class AppShell {
     this.gameGrid = document.getElementById('game-grid');
     this.gameMount = document.getElementById('game-mount');
     this.closeGameBtn = document.getElementById('close-game-btn');
+    this.reloadBtn = document.getElementById('app-reload-btn');
 
     this.initTouchGuards();
     this.initSoundButtons();
+    this.initReloadButton();
     this.initCloseButton();
     this.renderMenu();
+  }
+
+  initReloadButton() {
+    if (!this.reloadBtn) return;
+    this.reloadBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      this.sound.unlock();
+      this.reloadBtn.classList.add('is-pressed');
+      this.sound.playPageTurn(1);
+      const url = new URL(window.location.href);
+      url.searchParams.set('r', String(Date.now()));
+      setTimeout(() => {
+        window.location.replace(url.toString());
+      }, 120);
+    });
   }
 
   initTouchGuards() {

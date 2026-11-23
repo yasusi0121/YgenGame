@@ -20,7 +20,7 @@ const JIS_ROWS = [
   ['Z','X','C','V','B','N','M',',','.','/']
 ];
 
-/* 10 columns (あ..わ) x 5 rows (あ段..お段), ordered left-to-right for kids' learning */
+/* 10 columns (あ..わ) x 5 rows (あ段..お段), Kunrei-shiki romaji; rendered right-to-left (あ on right) */
 const GOJUON_COLUMNS = [
   [
     { k: 'あ', r: 'A' }, { k: 'い', r: 'I' }, { k: 'う', r: 'U' }, { k: 'え', r: 'E' }, { k: 'お', r: 'O' }
@@ -29,16 +29,16 @@ const GOJUON_COLUMNS = [
     { k: 'か', r: 'KA' }, { k: 'き', r: 'KI' }, { k: 'く', r: 'KU' }, { k: 'け', r: 'KE' }, { k: 'こ', r: 'KO' }
   ],
   [
-    { k: 'さ', r: 'SA' }, { k: 'し', r: 'SHI' }, { k: 'す', r: 'SU' }, { k: 'せ', r: 'SE' }, { k: 'そ', r: 'SO' }
+    { k: 'さ', r: 'SA' }, { k: 'し', r: 'SI' }, { k: 'す', r: 'SU' }, { k: 'せ', r: 'SE' }, { k: 'そ', r: 'SO' }
   ],
   [
-    { k: 'た', r: 'TA' }, { k: 'ち', r: 'CHI' }, { k: 'つ', r: 'TSU' }, { k: 'て', r: 'TE' }, { k: 'と', r: 'TO' }
+    { k: 'た', r: 'TA' }, { k: 'ち', r: 'TI' }, { k: 'つ', r: 'TU' }, { k: 'て', r: 'TE' }, { k: 'と', r: 'TO' }
   ],
   [
     { k: 'な', r: 'NA' }, { k: 'に', r: 'NI' }, { k: 'ぬ', r: 'NU' }, { k: 'ね', r: 'NE' }, { k: 'の', r: 'NO' }
   ],
   [
-    { k: 'は', r: 'HA' }, { k: 'ひ', r: 'HI' }, { k: 'ふ', r: 'FU' }, { k: 'へ', r: 'HE' }, { k: 'ほ', r: 'HO' }
+    { k: 'は', r: 'HA' }, { k: 'ひ', r: 'HI' }, { k: 'ふ', r: 'HU' }, { k: 'へ', r: 'HE' }, { k: 'ほ', r: 'HO' }
   ],
   [
     { k: 'ま', r: 'MA' }, { k: 'み', r: 'MI' }, { k: 'む', r: 'MU' }, { k: 'め', r: 'ME' }, { k: 'も', r: 'MO' }
@@ -90,15 +90,15 @@ const LEVEL_WORDS = [
   { icon: 'bear',       chunks: [{ k: 'く', r: 'KU' }, { k: 'ま', r: 'MA' }] },
   { icon: 'cloud',      chunks: [{ k: 'く', r: 'KU' }, { k: 'も', r: 'MO' }] },
   { icon: 'peach',      chunks: [{ k: 'も', r: 'MO' }, { k: 'も', r: 'MO' }] },
-  { icon: 'star',       chunks: [{ k: 'ほ', r: 'HO' }, { k: 'し', r: 'SHI' }] },
+  { icon: 'star',       chunks: [{ k: 'ほ', r: 'HO' }, { k: 'し', r: 'SI' }] },
   { icon: 'flower',     chunks: [{ k: 'は', r: 'HA' }, { k: 'な', r: 'NA' }] },
   { icon: 'grape',      chunks: [{ k: 'ぶ', r: 'BU' }, { k: 'ど', r: 'DO' }, { k: 'う', r: 'U' }] },
   { icon: 'apple',      chunks: [{ k: 'り', r: 'RI' }, { k: 'ん', r: 'NN' }, { k: 'ご', r: 'GO' }] },
   { icon: 'orange',     chunks: [{ k: 'み', r: 'MI' }, { k: 'か', r: 'KA' }, { k: 'ん', r: 'NN' }] },
   { icon: 'lemon',      chunks: [{ k: 'れ', r: 'RE' }, { k: 'も', r: 'MO' }, { k: 'ん', r: 'NN' }] },
-  { icon: 'strawberry', chunks: [{ k: 'い', r: 'I'  }, { k: 'ち', r: 'CHI'}, { k: 'ご', r: 'GO' }] },
+  { icon: 'strawberry', chunks: [{ k: 'い', r: 'I'  }, { k: 'ち', r: 'TI' }, { k: 'ご', r: 'GO' }] },
   { icon: 'dolphin',    chunks: [{ k: 'い', r: 'I'  }, { k: 'る', r: 'RU' }, { k: 'か', r: 'KA' }] },
-  { icon: 'whale',      chunks: [{ k: 'く', r: 'KU' }, { k: 'じ', r: 'JI' }, { k: 'ら', r: 'RA' }] },
+  { icon: 'whale',      chunks: [{ k: 'く', r: 'KU' }, { k: 'じ', r: 'ZI' }, { k: 'ら', r: 'RA' }] },
   { icon: 'chick',      chunks: [{ k: 'ひ', r: 'HI' }, { k: 'よ', r: 'YO' }, { k: 'こ', r: 'KO' }] },
   { icon: 'icecream',   chunks: [{ k: 'あ', r: 'A'  }, { k: 'い', r: 'I'  }, { k: 'す', r: 'SU' }] }
 ];
@@ -475,6 +475,30 @@ function ensureTypingStyles() {
       background: #FCA5A5 !important;
       color: #7F1D1D !important;
     }
+    .tp-sub-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 3px;
+      border-radius: 999px;
+    }
+    .tp-sub-btn {
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: #CBD5E1;
+      font-family: var(--font-rounded);
+      font-size: clamp(11px, 1.3vw, 13px);
+      font-weight: 900;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .tp-sub-btn.is-active {
+      background: #FFD12E;
+      color: #4D3300;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -486,6 +510,7 @@ export default class TypingPCGame {
     this.sound = app.sound;
 
     this.mode = 'gojuon'; // 'gojuon' | 'vowels' | 'syllables' | 'words' | 'free'
+    this.gojuonSub = 'order'; // 'order' (あから順) | 'random' (ランダム) | 'pick' (自分で押してヒント)
     this.hintOn = true;
     this.score = 0;
     this.streak = 0;
@@ -534,8 +559,12 @@ export default class TypingPCGame {
               <span style="background:#FFBD2E;"></span>
               <span style="background:#27C93F;"></span>
             </div>
-            <div class="tp-cam-led" aria-hidden="true"></div>
-            <span id="tp-monitor-status" style="color:#94A3B8;font-size:12px;font-weight:900;letter-spacing:0.08em;">KIDS PC</span>
+            <div class="tp-sub-tabs" id="tp-gojuon-subs">
+              <button class="tp-sub-btn is-active" type="button" data-gsub="order">あから じゅん</button>
+              <button class="tp-sub-btn" type="button" data-gsub="random">ランダム</button>
+              <button class="tp-sub-btn" type="button" data-gsub="pick">じぶんで えらぶ</button>
+            </div>
+            <span id="tp-monitor-status" style="color:#94A3B8;font-size:12px;font-weight:900;letter-spacing:0.06em;">KIDS PC</span>
           </div>
           <div class="tp-screen" id="tp-screen"></div>
         </div>
@@ -563,6 +592,8 @@ export default class TypingPCGame {
     this.rootEl = this.container.querySelector('#tp-root');
     this.screenEl = this.container.querySelector('#tp-screen');
     this.monitorStatusEl = this.container.querySelector('#tp-monitor-status');
+    this.gojuonSubsWrap = this.container.querySelector('#tp-gojuon-subs');
+    this.gojuonSubBtns = Array.from(this.container.querySelectorAll('[data-gsub]'));
     this.scoreEl = this.container.querySelector('#tp-score');
     this.hintBtn = this.container.querySelector('#tp-hint-btn');
     this.modeBtns = Array.from(this.container.querySelectorAll('[data-mode]'));
@@ -573,6 +604,14 @@ export default class TypingPCGame {
         e.preventDefault();
         this.sound.unlock();
         this.switchMode(btn.dataset.mode);
+      });
+    });
+
+    this.gojuonSubBtns.forEach((btn) => {
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.sound.unlock();
+        this.switchGojuonSub(btn.dataset.gsub);
       });
     });
 
@@ -620,15 +659,37 @@ export default class TypingPCGame {
     }
   }
 
+  switchGojuonSub(sub) {
+    this.gojuonSub = sub;
+    this.gojuonCharIdx = 0;
+    this.gojuonDone.clear();
+    this.locked = false;
+    this.gojuonSubBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.gsub === sub));
+    this.sound.playButtonDown('yellow');
+
+    if (sub === 'order') {
+      this.gojuonIdx = 0;
+    } else if (sub === 'random') {
+      this.gojuonIdx = Math.floor(Math.random() * GOJUON_SEQ.length);
+    } else {
+      // 'pick': user taps any cell on the 50-on table to show hint & type it
+      this.gojuonIdx = -1;
+    }
+    this.renderScreen();
+    this.updateGuideKey();
+  }
+
   switchMode(mode) {
     this.mode = mode;
     this.locked = false;
     this.streak = 0;
     this.modeBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.mode === mode));
+    this.gojuonSubsWrap.style.display = mode === 'gojuon' ? 'inline-flex' : 'none';
     this.sound.playPageTurn(1);
 
     if (mode === 'gojuon') {
       this.gojuonCharIdx = 0;
+      if (this.gojuonSub === 'order' && this.gojuonIdx < 0) this.gojuonIdx = 0;
       this.renderScreen();
       this.updateGuideKey();
     } else if (mode === 'free') {
@@ -658,6 +719,7 @@ export default class TypingPCGame {
   getExpectedKey() {
     if (this.mode === 'free' || this.locked) return null;
     if (this.mode === 'gojuon') {
+      if (this.gojuonIdx < 0) return null;
       const target = GOJUON_SEQ[this.gojuonIdx];
       return target ? target.r[this.gojuonCharIdx] : null;
     }
@@ -679,6 +741,11 @@ export default class TypingPCGame {
     }
 
     const expected = this.getExpectedKey();
+    if (!expected) {
+      this.sound.playKeyClick(false);
+      return;
+    }
+
     if (key === expected) {
       this.sound.playKeyClick(false);
 
@@ -699,7 +766,7 @@ export default class TypingPCGame {
     }
   }
 
-  /** Gojuon mode: auto-advance to next kana cleanly on completion */
+  /** Gojuon mode: supports 'order', 'random', and 'pick' sub-modes */
   handleGojuonCorrect() {
     const target = GOJUON_SEQ[this.gojuonIdx];
     this.gojuonCharIdx++;
@@ -707,11 +774,29 @@ export default class TypingPCGame {
       this.gojuonDone.add(this.gojuonIdx);
       this.score++;
       this.scoreEl.innerHTML = `${FLAT_ICONS.star(20)}<span>${this.score}</span>`;
-      this.sound.playCountPip((this.gojuonIdx % 12) + 2);
-
-      // Advance automatically to next character
-      const nextIdx = this.gojuonIdx + 1;
       this.gojuonCharIdx = 0;
+
+      if (this.gojuonSub === 'pick') {
+        this.sound.playSuccessFanfare();
+        this.gojuonIdx = -1;
+        this.renderScreen();
+        this.updateGuideKey();
+        return;
+      }
+
+      if (this.gojuonSub === 'random') {
+        this.sound.playCountPip((this.score % 12) + 2);
+        let next = Math.floor(Math.random() * GOJUON_SEQ.length);
+        if (next === this.gojuonIdx) next = (next + 1) % GOJUON_SEQ.length;
+        this.gojuonIdx = next;
+        this.renderScreen();
+        this.updateGuideKey();
+        return;
+      }
+
+      // 'order': advance sequentially あ -> ん
+      this.sound.playCountPip((this.gojuonIdx % 12) + 2);
+      const nextIdx = this.gojuonIdx + 1;
 
       if (nextIdx >= GOJUON_SEQ.length) {
         this.locked = true;
@@ -735,7 +820,6 @@ export default class TypingPCGame {
           });
         }, 200);
       } else {
-        // Every completed column (5 chars) plays a mini fanfare
         if (GOJUON_SEQ[nextIdx].col !== target.col) {
           this.sound.playSuccessFanfare();
         }
@@ -756,7 +840,6 @@ export default class TypingPCGame {
     this.charInChunk++;
 
     if (this.charInChunk >= chunk.r.length) {
-      // Completed this kana syllable (e.g., BU -> 'ぶ' turns bright green!)
       this.sound.playCountPip(this.chunkIdx + 5);
       this.chunkIdx++;
       this.charInChunk = 0;
@@ -865,15 +948,19 @@ export default class TypingPCGame {
 
   renderScreen() {
     if (this.mode === 'gojuon') {
-      const target = GOJUON_SEQ[this.gojuonIdx];
-      const typedPart = target.r.slice(0, this.gojuonCharIdx);
-      const restPart = target.r.slice(this.gojuonCharIdx);
-      this.monitorStatusEl.textContent = `いま：「${target.k}」  ${typedPart}[${restPart[0] || ''}]${restPart.slice(1)}`;
+      if (this.gojuonIdx >= 0) {
+        const target = GOJUON_SEQ[this.gojuonIdx];
+        const typedPart = target.r.slice(0, this.gojuonCharIdx);
+        const restPart = target.r.slice(this.gojuonCharIdx);
+        this.monitorStatusEl.textContent = `「${target.k}」 ${typedPart}[${restPart[0] || ''}]${restPart.slice(1)}`;
+      } else {
+        this.monitorStatusEl.textContent = 'すきな もじを タップ！';
+      }
 
-      // Render 5 rows x 10 columns (left to right: あ -> わ)
+      // Standard Japanese Gojuon layout: あ-column on the RIGHT (c = 9 down to 0)
       let cellsHtml = '';
       for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 10; c++) {
+        for (let c = 9; c >= 0; c--) {
           const item = GOJUON_COLUMNS[c][r];
           if (!item) {
             cellsHtml += `<div class="tp-gcell is-empty"></div>`;
@@ -959,7 +1046,10 @@ export default class TypingPCGame {
 
   updateGuideKey() {
     this.keyBtns.forEach((b) => b.classList.remove('is-guide'));
-    if (this.mode === 'free' || !this.hintOn || this.locked) return;
+    if (this.mode === 'free' || this.locked) return;
+    // In 'pick' sub-mode, always show the keyboard hint for the chosen character
+    const showHint = this.hintOn || (this.mode === 'gojuon' && this.gojuonSub === 'pick');
+    if (!showHint) return;
     const expected = this.getExpectedKey();
     if (!expected) return;
     const targetBtn = this.container.querySelector(`.tp-key[data-key="${expected}"]`);
