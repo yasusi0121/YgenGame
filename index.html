@@ -1895,6 +1895,366 @@
         width: 12.2%;
       }
     }
+
+    /* ============================================================
+       SHARED CELEBRATION OVERLAY (Big Cracker + Next Button)
+       ============================================================ */
+    .celeb-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      background: rgba(15, 23, 42, 0.42);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: celebFadeIn 0.22s ease forwards;
+    }
+
+    @keyframes celebFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .celeb-card {
+      position: relative;
+      width: min(92vw, 460px);
+      background: #FFFFFF;
+      border: 6px solid #FFD12E;
+      border-radius: 38px;
+      padding: 28px 24px 26px;
+      box-shadow: 0 14px 0 #D99B00, 0 24px 48px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+      animation: celebPop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes celebPop {
+      0% { transform: scale(0.65); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .celeb-icons-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .celeb-cracker-l { animation: crackerBounce 0.7s ease-in-out infinite alternate; }
+    .celeb-cracker-r { transform: scaleX(-1); animation: crackerBounceR 0.7s ease-in-out infinite alternate; }
+
+    @keyframes crackerBounce {
+      from { transform: rotate(-10deg) scale(1); }
+      to   { transform: rotate(8deg) scale(1.12); }
+    }
+    @keyframes crackerBounceR {
+      from { transform: scaleX(-1) rotate(-10deg) scale(1); }
+      to   { transform: scaleX(-1) rotate(8deg) scale(1.12); }
+    }
+
+    .celeb-title {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 44px);
+      font-weight: 900;
+      color: #FF5722;
+      letter-spacing: 0.08em;
+    }
+
+    .celeb-sub {
+      margin: 0;
+      font-size: clamp(18px, 2.4vw, 22px);
+      font-weight: 900;
+      color: #334155;
+    }
+
+    .celeb-next-btn {
+      margin-top: 6px;
+      width: 100%;
+      max-width: 320px;
+      height: 74px;
+      border: 5px solid #FFFFFF;
+      border-radius: 999px;
+      background: #22C55E;
+      color: #FFFFFF;
+      font-family: var(--font-rounded);
+      font-size: clamp(22px, 3vw, 28px);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      box-shadow: 0 9px 0 #15803D, 0 14px 20px rgba(21, 128, 61, 0.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .celeb-next-btn:active {
+      transform: translateY(6px);
+      box-shadow: 0 3px 0 #15803D;
+    }
+
+    /* ============================================================
+       COLOR MIX V2: BIG VISUAL TARGET + BOWL SIDE-BY-SIDE
+       ============================================================ */
+    .cm-compare-row {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(14px, 3vw, 34px);
+      flex-wrap: nowrap;
+    }
+
+    .cm-target-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cm-big-circle {
+      width: clamp(148px, 26vh, 225px);
+      height: clamp(148px, 26vh, 225px);
+      border-radius: 50%;
+      background: #FFFFFF;
+      padding: 10px;
+      box-shadow: 0 11px 0 rgba(0, 0, 0, 0.16), 0 18px 30px rgba(0, 0, 0, 0.16);
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .cm-big-circle.is-target {
+      border: 6px dashed #FFD12E;
+      padding: 8px;
+    }
+
+    .cm-big-circle.is-splash {
+      animation: cardBoing 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .cm-tag-pill {
+      background: rgba(255, 255, 255, 0.94);
+      color: #2D3436;
+      font-size: clamp(14px, 1.8vw, 18px);
+      font-weight: 900;
+      padding: 4px 16px;
+      border-radius: 999px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cm-skip-btn {
+      border: 3px solid #FFFFFF;
+      background: rgba(255, 255, 255, 0.24);
+      color: #FFFFFF;
+      font-family: var(--font-rounded);
+      font-size: 13px;
+      font-weight: 900;
+      padding: 4px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .cm-arrow-mid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: #FFFFFF;
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       GAME 6: PITCH QUIZ (ぜったい おんかん)
+       ============================================================ */
+    .pq-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(14px + var(--safe-top)) calc(16px + var(--safe-right)) calc(18px + var(--safe-bottom)) calc(16px + var(--safe-left));
+      gap: 8px;
+    }
+
+    .pq-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .pq-listen-btn {
+      position: relative;
+      width: clamp(118px, 18vh, 152px);
+      height: clamp(118px, 18vh, 152px);
+      border: 6px solid #FFFFFF;
+      border-radius: 50%;
+      background: #FFD12E;
+      color: #4D3300;
+      box-shadow: 0 10px 0 #D69600, 0 18px 28px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      font-family: var(--font-rounded);
+      font-size: clamp(14px, 1.8vw, 17px);
+      font-weight: 900;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .pq-listen-btn:active {
+      transform: translateY(6px);
+      box-shadow: 0 4px 0 #D69600;
+    }
+
+    .pq-listen-btn.is-playing {
+      animation: pqPulse 0.65s ease-in-out infinite alternate;
+      box-shadow: 0 0 0 12px rgba(255, 209, 46, 0.42), 0 10px 0 #D69600;
+    }
+
+    @keyframes pqPulse {
+      from { transform: scale(1); }
+      to   { transform: scale(1.09); }
+    }
+
+    .pq-phase-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #1E293B;
+      font-size: clamp(15px, 2vw, 20px);
+      font-weight: 900;
+      padding: 6px 20px;
+      border-radius: 999px;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.14);
+    }
+
+    .pq-piano-locked {
+      opacity: 0.55;
+      pointer-events: none;
+      filter: saturate(0.7);
+      transition: opacity 0.2s ease, filter 0.2s ease;
+    }
+
+    .piano-white-key.is-wrong-key {
+      background: #FEE2E2 !important;
+      animation: gentleShake 0.35s ease;
+    }
+
+    .piano-black-key.is-wrong-key {
+      background: #991B1B !important;
+    }
+
+    /* ============================================================
+       GAME 7: GEAR MACHINE (はぐるま マシン)
+       ============================================================ */
+    .gm-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(12px + var(--safe-top)) calc(16px + var(--safe-right)) calc(14px + var(--safe-bottom)) calc(16px + var(--safe-left));
+      gap: 8px;
+    }
+
+    .gm-viewport {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gm-board {
+      position: relative;
+      width: min(94vw, 960px, calc(62dvh * 1.875));
+      aspect-ratio: 900 / 480;
+      background: rgba(255, 255, 255, 0.14);
+      border: 5px solid rgba(255, 255, 255, 0.45);
+      border-radius: 32px;
+      box-shadow: inset 0 6px 18px rgba(0, 0, 0, 0.14), 0 12px 26px rgba(0, 0, 0, 0.16);
+      overflow: hidden;
+    }
+
+    .gm-board.is-jammed {
+      animation: gentleShake 0.36s ease;
+      border-color: #FF6B6B;
+    }
+
+    .gm-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .gm-peg-hit {
+      cursor: pointer;
+      fill: transparent;
+    }
+
+    .gm-dock {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(8px, 1.6vw, 16px);
+      flex-wrap: wrap;
+      z-index: 15;
+    }
+
+    .gm-tool-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: clamp(54px, 7.5vh, 66px);
+      padding: 0 clamp(14px, 2vw, 22px);
+      border: 4px solid rgba(255, 255, 255, 0.7);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.24);
+      color: #FFFFFF;
+      font-family: var(--font-rounded);
+      font-size: clamp(14px, 1.7vw, 17px);
+      font-weight: 900;
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.16);
+      cursor: pointer;
+      transition: transform 0.1s ease, background 0.15s ease, box-shadow 0.1s ease;
+    }
+
+    .gm-tool-btn.is-active {
+      background: #FFFFFF;
+      color: #1E293B;
+      border-color: #FFD12E;
+      box-shadow: 0 0 0 4px #FFD12E, 0 6px 0 rgba(0, 0, 0, 0.16);
+      transform: translateY(-2px);
+    }
+
+    .gm-tool-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16);
+    }
   </style>
 </head>
 <body>
@@ -2545,6 +2905,79 @@
           const scale = [261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.0, 987.77, 1046.5];
           const freq = scale[stepIndex % scale.length];
           this.playMarimbaNote(freq, now, 0.32, 0.22, 1.05);
+        }
+
+        /** Party cracker POP + sparkle fanfare */
+        playCrackerPop() {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+
+          // Crisp party popper burst
+          const noise = ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+          const bp = ctx.createBiquadFilter();
+          bp.type = 'bandpass';
+          bp.frequency.setValueAtTime(1600, now);
+          bp.frequency.exponentialRampToValueAtTime(520, now + 0.09);
+          bp.Q.value = 1.4;
+
+          const ng = ctx.createGain();
+          ng.gain.setValueAtTime(0.42, now);
+          ng.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+          noise.connect(bp); bp.connect(ng); ng.connect(this.dryBus); ng.connect(this.wetBus);
+          noise.start(now); noise.stop(now + 0.12);
+
+          // Pop thump
+          const pop = ctx.createOscillator();
+          pop.type = 'sine';
+          pop.frequency.setValueAtTime(260, now);
+          pop.frequency.exponentialRampToValueAtTime(70, now + 0.075);
+          const pg = ctx.createGain();
+          pg.gain.setValueAtTime(0.32, now);
+          pg.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+          pop.connect(pg); pg.connect(this.dryBus);
+          pop.start(now); pop.stop(now + 0.09);
+
+          // Joyful celebratory chord cascade
+          [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+            this.playMarimbaNote(f, now + 0.06 + i * 0.055, 0.72, 0.21, 1.3);
+          });
+        }
+
+        /** Mechanical gear snap-in sound */
+        playGearSnap(size = 'M') {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+          const pitch = size === 'S' ? 520 : (size === 'L' ? 280 : 390);
+          const osc = ctx.createOscillator();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(pitch * 0.75, now);
+          osc.frequency.exponentialRampToValueAtTime(pitch * 1.25, now + 0.055);
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.24, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+          osc.connect(g); g.connect(this.dryBus);
+          osc.start(now); osc.stop(now + 0.085);
+          this.playButtonDown('yellow');
+        }
+
+        /** Soft gear pop-off sound */
+        playGearRemove() {
+          const ctx = this.ensureContext();
+          if (!ctx || this.muted) return;
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(340, now);
+          osc.frequency.exponentialRampToValueAtTime(190, now + 0.07);
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.18, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.connect(g); g.connect(this.dryBus);
+          osc.start(now); osc.stop(now + 0.09);
         }
       }
 
@@ -4191,11 +4624,100 @@
           return this.svg(`
             <line x1="14" y1="32" x2="50" y2="32" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
           `, size);
+        },
+        cracker(size = 56) {
+          return this.svg(`
+            <polygon points="10,54 24,22 42,40" fill="#FF595E" stroke="#FFFFFF" stroke-width="3.2" stroke-linejoin="round"/>
+            <line x1="17" y1="38" x2="29" y2="50" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+            <line x1="21" y1="29" x2="35" y2="43" stroke="#38BDF8" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M36 22 Q44 12 52 14" stroke="#FFD12E" stroke-width="4" stroke-linecap="round"/>
+            <path d="M40 28 Q50 24 56 30" stroke="#4ADE80" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="32" cy="12" r="4" fill="#38BDF8"/>
+            <circle cx="52" cy="20" r="4" fill="#FF85B3"/>
+            <circle cx="48" cy="38" r="3.5" fill="#FFD12E"/>
+          `, size);
+        },
+        speaker(size = 44, color = '#4D3300') {
+          return this.svg(`
+            <polygon points="12,24 24,24 36,14 36,50 24,40 12,40" fill="${color}" stroke="${color}" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M44 23 Q51 32 44 41" stroke="${color}" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M50 16 Q60 32 50 48" stroke="${color}" stroke-width="4.5" stroke-linecap="round"/>
+          `, size);
+        },
+        arrowRight(size = 32) {
+          return this.svg(`
+            <line x1="12" y1="32" x2="48" y2="32" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+            <polyline points="36,18 50,32 36,46" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+          `, size);
+        },
+        gearMini(size = 26, color = '#FF924C') {
+          return this.svg(`
+            <circle cx="32" cy="32" r="16" fill="${color}" stroke="#FFFFFF" stroke-width="4"/>
+            <circle cx="32" cy="32" r="6" fill="#FFFFFF"/>
+            <g stroke="${color}" stroke-width="7" stroke-linecap="round">
+              <line x1="32" y1="8" x2="32" y2="14"/>
+              <line x1="32" y1="50" x2="32" y2="56"/>
+              <line x1="8" y1="32" x2="14" y2="32"/>
+              <line x1="50" y1="32" x2="56" y2="32"/>
+              <line x1="15" y1="15" x2="20" y2="20"/>
+              <line x1="44" y1="44" x2="49" y2="49"/>
+              <line x1="49" y1="15" x2="44" y2="20"/>
+              <line x1="20" y1="44" x2="15" y2="49"/>
+            </g>
+          `, size);
+        },
+        eraser(size = 24) {
+          return this.svg(`
+            <rect x="14" y="20" width="36" height="24" rx="7" transform="rotate(-24 32 32)" fill="#FF85B3" stroke="#FFFFFF" stroke-width="3.5"/>
+            <rect x="14" y="20" width="15" height="24" rx="5" transform="rotate(-24 32 32)" fill="#FFFFFF"/>
+          `, size);
+        },
+        refresh(size = 24) {
+          return this.svg(`
+            <path d="M50 32 A18 18 0 1 1 44 18" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+            <polyline points="36,10 46,19 34,24" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          `, size);
         }
       };
 
+      /* Shared big celebration modal (Cracker + Next button) */
+      function showCelebrationOverlay(parentEl, { title = 'せいかい！', subtitle = '', centerHtml = '', btnLabel = 'つぎへ', sound, onNext }) {
+        const existing = parentEl.querySelector('.celeb-overlay');
+        if (existing) existing.remove();
+
+        if (sound) sound.playCrackerPop();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'celeb-overlay';
+        overlay.innerHTML = `
+          <div class="celeb-card">
+            <div class="celeb-icons-row">
+              <span class="celeb-cracker-l">${FLAT_ICONS.cracker(58)}</span>
+              ${centerHtml || FLAT_ICONS.star(62)}
+              <span class="celeb-cracker-r">${FLAT_ICONS.cracker(58)}</span>
+            </div>
+            <h3 class="celeb-title">${title}</h3>
+            ${subtitle ? `<p class="celeb-sub">${subtitle}</p>` : ''}
+            <button class="celeb-next-btn" type="button">
+              <span>${btnLabel}</span>
+              ${FLAT_ICONS.arrowRight(28)}
+            </button>
+          </div>
+        `;
+
+        const btn = overlay.querySelector('.celeb-next-btn');
+        btn.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          if (sound) sound.playPageTurn(1);
+          overlay.remove();
+          if (onNext) onNext();
+        });
+
+        parentEl.appendChild(overlay);
+      }
+
       /* =========================================================================
-         2C. GAME 3: COLOR MIX (いろの まほう — Intuitive Visual Mixing)
+         2C. GAME 3: COLOR MIX (いろの まほう — Big Visual Target + Cracker Modal)
          ========================================================================= */
       const COLOR_PAINTS = {
         red:    { id: 'red',    name: 'あか',   hex: '#FF4757', shadow: '#C81E2B', fg: '#FFFFFF', pitch: 0 },
@@ -4231,29 +4753,45 @@
           this.drops = new Set();
           this.missionKeys = Object.keys(COLOR_RECIPES).filter((k) => COLOR_RECIPES[k].mission);
           this.missionIndex = 0;
-          this.missionCleared = false;
+          this.locked = false;
         }
 
         mount() {
           this.app.setGameBackground('#7C6AEF');
           this.container.innerHTML = `
-            <div class="cm-root">
+            <div class="cm-root" id="cm-root">
               <div class="lb-title-area" style="margin-top:4px;">
                 <h2 class="lb-circuit-name"><ruby>COLOR MIX<rt>いろの まほう</rt></ruby></h2>
               </div>
 
-              <div class="cm-mission-bar" id="cm-mission-bar"></div>
-
               <div class="cm-stage">
-                <div class="cm-cauldron-wrap">
-                  <div class="cm-bowl" id="cm-bowl">
-                    <div class="cm-liquid" id="cm-liquid">
-                      <div class="cm-result-icon" id="cm-icon"></div>
-                      <div class="cm-result-name" id="cm-name">まぜてね</div>
+                <div class="cm-compare-row">
+                  <!-- LEFT: Huge visual target color -->
+                  <div class="cm-target-box">
+                    <div class="cm-big-circle is-target">
+                      <div class="cm-liquid" id="cm-target-liquid">
+                        <div class="cm-result-icon" id="cm-target-icon"></div>
+                        <div class="cm-result-name" id="cm-target-name"></div>
+                      </div>
                     </div>
+                    <button class="cm-skip-btn" type="button" id="cm-skip-btn">べつの いろ</button>
+                  </div>
+
+                  <div class="cm-arrow-mid" aria-hidden="true">
+                    ${FLAT_ICONS.arrowRight(34)}
+                  </div>
+
+                  <!-- RIGHT: Mixing bowl -->
+                  <div class="cm-target-box">
+                    <div class="cm-big-circle" id="cm-bowl">
+                      <div class="cm-liquid" id="cm-liquid">
+                        <div class="cm-result-icon" id="cm-icon"></div>
+                        <div class="cm-result-name" id="cm-name">まぜてね</div>
+                      </div>
+                    </div>
+                    <div class="cm-formula" id="cm-formula"></div>
                   </div>
                 </div>
-                <div class="cm-formula" id="cm-formula"></div>
               </div>
 
               <div class="cm-palette" id="cm-palette">
@@ -4273,22 +4811,33 @@
             </div>
           `;
 
+          this.rootEl = this.container.querySelector('#cm-root');
+          this.targetLiquidEl = this.container.querySelector('#cm-target-liquid');
+          this.targetIconEl = this.container.querySelector('#cm-target-icon');
+          this.targetNameEl = this.container.querySelector('#cm-target-name');
           this.bowlEl = this.container.querySelector('#cm-bowl');
           this.liquidEl = this.container.querySelector('#cm-liquid');
           this.iconEl = this.container.querySelector('#cm-icon');
           this.nameEl = this.container.querySelector('#cm-name');
           this.formulaEl = this.container.querySelector('#cm-formula');
-          this.missionBarEl = this.container.querySelector('#cm-mission-bar');
           this.paintBtns = Array.from(this.container.querySelectorAll('.cm-paint-btn'));
+
+          this.container.querySelector('#cm-skip-btn').addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (this.locked) return;
+            this.sound.unlock();
+            this.sound.playPageTurn(1);
+            this.nextMission();
+          });
 
           this.paintBtns.forEach((btn) => {
             btn.addEventListener('pointerdown', (e) => {
               e.preventDefault();
+              if (this.locked) return;
               this.sound.unlock();
               const id = btn.dataset.paint;
               if (id === 'clear') {
                 this.drops.clear();
-                this.missionCleared = false;
                 this.sound.playPageTurn(-1);
                 this.updateUI(true);
                 return;
@@ -4310,6 +4859,13 @@
           this.container.innerHTML = '';
         }
 
+        nextMission() {
+          this.missionIndex = (this.missionIndex + 1) % this.missionKeys.length;
+          this.drops.clear();
+          this.locked = false;
+          this.updateUI(false);
+        }
+
         getRecipeKey() {
           return Array.from(this.drops).sort().join('+');
         }
@@ -4317,12 +4873,19 @@
         updateUI(animate) {
           const key = this.getRecipeKey();
           const result = COLOR_RECIPES[key] || COLOR_RECIPES[''];
+          const targetKey = this.missionKeys[this.missionIndex];
+          const target = COLOR_RECIPES[targetKey];
 
+          // Target circle (huge & unmistakable)
+          this.targetLiquidEl.style.backgroundColor = target.hex;
+          this.targetIconEl.innerHTML = FLAT_ICONS[target.icon](68);
+          this.targetNameEl.textContent = target.name;
+
+          // Mixing bowl circle
           this.liquidEl.style.backgroundColor = result.hex;
-          this.iconEl.innerHTML = FLAT_ICONS[result.icon](76);
+          this.iconEl.innerHTML = FLAT_ICONS[result.icon](68);
           this.nameEl.textContent = result.name;
 
-          // Highlight currently mixed paint buttons visually
           this.paintBtns.forEach((btn) => {
             btn.classList.toggle('is-picked', this.drops.has(btn.dataset.paint));
           });
@@ -4333,42 +4896,29 @@
             this.bowlEl.classList.add('is-splash');
           }
 
-          // Pure visual color-orb formula (no sentences to read)
           if (this.drops.size === 0) {
             this.formulaEl.innerHTML = '';
           } else {
             const orbs = Array.from(this.drops).map((id) =>
               `<span class="cm-drop-orb" style="background:${COLOR_PAINTS[id].hex};"></span>`
             );
-            this.formulaEl.innerHTML = orbs.join(`<span style="color:#FFFFFF;display:inline-flex;">${FLAT_ICONS.plusSign(22)}</span>`);
+            this.formulaEl.innerHTML = orbs.join(`<span style="color:#FFFFFF;display:inline-flex;">${FLAT_ICONS.plusSign(20)}</span>`);
           }
 
-          // Compact visual mission target
-          const targetKey = this.missionKeys[this.missionIndex];
-          const target = COLOR_RECIPES[targetKey];
-          if (key === targetKey && !this.missionCleared) {
-            this.missionCleared = true;
-            this.sound.playSuccessFanfare();
+          // Match! Launch big celebratory cracker modal
+          if (key === targetKey && !this.locked) {
+            this.locked = true;
+            setTimeout(() => {
+              showCelebrationOverlay(this.rootEl, {
+                title: 'せいかい！',
+                subtitle: `${target.name} が できたよ！`,
+                centerHtml: `<div style="width:76px;height:76px;border-radius:50%;background:${target.hex};display:grid;place-items:center;border:4px solid #fff;box-shadow:0 6px 0 rgba(0,0,0,0.14);">${FLAT_ICONS[target.icon](52)}</div>`,
+                btnLabel: 'つぎの いろへ',
+                sound: this.sound,
+                onNext: () => this.nextMission()
+              });
+            }, 260);
           }
-
-          this.missionBarEl.innerHTML = `
-            <span class="cm-mission-dot" style="background:${target.hex};width:28px;height:28px;"></span>
-            ${FLAT_ICONS[target.icon](30)}
-            <span>${this.missionCleared ? 'できた！' : target.name}</span>
-            ${this.missionCleared ? FLAT_ICONS.star(24) : ''}
-            <button class="cm-mission-btn" type="button" id="cm-next-mission">${this.missionCleared ? 'つぎへ' : 'かえる'}</button>
-          `;
-
-          const nextBtn = this.missionBarEl.querySelector('#cm-next-mission');
-          nextBtn.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            this.sound.unlock();
-            this.missionIndex = (this.missionIndex + 1) % this.missionKeys.length;
-            this.missionCleared = false;
-            this.drops.clear();
-            this.sound.playPageTurn(1);
-            this.updateUI(true);
-          });
         }
       }
 
@@ -4917,6 +5467,766 @@
       }
 
       /* =========================================================================
+         2F. GAME 6: PITCH QUIZ (ぜったい おんかん — Listen -> Answer on Piano)
+         ========================================================================= */
+      const PQ_LEVELS = {
+        easy:   { label: 'かんたん', notes: ['C4', 'E4', 'G4'] },
+        normal: { label: 'ふつう',   notes: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'] },
+        hard:   { label: 'むずかしい', notes: ['C4', 'Cs4', 'D4', 'Ds4', 'E4', 'F4', 'Fs4', 'G4', 'Gs4', 'A4', 'As4', 'B4', 'C5'] }
+      };
+
+      const PQ_WHITE_KEYS = [
+        { id: 'C4', label: 'ド',   freq: 261.63, accent: '#FF595E', isC: true },
+        { id: 'D4', label: 'れ',   freq: 293.66, accent: '#FF924C' },
+        { id: 'E4', label: 'み',   freq: 329.63, accent: '#FFCA3A' },
+        { id: 'F4', label: 'ふぁ', freq: 349.23, accent: '#8AC926' },
+        { id: 'G4', label: 'そ',   freq: 392.00, accent: '#2EC4B6' },
+        { id: 'A4', label: 'ら',   freq: 440.00, accent: '#3A86FF' },
+        { id: 'B4', label: 'し',   freq: 493.88, accent: '#8338EC' },
+        { id: 'C5', label: 'ド',   freq: 523.25, accent: '#FF595E', isC: true }
+      ];
+
+      const PQ_BLACK_KEYS = [
+        { id: 'Cs4', label: 'ド♯', afterWhite: 0, freq: 277.18 },
+        { id: 'Ds4', label: 'れ♯', afterWhite: 1, freq: 311.13 },
+        { id: 'Fs4', label: 'ふぁ♯', afterWhite: 3, freq: 369.99 },
+        { id: 'Gs4', label: 'そ♯', afterWhite: 4, freq: 415.30 },
+        { id: 'As4', label: 'ら♯', afterWhite: 5, freq: 466.16 }
+      ];
+
+      const PQ_ALL_MAP = {};
+      PQ_WHITE_KEYS.forEach((k) => { PQ_ALL_MAP[k.id] = k; });
+      PQ_BLACK_KEYS.forEach((k) => { PQ_ALL_MAP[k.id] = k; });
+
+      class PitchQuizGame {
+        constructor(container, app) {
+          this.container = container;
+          this.app = app;
+          this.sound = app.sound;
+          this.level = 'easy';
+          this.phase = 'listen'; // 'listen' | 'answer' | 'solved'
+          this.targetId = 'C4';
+          this.score = 0;
+          this.timer = null;
+        }
+
+        mount() {
+          this.app.setGameBackground('#E85D75');
+          const whiteCount = PQ_WHITE_KEYS.length;
+          const blackWidthPct = (100 / whiteCount) * 0.62;
+
+          this.container.innerHTML = `
+            <div class="pq-root" id="pq-root">
+              <div class="lb-title-area" style="margin-top:2px;">
+                <h2 class="lb-circuit-name"><ruby>PITCH QUIZ<rt>ぜったい おんかん</rt></ruby></h2>
+              </div>
+
+              <div class="pm-status-row">
+                <div class="pm-mode-tabs" id="pq-levels">
+                  <button class="pm-tab-btn is-active" type="button" data-lv="easy">かんたん</button>
+                  <button class="pm-tab-btn" type="button" data-lv="normal">ふつう</button>
+                  <button class="pm-tab-btn" type="button" data-lv="hard">むずかしい</button>
+                </div>
+                <span class="pm-pill" id="pq-score">${FLAT_ICONS.star(22)}<span>0</span></span>
+              </div>
+
+              <div class="pq-stage">
+                <button class="pq-listen-btn" type="button" id="pq-listen-btn" aria-label="おとを きく">
+                  ${FLAT_ICONS.speaker(48, '#4D3300')}
+                  <span id="pq-listen-label">きく</span>
+                </button>
+                <div class="pq-phase-pill" id="pq-phase-pill">おとを きいてね！</div>
+              </div>
+
+              <div class="sm-piano-frame" id="pq-piano-frame">
+                <div class="sm-piano-scroll" style="max-width:780px;">
+                  <div class="sm-piano" id="pq-piano" style="min-width:520px;">
+                    ${PQ_WHITE_KEYS.map((k, idx) => `
+                      <button class="piano-white-key ${k.isC ? 'is-c-key' : ''}" type="button"
+                              data-note-id="${k.id}" data-freq="${k.freq}" data-idx="${idx}"
+                              style="--key-accent:${k.accent};">
+                        ${k.isC ? FLAT_ICONS.star(18) : ''}
+                        <span class="piano-key-name">${k.label}</span>
+                      </button>
+                    `).join('')}
+                    ${PQ_BLACK_KEYS.map((bk, bIdx) => {
+                      const leftPct = ((bk.afterWhite + 1) / whiteCount) * 100;
+                      return `
+                        <button class="piano-black-key" type="button"
+                                data-note-id="${bk.id}" data-freq="${bk.freq}" data-idx="${bIdx + 10}"
+                                style="left:${leftPct}%; width:${blackWidthPct}%;"
+                                aria-label="黒鍵"></button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          this.rootEl = this.container.querySelector('#pq-root');
+          this.scoreEl = this.container.querySelector('#pq-score');
+          this.listenBtn = this.container.querySelector('#pq-listen-btn');
+          this.listenLabel = this.container.querySelector('#pq-listen-label');
+          this.phasePill = this.container.querySelector('#pq-phase-pill');
+          this.pianoFrame = this.container.querySelector('#pq-piano-frame');
+          this.levelBtns = Array.from(this.container.querySelectorAll('[data-lv]'));
+          this.keyEls = Array.from(this.container.querySelectorAll('[data-note-id]'));
+
+          this.levelBtns.forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              this.level = btn.dataset.lv;
+              this.levelBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+              this.startRound();
+            });
+          });
+
+          this.listenBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (this.phase === 'solved') return;
+            this.sound.unlock();
+            this.playTargetPhase();
+          });
+
+          this.keyEls.forEach((keyEl) => {
+            keyEl.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (this.phase !== 'answer') return;
+              this.sound.unlock();
+              const noteId = keyEl.dataset.noteId;
+              const freq = Number(keyEl.dataset.freq);
+
+              keyEl.classList.add('is-pressed');
+              setTimeout(() => keyEl.classList.remove('is-pressed'), 180);
+              this.sound.playInstrumentNote('piano', freq, 0);
+
+              if (noteId === this.targetId) {
+                this.phase = 'solved';
+                this.score++;
+                this.scoreEl.innerHTML = `${FLAT_ICONS.star(22)}<span>${this.score}</span>`;
+                const info = PQ_ALL_MAP[this.targetId];
+                setTimeout(() => {
+                  showCelebrationOverlay(this.rootEl, {
+                    title: 'せいかい！',
+                    subtitle: `「${info.label}」の おと だったよ！`,
+                    centerHtml: FLAT_ICONS.note(60, '#FF595E'),
+                    btnLabel: 'つぎの おとへ',
+                    sound: this.sound,
+                    onNext: () => this.startRound()
+                  });
+                }, 260);
+              } else {
+                keyEl.classList.remove('is-wrong-key');
+                void keyEl.offsetWidth;
+                keyEl.classList.add('is-wrong-key');
+                setTimeout(() => keyEl.classList.remove('is-wrong-key'), 420);
+                this.phasePill.textContent = 'もういっかい きいてみよう！';
+              }
+            });
+          });
+
+          this.startRound();
+        }
+
+        unmount() {
+          clearTimeout(this.timer);
+          this.container.innerHTML = '';
+        }
+
+        startRound() {
+          clearTimeout(this.timer);
+          const pool = PQ_LEVELS[this.level].notes;
+          let next = pool[Math.floor(Math.random() * pool.length)];
+          if (pool.length > 1 && next === this.targetId) {
+            next = pool[(pool.indexOf(next) + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length];
+          }
+          this.targetId = next;
+          this.playTargetPhase();
+        }
+
+        playTargetPhase() {
+          clearTimeout(this.timer);
+          this.phase = 'listen';
+          this.pianoFrame.classList.add('pq-piano-locked');
+          this.listenBtn.classList.add('is-playing');
+          this.listenLabel.textContent = 'きいてね';
+          this.phasePill.textContent = 'おとが なるよ…';
+
+          const info = PQ_ALL_MAP[this.targetId];
+          this.sound.playInstrumentNote('piano', info.freq, 0);
+
+          this.timer = setTimeout(() => {
+            this.phase = 'answer';
+            this.listenBtn.classList.remove('is-playing');
+            this.listenLabel.textContent = 'もういちど';
+            this.pianoFrame.classList.remove('pq-piano-locked');
+            this.phasePill.textContent = 'どの けんばん かな？ おしてね！';
+          }, 950);
+        }
+      }
+
+      /* =========================================================================
+         2G. GAME 7: GEAR MACHINE (はぐるま マシン — Exact Meshing Physics Engine)
+             Grid pitch = 96px, module m = 8px (R = 4 * T):
+               S: T = 8,  R = 32px
+               M: T = 12, R = 48px  (M+M = 96px exact mesh on orthogonal neighbors)
+               L: T = 16, R = 64px  (S+L = 96px exact mesh on orthogonal neighbors)
+         ========================================================================= */
+      const GM_COLS = 6;
+      const GM_ROWS = 4;
+      const GM_STEP = 96;
+      const GM_OX = 116;
+      const GM_OY = 96;
+
+      const GM_SPECS = {
+        S: { teeth: 8,  r: 32, color: '#38BDF8', stroke: '#0284C7', label: 'しょう' },
+        M: { teeth: 12, r: 48, color: '#FF924C', stroke: '#C85A17', label: 'ちゅう' },
+        L: { teeth: 16, r: 64, color: '#A78BFA', stroke: '#6D28D9', label: 'だい' }
+      };
+
+      const GM_MACHINES = [
+        { id: 'clock',    name: 'とけい' },
+        { id: 'signal',   name: 'しんごうき' },
+        { id: 'fan',      name: 'せんぷうき' },
+        { id: 'musicbox', name: 'おるごーる' }
+      ];
+
+      /** Generate mathematically accurate gear tooth SVG path centered at (0,0) */
+      function buildGearPath(teeth, pitchR) {
+        const addendum = 6.2;
+        const dedendum = 6.8;
+        const rOut = pitchR + addendum;
+        const rIn = Math.max(12, pitchR - dedendum);
+        const step = (Math.PI * 2) / teeth;
+        let d = '';
+        for (let i = 0; i < teeth; i++) {
+          const base = i * step;
+          const a0 = base - step * 0.24;
+          const a1 = base - step * 0.14;
+          const a2 = base + step * 0.14;
+          const a3 = base + step * 0.24;
+          const a4 = base + step * 0.50;
+          const p = (r, a) => `${(Math.cos(a) * r).toFixed(2)} ${(Math.sin(a) * r).toFixed(2)}`;
+          d += (i === 0 ? `M ${p(rIn, a0)} ` : `L ${p(rIn, a0)} `);
+          d += `L ${p(rOut, a1)} L ${p(rOut, a2)} L ${p(rIn, a3)} L ${p(rIn, a4)} `;
+        }
+        return d + 'Z';
+      }
+
+      const GM_GEAR_PATHS = {
+        S: buildGearPath(GM_SPECS.S.teeth, GM_SPECS.S.r),
+        M: buildGearPath(GM_SPECS.M.teeth, GM_SPECS.M.r),
+        L: buildGearPath(GM_SPECS.L.teeth, GM_SPECS.L.r)
+      };
+
+      class GearMachineGame {
+        constructor(container, app) {
+          this.container = container;
+          this.app = app;
+          this.sound = app.sound;
+          this.tool = 'M'; // 'S' | 'M' | 'L' | 'erase'
+          this.gears = []; // { id, col, row, x, y, size, fixed, role, omega, phase }
+          this.blocked = new Set(); // "col,row"
+          this.machine = GM_MACHINES[0];
+          this.jammed = false;
+          this.goalPowered = false;
+          this.solved = false;
+          this.simTime = 0;
+          this.lastFrame = 0;
+          this.rafId = null;
+          this.musicTick = 0;
+          this.solveTimer = null;
+        }
+
+        mount() {
+          this.app.setGameBackground('#0F766E');
+          this.container.innerHTML = `
+            <div class="gm-root" id="gm-root">
+              <div class="lb-title-area" style="margin-top:2px;">
+                <h2 class="lb-circuit-name"><ruby>GEAR MACHINE<rt>はぐるま マシン</rt></ruby></h2>
+                <p class="lb-circuit-tip" id="gm-tip">はぐるま を つないで うごかそう！</p>
+              </div>
+
+              <div class="gm-viewport">
+                <div class="gm-board" id="gm-board">
+                  <svg class="gm-svg" id="gm-svg" viewBox="0 0 900 480"></svg>
+                </div>
+              </div>
+
+              <div class="gm-dock" id="gm-dock">
+                <button class="gm-tool-btn" type="button" data-tool="S">${FLAT_ICONS.gearMini(22, '#38BDF8')}<span>ちいさい</span></button>
+                <button class="gm-tool-btn is-active" type="button" data-tool="M">${FLAT_ICONS.gearMini(28, '#FF924C')}<span>ふつう</span></button>
+                <button class="gm-tool-btn" type="button" data-tool="L">${FLAT_ICONS.gearMini(34, '#A78BFA')}<span>おおきい</span></button>
+                <button class="gm-tool-btn" type="button" data-tool="erase">${FLAT_ICONS.eraser(24)}<span>はずす</span></button>
+                <button class="gm-tool-btn" type="button" id="gm-new-btn">${FLAT_ICONS.refresh(22)}<span>べつの おだい</span></button>
+              </div>
+            </div>
+          `;
+
+          this.rootEl = this.container.querySelector('#gm-root');
+          this.tipEl = this.container.querySelector('#gm-tip');
+          this.boardEl = this.container.querySelector('#gm-board');
+          this.svgEl = this.container.querySelector('#gm-svg');
+          this.toolBtns = Array.from(this.container.querySelectorAll('[data-tool]'));
+
+          this.toolBtns.forEach((btn) => {
+            btn.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.sound.unlock();
+              this.tool = btn.dataset.tool;
+              this.toolBtns.forEach((b) => b.classList.toggle('is-active', b === btn));
+              this.sound.playButtonDown('yellow');
+            });
+          });
+
+          this.container.querySelector('#gm-new-btn').addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            this.sound.unlock();
+            this.sound.playPageTurn(1);
+            this.generatePuzzle();
+          });
+
+          this.generatePuzzle();
+          this.lastFrame = performance.now();
+          const loop = (now) => {
+            const dt = Math.min(0.05, (now - this.lastFrame) / 1000);
+            this.lastFrame = now;
+            this.tickAnimation(dt);
+            this.rafId = requestAnimationFrame(loop);
+          };
+          this.rafId = requestAnimationFrame(loop);
+        }
+
+        unmount() {
+          cancelAnimationFrame(this.rafId);
+          clearTimeout(this.solveTimer);
+          this.container.innerHTML = '';
+        }
+
+        pegCoords(col, row) {
+          return { x: GM_OX + col * GM_STEP, y: GM_OY + row * GM_STEP };
+        }
+
+        /** Generate a guaranteed-solvable random puzzle with random goal machine */
+        generatePuzzle() {
+          clearTimeout(this.solveTimer);
+          this.solved = false;
+          this.goalPowered = false;
+          this.jammed = false;
+          this.musicTick = 0;
+
+          // Pick random goal machine (different from previous if possible)
+          const candidates = GM_MACHINES.filter((m) => m.id !== this.machine.id);
+          this.machine = candidates[Math.floor(Math.random() * candidates.length)];
+
+          const startRow = Math.floor(Math.random() * GM_ROWS);
+          const goalRow = Math.floor(Math.random() * GM_ROWS);
+
+          // Place 1-3 random blocked pegs while verifying orthogonal solvability via BFS
+          let blocked = new Set();
+          for (let attempt = 0; attempt < 25; attempt++) {
+            const testBlocked = new Set();
+            const numBlocks = 1 + Math.floor(Math.random() * 3);
+            for (let k = 0; k < numBlocks; k++) {
+              const bc = 1 + Math.floor(Math.random() * (GM_COLS - 2));
+              const br = Math.floor(Math.random() * GM_ROWS);
+              testBlocked.add(`${bc},${br}`);
+            }
+            if (this.hasOrthogonalPath(0, startRow, GM_COLS - 1, goalRow, testBlocked)) {
+              blocked = testBlocked;
+              break;
+            }
+          }
+          this.blocked = blocked;
+
+          const startPos = this.pegCoords(0, startRow);
+          const goalPos = this.pegCoords(GM_COLS - 1, goalRow);
+
+          this.gears = [
+            { id: 'start', col: 0, row: startRow, x: startPos.x, y: startPos.y, size: 'M', fixed: true, role: 'start', omega: 1.4, phase: 0 },
+            { id: 'goal',  col: GM_COLS - 1, row: goalRow, x: goalPos.x, y: goalPos.y, size: 'M', fixed: true, role: 'goal', omega: 0, phase: 0 }
+          ];
+
+          this.tipEl.textContent = `はぐるま を つないで「${this.machine.name}」を うごかそう！`;
+          this.solveNetwork();
+          this.renderSvg();
+        }
+
+        hasOrthogonalPath(sc, sr, gc, gr, blocked) {
+          const q = [[sc, sr]];
+          const seen = new Set([`${sc},${sr}`]);
+          const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+          while (q.length > 0) {
+            const [c, r] = q.shift();
+            if (c === gc && r === gr) return true;
+            for (const [dc, dr] of dirs) {
+              const nc = c + dc, nr = r + dr;
+              const key = `${nc},${nr}`;
+              if (nc >= 0 && nc < GM_COLS && nr >= 0 && nr < GM_ROWS && !blocked.has(key) && !seen.has(key)) {
+                seen.add(key);
+                q.push([nc, nr]);
+              }
+            }
+          }
+          return false;
+        }
+
+        /** Check strict non-overlapping physical clearance */
+        canPlaceAt(col, row, size) {
+          if (this.blocked.has(`${col},${row}`)) return false;
+          const pos = this.pegCoords(col, row);
+          const rNew = GM_SPECS[size].r;
+          for (const g of this.gears) {
+            if (g.col === col && g.row === row) continue;
+            const dist = Math.hypot(g.x - pos.x, g.y - pos.y);
+            const minDist = rNew + GM_SPECS[g.size].r - 1.5;
+            if (dist < minDist) return false;
+          }
+          return true;
+        }
+
+        /** Exact BFS gear meshing, gear-ratio angular velocity, phase alignment & jam detection */
+        solveNetwork() {
+          for (const g of this.gears) {
+            g.omega = 0;
+            g.visited = false;
+          }
+          this.jammed = false;
+
+          const startGear = this.gears.find((g) => g.role === 'start');
+          if (!startGear) return;
+
+          startGear.omega = 1.45;
+          startGear.phase = 0;
+          startGear.visited = true;
+
+          const queue = [startGear];
+          const MESH_TOL = 2.0;
+
+          while (queue.length > 0 && !this.jammed) {
+            const cur = queue.shift();
+            const curSpec = GM_SPECS[cur.size];
+
+            for (const nxt of this.gears) {
+              if (nxt === cur) continue;
+              const nxtSpec = GM_SPECS[nxt.size];
+              const dist = Math.hypot(nxt.x - cur.x, nxt.y - cur.y);
+              const ideal = curSpec.r + nxtSpec.r;
+
+              if (Math.abs(dist - ideal) <= MESH_TOL) {
+                const expectedOmega = -cur.omega * (curSpec.teeth / nxtSpec.teeth);
+                const theta = Math.atan2(nxt.y - cur.y, nxt.x - cur.x);
+                const expectedPhase = theta + Math.PI + (Math.PI / nxtSpec.teeth) - (cur.phase - theta) * (curSpec.teeth / nxtSpec.teeth);
+
+                if (!nxt.visited) {
+                  nxt.visited = true;
+                  nxt.omega = expectedOmega;
+                  nxt.phase = expectedPhase;
+                  queue.push(nxt);
+                } else if (Math.abs(nxt.omega - expectedOmega) > 0.02) {
+                  // Odd-cycle mechanical jam detected!
+                  this.jammed = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (this.jammed) {
+            for (const g of this.gears) g.omega = 0;
+            this.goalPowered = false;
+            this.boardEl.classList.remove('is-jammed');
+            void this.boardEl.offsetWidth;
+            this.boardEl.classList.add('is-jammed');
+            this.tipEl.textContent = 'はぐるま が ぶつかって とまったよ！ 1つ はずしてみてね';
+            this.sound.playGentleNudge();
+            return;
+          }
+
+          const goalGear = this.gears.find((g) => g.role === 'goal');
+          this.goalPowered = !!(goalGear && Math.abs(goalGear.omega) > 0.01);
+
+          if (this.goalPowered && !this.solved) {
+            this.solved = true;
+            this.tipEl.textContent = `やったね！「${this.machine.name}」が うごいたよ！`;
+            this.sound.playSuccessFanfare();
+            clearTimeout(this.solveTimer);
+            this.solveTimer = setTimeout(() => {
+              showCelebrationOverlay(this.rootEl, {
+                title: 'うごいたよ！',
+                subtitle: `「${this.machine.name}」が かんせい！`,
+                centerHtml: FLAT_ICONS.gearMini(64, '#FFD12E'),
+                btnLabel: 'つぎの マシンへ',
+                sound: this.sound,
+                onNext: () => this.generatePuzzle()
+              });
+            }, 1250);
+          } else if (!this.goalPowered) {
+            this.tipEl.textContent = `はぐるま を つないで「${this.machine.name}」を うごかそう！`;
+          }
+        }
+
+        handlePegTap(col, row) {
+          if (this.solved) return;
+          this.sound.unlock();
+          if (this.blocked.has(`${col},${row}`)) {
+            this.sound.playGentleNudge();
+            return;
+          }
+
+          const existingIdx = this.gears.findIndex((g) => g.col === col && g.row === row);
+          if (existingIdx >= 0) {
+            const g = this.gears[existingIdx];
+            if (g.fixed) {
+              this.sound.playButtonDown('yellow');
+              return;
+            }
+            if (this.tool === 'erase' || g.size === this.tool) {
+              this.gears.splice(existingIdx, 1);
+              this.sound.playGearRemove();
+              this.solveNetwork();
+              this.renderSvg();
+              return;
+            }
+            // Replace with different size if clearance allows
+            if (this.canPlaceAt(col, row, this.tool)) {
+              g.size = this.tool;
+              this.sound.playGearSnap(this.tool);
+              this.solveNetwork();
+              this.renderSvg();
+            } else {
+              this.sound.playGentleNudge();
+              this.boardEl.classList.remove('is-jammed');
+              void this.boardEl.offsetWidth;
+              this.boardEl.classList.add('is-jammed');
+            }
+            return;
+          }
+
+          if (this.tool === 'erase') return;
+
+          if (this.canPlaceAt(col, row, this.tool)) {
+            const pos = this.pegCoords(col, row);
+            this.gears.push({
+              id: `g_${col}_${row}`,
+              col, row, x: pos.x, y: pos.y,
+              size: this.tool,
+              fixed: false,
+              role: 'user',
+              omega: 0,
+              phase: 0
+            });
+            this.sound.playGearSnap(this.tool);
+            this.solveNetwork();
+            this.renderSvg();
+          } else {
+            // Physically blocked by adjacent gear overlap
+            this.sound.playGentleNudge();
+            this.boardEl.classList.remove('is-jammed');
+            void this.boardEl.offsetWidth;
+            this.boardEl.classList.add('is-jammed');
+          }
+        }
+
+        renderGoalMachineSvg(goalY) {
+          const m = this.machine.id;
+          const cx = 775;
+          const cy = 240;
+          const shaft = `
+            <path d="M ${GM_OX + (GM_COLS - 1) * GM_STEP} ${goalY} L 685 ${goalY} L 685 ${cy} L 710 ${cy}"
+                  fill="none" stroke="${this.goalPowered ? '#FFD12E' : 'rgba(255,255,255,0.45)'}"
+                  stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          `;
+
+          if (m === 'clock') {
+            return `
+              ${shaft}
+              <g id="gm-machine">
+                <circle cx="${cx}" cy="${cy}" r="74" fill="#FFFFFF" stroke="#FFD12E" stroke-width="10"/>
+                <circle cx="${cx}" cy="${cy - 54}" r="5" fill="#94A3B8"/>
+                <circle cx="${cx + 54}" cy="${cy}" r="5" fill="#94A3B8"/>
+                <circle cx="${cx}" cy="${cy + 54}" r="5" fill="#94A3B8"/>
+                <circle cx="${cx - 54}" cy="${cy}" r="5" fill="#94A3B8"/>
+                <line id="gm-clock-h" x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - 32}" stroke="#1E293B" stroke-width="9" stroke-linecap="round"/>
+                <line id="gm-clock-m" x1="${cx}" y1="${cy}" x2="${cx + 44}" y2="${cy}" stroke="#FF595E" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="${cx}" cy="${cy}" r="8" fill="#1E293B"/>
+              </g>
+            `;
+          }
+
+          if (m === 'signal') {
+            return `
+              ${shaft}
+              <g id="gm-machine">
+                <rect x="${cx - 46}" y="${cy - 102}" width="92" height="204" rx="28" fill="#1E293B" stroke="#FFFFFF" stroke-width="7"/>
+                <circle id="gm-sig-r" cx="${cx}" cy="${cy - 58}" r="23" fill="#475569"/>
+                <circle id="gm-sig-y" cx="${cx}" cy="${cy}"      r="23" fill="#475569"/>
+                <circle id="gm-sig-g" cx="${cx}" cy="${cy + 58}" r="23" fill="#475569"/>
+              </g>
+            `;
+          }
+
+          if (m === 'fan') {
+            return `
+              ${shaft}
+              <g id="gm-machine">
+                <rect x="${cx - 12}" y="${cy + 40}" width="24" height="62" rx="10" fill="#CBD5E1"/>
+                <rect x="${cx - 46}" y="${cy + 92}" width="92" height="18" rx="9" fill="#FFFFFF"/>
+                <circle cx="${cx}" cy="${cy}" r="74" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" stroke-width="8"/>
+                <g id="gm-fan-blades" transform="translate(${cx}, ${cy})">
+                  <ellipse cx="0" cy="-34" rx="16" ry="30" fill="#38BDF8" stroke="#FFFFFF" stroke-width="4"/>
+                  <ellipse cx="0" cy="34"  rx="16" ry="30" fill="#38BDF8" stroke="#FFFFFF" stroke-width="4"/>
+                  <ellipse cx="-34" cy="0" rx="30" ry="16" fill="#67E8F9" stroke="#FFFFFF" stroke-width="4"/>
+                  <ellipse cx="34"  cy="0" rx="30" ry="16" fill="#67E8F9" stroke="#FFFFFF" stroke-width="4"/>
+                  <circle cx="0" cy="0" r="14" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4"/>
+                </g>
+              </g>
+            `;
+          }
+
+          // 'musicbox'
+          return `
+            ${shaft}
+            <g id="gm-machine">
+              <rect x="${cx - 64}" y="${cy - 44}" width="128" height="96" rx="22" fill="#FF85B3" stroke="#FFFFFF" stroke-width="7"/>
+              <rect x="${cx - 46}" y="${cy - 22}" width="92" height="52" rx="12" fill="#FFF1F2"/>
+              <g id="gm-music-note" transform="translate(${cx}, ${cy})">
+                <path d="M-8 14 V-12 L14 -17 V9" stroke="#FF4757" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <circle cx="-13" cy="14" r="7" fill="#FF4757"/>
+                <circle cx="9" cy="9" r="7" fill="#FF4757"/>
+              </g>
+            </g>
+          `;
+        }
+
+        renderSvg() {
+          let pegsHtml = '';
+          for (let r = 0; r < GM_ROWS; r++) {
+            for (let c = 0; c < GM_COLS; c++) {
+              const { x, y } = this.pegCoords(c, r);
+              const isBlocked = this.blocked.has(`${c},${r}`);
+              if (isBlocked) {
+                pegsHtml += `
+                  <g>
+                    <circle cx="${x}" cy="${y}" r="22" fill="rgba(15,23,42,0.45)" stroke="rgba(255,255,255,0.35)" stroke-width="4"/>
+                    <line x1="${x - 9}" y1="${y - 9}" x2="${x + 9}" y2="${y + 9}" stroke="#FF6B6B" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="${x + 9}" y1="${y - 9}" x2="${x - 9}" y2="${y + 9}" stroke="#FF6B6B" stroke-width="5" stroke-linecap="round"/>
+                  </g>
+                `;
+              } else {
+                pegsHtml += `
+                  <circle cx="${x}" cy="${y}" r="11" fill="rgba(255,255,255,0.38)" stroke="rgba(255,255,255,0.65)" stroke-width="3"/>
+                `;
+              }
+            }
+          }
+
+          let gearsHtml = '';
+          this.gears.forEach((g) => {
+            const spec = GM_SPECS[g.size];
+            const fill = g.role === 'start' ? '#FFD12E' : (g.role === 'goal' ? '#4ADE80' : spec.color);
+            const stroke = g.role === 'start' ? '#B45309' : (g.role === 'goal' ? '#15803D' : spec.stroke);
+            const innerR = Math.max(11, spec.r * 0.42);
+            gearsHtml += `
+              <g transform="translate(${g.x}, ${g.y})">
+                <g class="gm-gear-rot" data-gear-id="${g.id}">
+                  <path d="${GM_GEAR_PATHS[g.size]}" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                  <circle cx="0" cy="0" r="${innerR}" fill="#FFFFFF" opacity="0.35"/>
+                  <circle cx="${(innerR * 0.58).toFixed(1)}" cy="0" r="5" fill="#FFFFFF"/>
+                  <circle cx="${(-innerR * 0.58).toFixed(1)}" cy="0" r="5" fill="#FFFFFF"/>
+                  <circle cx="0" cy="0" r="10" fill="#FFFFFF" stroke="${stroke}" stroke-width="3.5"/>
+                </g>
+                ${g.role === 'start' ? `<text x="0" y="${spec.r + 24}" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="900">スタート</text>` : ''}
+                ${g.role === 'goal'  ? `<text x="0" y="${spec.r + 24}" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="900">ゴール</text>` : ''}
+              </g>
+            `;
+          });
+
+          // Interactive peg hit targets on top
+          let hitsHtml = '';
+          for (let r = 0; r < GM_ROWS; r++) {
+            for (let c = 0; c < GM_COLS; c++) {
+              const { x, y } = this.pegCoords(c, r);
+              hitsHtml += `<circle class="gm-peg-hit" cx="${x}" cy="${y}" r="44" data-col="${c}" data-row="${r}"/>`;
+            }
+          }
+
+          const goalGear = this.gears.find((g) => g.role === 'goal');
+          const goalY = goalGear ? goalGear.y : 240;
+
+          this.svgEl.innerHTML = `
+            ${pegsHtml}
+            ${this.renderGoalMachineSvg(goalY)}
+            ${gearsHtml}
+            ${hitsHtml}
+          `;
+
+          this.svgEl.querySelectorAll('.gm-peg-hit').forEach((el) => {
+            el.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              this.handlePegTap(Number(el.dataset.col), Number(el.dataset.row));
+            });
+          });
+
+          this.applyGearTransforms();
+        }
+
+        applyGearTransforms() {
+          for (const g of this.gears) {
+            const el = this.svgEl.querySelector(`[data-gear-id="${g.id}"]`);
+            if (!el) continue;
+            const angleRad = g.phase + g.omega * this.simTime;
+            const angleDeg = (angleRad * 180) / Math.PI;
+            el.setAttribute('transform', `rotate(${angleDeg.toFixed(2)})`);
+          }
+        }
+
+        tickAnimation(dt) {
+          this.simTime += dt;
+          this.applyGearTransforms();
+
+          if (!this.goalPowered) return;
+
+          const m = this.machine.id;
+          if (m === 'clock') {
+            const hEl = this.svgEl.querySelector('#gm-clock-h');
+            const mEl = this.svgEl.querySelector('#gm-clock-m');
+            if (hEl && mEl) {
+              const degM = (this.simTime * 190) % 360;
+              const degH = (this.simTime * 28) % 360;
+              mEl.setAttribute('transform', `rotate(${degM.toFixed(1)} 775 240)`);
+              hEl.setAttribute('transform', `rotate(${degH.toFixed(1)} 775 240)`);
+            }
+          } else if (m === 'signal') {
+            const idx = Math.floor(this.simTime * 2.2) % 3;
+            const rEl = this.svgEl.querySelector('#gm-sig-r');
+            const yEl = this.svgEl.querySelector('#gm-sig-y');
+            const gEl = this.svgEl.querySelector('#gm-sig-g');
+            if (rEl && yEl && gEl) {
+              rEl.setAttribute('fill', idx === 0 ? '#FF4757' : '#475569');
+              yEl.setAttribute('fill', idx === 1 ? '#FFD32A' : '#475569');
+              gEl.setAttribute('fill', idx === 2 ? '#2ED573' : '#475569');
+            }
+          } else if (m === 'fan') {
+            const fEl = this.svgEl.querySelector('#gm-fan-blades');
+            if (fEl) {
+              const deg = (this.simTime * 420) % 360;
+              fEl.setAttribute('transform', `translate(775, 240) rotate(${deg.toFixed(1)})`);
+            }
+          } else if (m === 'musicbox') {
+            const nEl = this.svgEl.querySelector('#gm-music-note');
+            if (nEl) {
+              const bob = Math.sin(this.simTime * 7) * 9;
+              nEl.setAttribute('transform', `translate(775, ${(240 + bob).toFixed(1)})`);
+            }
+          }
+        }
+      }
+
+      /* =========================================================================
          3. EXTENSIBLE GAME REGISTRY
             Add future games here — they automatically appear in the Home Menu!
          ========================================================================= */
@@ -4987,7 +6297,7 @@
           id: 'sound-magic',
           title: 'SOUND MAGIC',
           ruby: 'おとの まほう',
-          desc: '4つの がっきと まねっこ えんそう！',
+          desc: 'ぴあの けんばんで たのしく えんそう！',
           badge: 'あそべるよ！',
           cta: 'あそぶ',
           bg: '#3A86FF',
@@ -4995,12 +6305,33 @@
           available: true,
           iconSvg: `
             <svg width="74" height="74" viewBox="0 0 80 80" fill="none">
-              <path d="M32 54V22L60 16V48" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="24" cy="54" r="9" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4"/>
-              <circle cx="52" cy="48" r="9" fill="#FF85A1" stroke="#FFFFFF" stroke-width="4"/>
+              <rect x="12" y="18" width="56" height="44" rx="10" fill="#FFFFFF" stroke="#1E293B" stroke-width="4"/>
+              <line x1="31" y1="18" x2="31" y2="62" stroke="#CBD5E1" stroke-width="3"/>
+              <line x1="49" y1="18" x2="49" y2="62" stroke="#CBD5E1" stroke-width="3"/>
+              <rect x="24" y="18" width="12" height="26" rx="4" fill="#1E293B"/>
+              <rect x="43" y="18" width="12" height="26" rx="4" fill="#1E293B"/>
             </svg>
           `,
           create: (container, app) => new SoundMagicGame(container, app)
+        },
+        {
+          id: 'pitch-quiz',
+          title: 'PITCH QUIZ',
+          ruby: 'ぜったい おんかん',
+          desc: 'おとを きいて けんばんを あてよう！',
+          badge: 'あそべるよ！',
+          cta: 'あそぶ',
+          bg: '#E85D75',
+          shadow: '#B8334C',
+          available: true,
+          iconSvg: `
+            <svg width="74" height="74" viewBox="0 0 80 80" fill="none">
+              <polygon points="16,32 28,32 42,20 42,60 28,48 16,48" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
+              <path d="M50 30 Q58 40 50 50" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+              <path d="M58 22 Q70 40 58 58" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+          `,
+          create: (container, app) => new PitchQuizGame(container, app)
         },
         {
           id: 'plus-magic',
@@ -5020,6 +6351,26 @@
             </svg>
           `,
           create: (container, app) => new PlusMagicGame(container, app)
+        },
+        {
+          id: 'gear-machine',
+          title: 'GEAR MACHINE',
+          ruby: 'はぐるま マシン',
+          desc: 'はぐるま を つないで きかいを うごかそう！',
+          badge: 'あそべるよ！',
+          cta: 'あそぶ',
+          bg: '#0F766E',
+          shadow: '#0B4F4A',
+          available: true,
+          iconSvg: `
+            <svg width="76" height="76" viewBox="0 0 80 80" fill="none">
+              <circle cx="30" cy="44" r="16" fill="#FFD12E" stroke="#FFFFFF" stroke-width="4"/>
+              <circle cx="30" cy="44" r="6" fill="#FFFFFF"/>
+              <circle cx="54" cy="30" r="12" fill="#4ADE80" stroke="#FFFFFF" stroke-width="4"/>
+              <circle cx="54" cy="30" r="4.5" fill="#FFFFFF"/>
+            </svg>
+          `,
+          create: (container, app) => new GearMachineGame(container, app)
         },
         {
           id: 'coming-next',
