@@ -1,3 +1,5 @@
+import { renderJapaneseSpeechBuffer } from './ja-voice-synth.js';
+
 export class SoundEngine {
   constructor() {
     this.ctx = null;
@@ -8,6 +10,9 @@ export class SoundEngine {
     this.muted = false;
     this.unlocked = false;
     this.idleSuspendTimer = null;
+    this.speechCache = new Map();
+    this.activeSpeechSource = null;
+    this.ttsUnavailable = false;
   }
 
   scheduleIdleSuspend(delayMs = 4500) {
@@ -971,60 +976,54 @@ export class SoundEngine {
   }
 
   /**
-   * Vowel-formant Japanese-like expressive babble synth (fallback & character flair).
-   * Maps each hiragana syllable to its Japanese vowel formant (A/I/U/E/O) so it sounds
-   * like a cute character speaking Japanese phrases!
+   * Render & play full Japanese Gojuon/Mora Klatt-style 3-formant speech
+   * (with all consonants, formant transitions, sokuon, hatsuon, and pitch accent).
    */
-  playJapaneseFormantSpeech(text, basePitch = 360) {
+  async playJapaneseFormantSpeech(text, { pitch = 1.25, rate = 1.0 } = {}) {
     const ctx = this.ensureContext();
-    if (!ctx || this.muted) return;
-    const formants = {
-      a: [780, 1220], i: [310, 2320], u: [350, 1120], e: [510, 1920], o: [490, 920]
+    if (!ctx || this.muted || !text) return;
+
+    const key = `${text}|${pitch.toFixed(2)}|${rate.toFixed(2)}`;
+    let buf = this.speechCache.get(key);
+    if (!buf) {
+      try {
+        buf = await renderJapaneseSpeechBuffer(text, { pitch, rate });
+      } catch (_) {
+        buf = null;
+      }
+      if (!buf) return;
+      if (this.speechCache.size >= 24) {
+        const firstKey = this.speechCache.keys().next().value;
+        this.speechCache.delete(firstKey);
+      }
+      this.speechCache.set(key, buf);
+    }
+
+    if (this.muted) return;
+    if (this.activeSpeechSource) {
+      try { this.activeSpeechSource.stop(); } catch (_) {}
+      this.activeSpeechSource = null;
+    }
+
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const gain = ctx.createGain();
+    gain.gain.value = 1.15;
+    src.connect(gain);
+    gain.connect(this.dryBus);
+    this.activeSpeechSource = src;
+    src.onended = () => {
+      if (this.activeSpeechSource === src) this.activeSpeechSource = null;
     };
-    const vowelOf = (ch) => {
-      if ('あかがさざただなはばぱまやらわぁゃアカガサザタダナハバパマヤラワァャ'.includes(ch)) return 'a';
-      if ('いきぎしじちぢにひびぴみりぃイキギシジチヂニヒビピミリィ'.includes(ch)) return 'i';
-      if ('うくぐすずつづぬふぶぷむゆるぅゅんウクグスズツヅヌフブプムユルゥュン'.includes(ch)) return 'u';
-      if ('えけげせぜてでねへべぺめれぇエケゲセゼテデネヘベペメレェ'.includes(ch)) return 'e';
-      if ('おこごそぞとどのほぼぽもよろをぉょオコゴソゾトドノホボポモヨロヲォョ'.includes(ch)) return 'o';
-      return null;
-    };
 
-    const chars = Array.from(text).filter((c) => vowelOf(c)).slice(0, 18);
-    const now = ctx.currentTime;
-    chars.forEach((ch, idx) => {
-      const v = vowelOf(ch);
-      const [f1, f2] = formants[v];
-      const t = now + idx * 0.105;
-      // Natural Japanese-like rising/falling phrase intonation
-      const phrasePos = idx / Math.max(1, chars.length - 1);
-      const contour = phrasePos < 0.2 ? 1.06 : (phrasePos > 0.85 ? 1.14 : 0.96 + ((idx * 13) % 7) * 0.02);
-      const pitchMod = basePitch * contour;
-
-      const osc = ctx.createOscillator();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(pitchMod, t);
-      osc.frequency.linearRampToValueAtTime(pitchMod * 0.96, t + 0.088);
-
-      const bp1 = ctx.createBiquadFilter();
-      bp1.type = 'bandpass'; bp1.frequency.setValueAtTime(f1, t); bp1.Q.value = 3.2;
-      const bp2 = ctx.createBiquadFilter();
-      bp2.type = 'bandpass'; bp2.frequency.setValueAtTime(f2, t); bp2.Q.value = 4.0;
-
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.001, t);
-      g.gain.linearRampToValueAtTime(0.55, t + 0.014);
-      g.gain.setValueAtTime(0.48, t + 0.065);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.095);
-
-      osc.connect(bp1); osc.connect(bp2);
-      bp1.connect(g); bp2.connect(g);
-      g.connect(this.dryBus); g.connect(this.wetBus);
-      osc.start(t); osc.stop(t + 0.1);
-    });
+    // Keep AudioContext awake for the full utterance + safety margin
+    this.scheduleIdleSuspend(Math.max(4500, Math.ceil(buf.duration * 1000) + 2000));
+    try {
+      src.start(ctx.currentTime + 0.01);
+    } catch (_) {}
   }
 
-  /** Stop any ongoing Japanese speech synthesis */
+  /** Stop any ongoing Japanese speech synthesis (both OS TTS and formant buffer) */
   stopSpeech() {
     if (this.speechTimer) {
       clearTimeout(this.speechTimer);
@@ -1034,21 +1033,33 @@ export class SoundEngine {
       clearTimeout(this.speechWatchdog);
       this.speechWatchdog = null;
     }
+    if (this.activeSpeechSource) {
+      try { this.activeSpeechSource.stop(); } catch (_) {}
+      this.activeSpeechSource = null;
+    }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       try { window.speechSynthesis.cancel(); } catch (_) {}
     }
   }
 
   /**
-   * Speak Japanese clearly with character voice (Web Speech API ja-JP)
-   * hardened for iOS Safari / iPadOS PWA, with automatic formant fallback.
+   * Speak Japanese clearly: tries native OS ja-JP SpeechSynthesis first,
+   * and seamlessly uses the full Gojuon 3-formant synthesizer when OS TTS is blocked/silent.
    */
-  speakJapanese(text, { pitch = 1.25, rate = 1.02, fallbackPitch = 380 } = {}) {
+  speakJapanese(text, { pitch = 1.25, rate = 1.02 } = {}) {
     if (this.muted || !text) return;
     if (this.speechTimer) { clearTimeout(this.speechTimer); this.speechTimer = null; }
     if (this.speechWatchdog) { clearTimeout(this.speechWatchdog); this.speechWatchdog = null; }
+    if (this.activeSpeechSource) {
+      try { this.activeSpeechSource.stop(); } catch (_) {}
+      this.activeSpeechSource = null;
+    }
 
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
+    const useSynth = () => {
+      this.playJapaneseFormantSpeech(text, { pitch, rate });
+    };
+
+    if (!this.ttsUnavailable && typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
       try {
         const synth = window.speechSynthesis;
         const doSpeak = () => {
@@ -1075,9 +1086,10 @@ export class SoundEngine {
           const triggerFallback = () => {
             if (started || fellBack) return;
             fellBack = true;
+            this.ttsUnavailable = true;
             if (this.speechWatchdog) { clearTimeout(this.speechWatchdog); this.speechWatchdog = null; }
             try { synth.cancel(); } catch (_) {}
-            this.playJapaneseFormantSpeech(text, fallbackPitch);
+            useSynth();
           };
 
           utter.onstart = () => {
@@ -1094,11 +1106,11 @@ export class SoundEngine {
           }
           synth.speak(utter);
 
-          // Strict 450ms watchdog: if iOS PWA stalls or blocks TTS silently, fall back immediately
+          // Strict 400ms watchdog: if iOS PWA stalls or blocks TTS silently, switch to Gojuon synth
           this.speechWatchdog = setTimeout(() => {
             this.speechWatchdog = null;
             if (!started) triggerFallback();
-          }, 450);
+          }, 400);
         };
 
         if (synth.speaking || synth.pending) {
@@ -1109,9 +1121,9 @@ export class SoundEngine {
         }
         return;
       } catch (_) {
-        // Fall through to formant synth
+        // Fall through to Gojuon formant synth
       }
     }
-    this.playJapaneseFormantSpeech(text, fallbackPitch);
+    useSynth();
   }
 }
