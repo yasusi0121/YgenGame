@@ -164,16 +164,16 @@ export default class GearMachineGame {
     this.container.innerHTML = `
       <div class="gm-root" id="gm-root">
         <div class="lb-title-area" style="margin-top:2px;">
-          <h2 class="lb-circuit-name"><ruby>GEAR MACHINE<rt>はぐるま マシン</rt></ruby></h2>
+          <h2 class="lb-circuit-name">はぐるま</h2>
           <p class="lb-circuit-tip" id="gm-tip">はぐるま を ひっぱって はめよう！</p>
         </div>
 
-        <div class="pm-mode-tabs" id="gm-levels" style="padding:4px 6px;">
-          <button class="pm-tab-btn is-active" type="button" data-glv="1">Lv.1</button>
-          <button class="pm-tab-btn" type="button" data-glv="2">Lv.2</button>
-          <button class="pm-tab-btn" type="button" data-glv="3">Lv.3</button>
-          <button class="pm-tab-btn" type="button" data-glv="4">Lv.4</button>
-          <button class="pm-tab-btn" type="button" data-glv="5">Lv.5</button>
+        <div class="pm-mode-tabs" id="gm-levels">
+          <button class="pm-tab-btn is-active" type="button" data-glv="1">${FLAT_ICONS.stars(1, 14)}<span>1</span></button>
+          <button class="pm-tab-btn" type="button" data-glv="2">${FLAT_ICONS.stars(2, 14)}<span>2</span></button>
+          <button class="pm-tab-btn" type="button" data-glv="3">${FLAT_ICONS.stars(3, 14)}<span>3</span></button>
+          <button class="pm-tab-btn" type="button" data-glv="4">${FLAT_ICONS.stars(4, 13)}<span>4</span></button>
+          <button class="pm-tab-btn" type="button" data-glv="5">${FLAT_ICONS.stars(5, 12)}<span>5</span></button>
         </div>
 
         <div class="gm-viewport">

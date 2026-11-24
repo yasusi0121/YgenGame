@@ -43,7 +43,7 @@ export default class ColorMixGame {
     this.container.innerHTML = `
       <div class="cm-root" id="cm-root">
         <div class="lb-title-area" style="margin-top:4px;">
-          <h2 class="lb-circuit-name"><ruby>COLOR MIX<rt>いろの まほう</rt></ruby></h2>
+          <h2 class="lb-circuit-name">いろまぜ</h2>
         </div>
 
         <div class="cm-stage">

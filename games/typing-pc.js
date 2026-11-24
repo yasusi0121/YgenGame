@@ -478,26 +478,32 @@ function ensureTypingStyles() {
     .tp-sub-tabs {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.12);
-      padding: 3px;
-      border-radius: 999px;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.16);
+      padding: 4px 6px;
+      border-radius: 16px;
     }
     .tp-sub-btn {
-      border: none;
-      border-radius: 999px;
-      background: transparent;
-      color: #CBD5E1;
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.88);
+      color: #334155;
       font-family: var(--font-rounded);
       font-size: clamp(11px, 1.3vw, 13px);
       font-weight: 900;
       padding: 4px 12px;
       cursor: pointer;
-      transition: background 0.14s ease, color 0.14s ease;
+      box-shadow: 0 3px 0 rgba(15, 23, 42, 0.25);
+      transition: transform 0.1s ease, background 0.14s ease, color 0.14s ease;
+    }
+    .tp-sub-btn:active {
+      transform: translateY(2px);
     }
     .tp-sub-btn.is-active {
       background: #FFD12E;
       color: #4D3300;
+      border-color: #FFFFFF;
+      box-shadow: 0 3px 0 #C28A00;
     }
     .tp-gojuon-col {
       width: 100%;
@@ -585,17 +591,17 @@ export default class TypingPCGame {
 
   mount() {
     ensureTypingStyles();
-    this.app.setGameBackground('#334155');
+    this.app.setGameBackground('#3B82F6');
 
     this.container.innerHTML = `
       <div class="tp-root" id="tp-root">
         <div class="tp-top-controls">
           <div class="pm-mode-tabs" id="tp-levels">
-            <button class="pm-tab-btn is-active" type="button" data-mode="gojuon">1. ごじゅうおん</button>
-            <button class="pm-tab-btn" type="button" data-mode="vowels">2. あいうえお</button>
-            <button class="pm-tab-btn" type="button" data-mode="syllables">3. ローマ字</button>
-            <button class="pm-tab-btn" type="button" data-mode="words">4. ことば</button>
-            <button class="pm-tab-btn" type="button" data-mode="free">5. じゆう</button>
+            <button class="pm-tab-btn is-active" type="button" data-mode="gojuon">ごじゅうおん</button>
+            <button class="pm-tab-btn" type="button" data-mode="vowels">${FLAT_ICONS.stars(1, 14)}<span>あいうえお</span></button>
+            <button class="pm-tab-btn" type="button" data-mode="syllables">${FLAT_ICONS.stars(2, 14)}<span>ローマ字</span></button>
+            <button class="pm-tab-btn" type="button" data-mode="words">${FLAT_ICONS.stars(3, 13)}<span>ことば</span></button>
+            <button class="pm-tab-btn" type="button" data-mode="free">${FLAT_ICONS.sparkle(16)}<span>じゆう</span></button>
           </div>
           <button class="pm-toggle-pill is-on" type="button" id="tp-hint-btn">ひんと：ON</button>
           <span class="pm-pill" id="tp-score">${FLAT_ICONS.star(20)}<span>0</span></span>

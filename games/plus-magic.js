@@ -39,14 +39,14 @@ export default class PlusMagicGame {
     this.container.innerHTML = `
       <div class="pm-root">
         <div class="lb-title-area" style="margin-top:2px;">
-          <h2 class="lb-circuit-name"><ruby>PLUS MAGIC<rt>たしざん の まほう</rt></ruby></h2>
+          <h2 class="lb-circuit-name">りんご たしざん</h2>
           <p class="lb-circuit-tip" id="pm-tip">りんご を カゴ に いれたり だしたり しよう！</p>
         </div>
 
         <div class="pm-mode-tabs" id="pm-tabs">
-          <button class="pm-tab-btn is-active" type="button" data-mode="concept">1. わかる</button>
-          <button class="pm-tab-btn" type="button" data-mode="step">2. ステップ</button>
-          <button class="pm-tab-btn" type="button" data-mode="random">3. ランダム</button>
+          <button class="pm-tab-btn is-active" type="button" data-mode="concept">${FLAT_ICONS.apple(20)}<span>わかる</span></button>
+          <button class="pm-tab-btn" type="button" data-mode="step">${FLAT_ICONS.stars(1)}<span>ステップ</span></button>
+          <button class="pm-tab-btn" type="button" data-mode="random">${FLAT_ICONS.stars(2)}<span>ランダム</span></button>
         </div>
 
         <div class="pm-board" id="pm-board"></div>

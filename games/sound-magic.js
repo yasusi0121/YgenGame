@@ -54,7 +54,7 @@ export default class SoundMagicGame {
     this.container.innerHTML = `
       <div class="sm-root">
         <div class="lb-title-area" style="margin-top:4px;">
-          <h2 class="lb-circuit-name"><ruby>SOUND MAGIC<rt>おとの まほう</rt></ruby></h2>
+          <h2 class="lb-circuit-name">ピアノ</h2>
           <p class="lb-circuit-tip" id="sm-tip">ぴあのを ひいてみよう！</p>
         </div>
 

@@ -114,10 +114,10 @@ export class AppShell {
       card.style.setProperty('--card-shadow', item.shadow);
 
       card.innerHTML = `
-        <span class="card-badge">${item.badge}</span>
+        ${item.badge ? `<span class="card-badge">${item.badge}</span>` : ''}
         <div class="card-icon-wrap">${item.iconSvg}</div>
-        <div>
-          <h2 class="card-title"><ruby>${item.title}<rt>${item.ruby}</rt></ruby></h2>
+        <div class="card-heading">
+          <h2 class="card-title">${item.title}</h2>
           <p class="card-desc">${item.desc}</p>
         </div>
         <span class="card-play-pill">

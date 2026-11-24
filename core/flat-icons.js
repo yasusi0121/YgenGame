@@ -157,6 +157,10 @@ export const FLAT_ICONS = {
       <path d="M32 7 L39.5 23 L57 25.5 L44 37.5 L47.5 55 L32 46.5 L16.5 55 L20 37.5 L7 25.5 L24.5 23 Z" fill="#FFD12E" stroke="#FFFFFF" stroke-width="3.5" stroke-linejoin="round"/>
     `, size);
   },
+  stars(count = 1, size = 15) {
+    const one = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 L14.9 8.6 L21.6 9.5 L16.7 14.1 L17.9 20.8 L12 17.6 L6.1 20.8 L7.3 14.1 L2.4 9.5 L9.1 8.6 Z" fill="#F59E0B" stroke="#92400E" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+    return `<span class="toy-stars" aria-hidden="true">${one.repeat(count)}</span>`;
+  },
   starEmpty(size = 26) {
     return this.svg(`
       <path d="M32 7 L39.5 23 L57 25.5 L44 37.5 L47.5 55 L32 46.5 L16.5 55 L20 37.5 L7 25.5 L24.5 23 Z" fill="rgba(148,163,184,0.28)" stroke="#94A3B8" stroke-width="3.5" stroke-linejoin="round"/>

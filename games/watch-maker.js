@@ -1,11 +1,12 @@
+import { FLAT_ICONS } from '../core/flat-icons.js';
 import { showCelebrationOverlay } from '../core/celebration.js';
 import { CLOCK_MODELS, getClockStageParts } from './watch-maker-models.js';
 import { renderMechPartSvg, renderClockHandSvg } from './watch-maker-parts.js';
 
 const LEVELS = [
-  { id: 'exterior',  label: '1. がいけん' },
-  { id: 'geartrain', label: '2. はぐるま' },
-  { id: 'movement',  label: '3. ほんもの' }
+  { id: 'exterior',  label: 'がいけん', stars: 1 },
+  { id: 'geartrain', label: 'はぐるま', stars: 2 },
+  { id: 'movement',  label: 'ほんもの', stars: 3 }
 ];
 
 export default class WatchMakerGame {
@@ -37,17 +38,19 @@ export default class WatchMakerGame {
   }
 
   injectStyles() {
-    if (document.getElementById('watch-maker-styles-v2')) return;
+    if (document.getElementById('watch-maker-styles-v3')) return;
+    const old2 = document.getElementById('watch-maker-styles-v2');
+    if (old2) old2.remove();
     const old = document.getElementById('watch-maker-styles');
     if (old) old.remove();
     const style = document.createElement('style');
-    style.id = 'watch-maker-styles-v2';
+    style.id = 'watch-maker-styles-v3';
     style.textContent = `
       .wm-root {
         width: 100%; height: 100%;
         display: flex; flex-direction: column; align-items: center;
         padding: calc(8px + var(--safe-top)) calc(12px + var(--safe-right)) calc(10px + var(--safe-bottom)) calc(12px + var(--safe-left));
-        gap: 6px;
+        gap: 7px;
         user-select: none; -webkit-user-select: none;
         touch-action: none;
       }
@@ -61,42 +64,47 @@ export default class WatchMakerGame {
         display: flex; align-items: center; gap: 8px;
       }
       .wm-skeleton-btn {
-        background: rgba(255,255,255,0.14);
-        border: 2px solid rgba(255,255,255,0.34);
-        color: #E2E8F0;
+        background: #FFFFFF;
+        border: 3px solid #FFFFFF;
+        box-shadow: 0 4px 0 rgba(15, 23, 42, 0.22);
+        color: #1E3A5F;
         font-family: var(--font-rounded);
-        font-weight: 900; font-size: 13px;
-        padding: 6px 12px; border-radius: 999px;
+        font-weight: 900; font-size: 14px;
+        padding: 7px 14px; border-radius: 18px;
         cursor: pointer; white-space: nowrap;
-        transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+        transition: transform 0.1s ease, background 0.14s ease;
       }
+      .wm-skeleton-btn:active { transform: translateY(2px); }
       .wm-skeleton-btn.is-on {
-        background: #38BDF8; border-color: #BAE6FD; color: #0F172A;
+        background: #38BDF8; border-color: #FFFFFF; color: #0F172A;
+        box-shadow: 0 4px 0 #0284C7;
       }
       .wm-progress-pill {
-        background: rgba(255,255,255,0.14);
-        border: 2px solid rgba(255,255,255,0.28);
-        color: #FEF3C7;
-        font-weight: 900; font-size: 14px;
-        padding: 5px 13px; border-radius: 999px;
+        background: #FFFFFF;
+        border: 3px solid #FFD12E;
+        box-shadow: 0 4px 0 rgba(15, 23, 42, 0.18);
+        color: #4D3300;
+        font-weight: 900; font-size: 15px;
+        padding: 6px 14px; border-radius: 18px;
         white-space: nowrap;
       }
       .wm-banner {
-        background: rgba(255,255,255,0.12);
-        border: 2px solid rgba(255,255,255,0.22);
-        color: #F8FAFC;
-        font-size: clamp(13px, 1.9vw, 18px);
+        background: #FFFFFF;
+        border: 3px solid #FFFFFF;
+        box-shadow: 0 5px 0 rgba(15, 23, 42, 0.18);
+        color: #1E293B;
+        font-size: clamp(14px, 1.9vw, 18px);
         font-weight: 900;
-        padding: 5px 16px;
+        padding: 6px 18px;
         border-radius: 999px;
         text-align: center;
         display: inline-flex; align-items: center; gap: 10px;
         flex-wrap: wrap; justify-content: center;
       }
       .wm-mech-chip {
-        background: rgba(251, 191, 36, 0.22);
-        border: 1.5px solid rgba(251, 191, 36, 0.55);
-        color: #FDE68A;
+        background: #FEF3C7;
+        border: 2px solid #F59E0B;
+        color: #92400E;
         font-size: 12px; font-weight: 900;
         padding: 2px 10px; border-radius: 999px;
       }
@@ -107,39 +115,41 @@ export default class WatchMakerGame {
         gap: 10px;
       }
       .wm-picker {
-        width: 186px; flex-shrink: 0;
-        background: rgba(15, 23, 42, 0.56);
-        border: 2px solid rgba(255,255,255,0.18);
-        border-radius: 18px;
-        padding: 7px;
+        width: 192px; flex-shrink: 0;
+        background: rgba(255, 251, 235, 0.94);
+        border: 4px solid #FFFFFF;
+        box-shadow: 0 7px 0 rgba(15, 23, 42, 0.22);
+        border-radius: 24px;
+        padding: 8px;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px;
+        gap: 7px;
         align-content: start;
         overflow-y: auto;
       }
       .wm-clock-btn {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         gap: 2px;
-        padding: 5px 3px 4px;
-        border-radius: 13px;
-        border: 2.5px solid rgba(255,255,255,0.18);
-        background: rgba(255,255,255,0.08);
-        color: #E2E8F0;
+        padding: 5px 3px 5px;
+        border-radius: 16px;
+        border: 3px solid #E2E8F0;
+        border-bottom: 5px solid #CBD5E1;
+        background: #FFFFFF;
+        color: #334155;
         font-family: var(--font-rounded);
         cursor: pointer;
         transition: transform 0.12s ease, background 0.14s ease, border-color 0.14s ease;
       }
-      .wm-clock-btn:active { transform: scale(0.95); }
+      .wm-clock-btn:active { transform: translateY(2px); }
       .wm-clock-btn.is-active {
-        background: #FEF3C7;
-        border-color: #F59E0B;
-        color: #451A03;
-        box-shadow: 0 3px 0 #B45309;
+        background: #FFD12E;
+        border-color: #FFFFFF;
+        border-bottom-color: #C28A00;
+        color: #4D3300;
       }
       .wm-clock-btn svg { width: 44px; height: 44px; display: block; }
       .wm-clock-name {
-        font-size: 10px; font-weight: 900; line-height: 1.1; text-align: center;
+        font-size: 10.5px; font-weight: 900; line-height: 1.1; text-align: center;
       }
       .wm-stage-wrap {
         flex: 1 1 auto; min-width: 0; min-height: 0;
@@ -152,9 +162,10 @@ export default class WatchMakerGame {
       }
       .wm-tray {
         width: 100%; max-width: 1040px;
-        background: rgba(15, 23, 42, 0.72);
-        border: 2.5px solid rgba(255,255,255,0.18);
-        border-radius: 20px;
+        background: rgba(255, 251, 235, 0.94);
+        border: 4px solid #FFFFFF;
+        box-shadow: 0 7px 0 rgba(15, 23, 42, 0.22);
+        border-radius: 24px;
         padding: 8px 10px;
         display: flex; align-items: center; justify-content: center;
         gap: 8px; flex-wrap: wrap;
@@ -164,16 +175,17 @@ export default class WatchMakerGame {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         width: 92px; min-height: 80px;
         padding: 5px 5px 4px;
-        background: #F8FAFC;
+        background: #FFFFFF;
         border: 3px solid #CBD5E1;
         border-bottom: 5px solid #94A3B8;
-        border-radius: 15px;
+        border-radius: 16px;
         cursor: grab;
         transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
         touch-action: none;
       }
       .wm-part-card:active { cursor: grabbing; transform: scale(0.95); }
       .wm-part-card.is-next {
+        background: #FFFBEB;
         border-color: #F59E0B;
         border-bottom-color: #B45309;
         box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.45);
@@ -198,8 +210,8 @@ export default class WatchMakerGame {
       }
       .wm-replay-btn {
         background: #F59E0B; color: #FFFFFF;
-        border: none; border-bottom: 5px solid #B45309;
-        border-radius: 15px; padding: 9px 18px;
+        border: 3px solid #FFFFFF; border-bottom: 6px solid #B45309;
+        border-radius: 18px; padding: 9px 20px;
         font-family: var(--font-rounded);
         font-size: 16px; font-weight: 900; cursor: pointer;
       }
@@ -229,7 +241,7 @@ export default class WatchMakerGame {
 
   mount() {
     this.injectStyles();
-    this.app.setGameBackground('#1B2A41');
+    this.app.setGameBackground('#2B4C7E');
     this.container.innerHTML = '';
 
     const root = document.createElement('div');
@@ -238,7 +250,7 @@ export default class WatchMakerGame {
       <div class="wm-topbar">
         <div class="pm-mode-tabs" id="wm-tabs">
           ${LEVELS.map((lv, idx) => `
-            <button class="pm-tab-btn ${idx === this.levelIndex ? 'is-active' : ''}" data-lv="${idx}" type="button">${lv.label}</button>
+            <button class="pm-tab-btn ${idx === this.levelIndex ? 'is-active' : ''}" data-lv="${idx}" type="button">${FLAT_ICONS.stars(lv.stars, 14)}<span>${lv.label}</span></button>
           `).join('')}
         </div>
         <div class="wm-top-right">

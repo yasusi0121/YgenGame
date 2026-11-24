@@ -50,14 +50,14 @@ export default class PitchQuizGame {
     this.container.innerHTML = `
       <div class="pq-root" id="pq-root">
         <div class="lb-title-area" style="margin-top:2px;">
-          <h2 class="lb-circuit-name"><ruby>PITCH QUIZ<rt>ぜったい おんかん</rt></ruby></h2>
+          <h2 class="lb-circuit-name">おとあて</h2>
         </div>
 
         <div class="pm-status-row">
           <div class="pm-mode-tabs" id="pq-levels">
-            <button class="pm-tab-btn is-active" type="button" data-lv="easy">かんたん</button>
-            <button class="pm-tab-btn" type="button" data-lv="normal">ふつう</button>
-            <button class="pm-tab-btn" type="button" data-lv="hard">むずかしい</button>
+            <button class="pm-tab-btn is-active" type="button" data-lv="easy">${FLAT_ICONS.stars(1)}<span>かんたん</span></button>
+            <button class="pm-tab-btn" type="button" data-lv="normal">${FLAT_ICONS.stars(2)}<span>ふつう</span></button>
+            <button class="pm-tab-btn" type="button" data-lv="hard">${FLAT_ICONS.stars(3)}<span>むずかしい</span></button>
           </div>
           <span class="pm-pill" id="pq-score">${FLAT_ICONS.star(22)}<span>0</span></span>
         </div>
