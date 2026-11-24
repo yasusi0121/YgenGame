@@ -83,6 +83,7 @@ export class SoundEngine {
 
   unlock() {
     if (this.muted) return;
+    this.unlockSpeech();
     const ctx = this.ensureContext();
     if (!ctx || this.unlocked) return;
     if (ctx.state === 'suspended') {
@@ -96,6 +97,36 @@ export class SoundEngine {
     try {
       src.start(0);
       this.unlocked = true;
+    } catch (_) {}
+  }
+
+  /** Unlock iOS Safari / iPadOS Web Speech API within a synchronous user gesture */
+  unlockSpeech() {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
+    try {
+      const synth = window.speechSynthesis;
+      const pickJa = () => {
+        const list = synth.getVoices ? synth.getVoices() : [];
+        if (list && list.length > 0) {
+          this.jaVoice =
+            list.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja') && /kyoko|o-ren|hattori|otoya|haruka|nanami|google/i.test(v.name || '')) ||
+            list.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja')) ||
+            null;
+        }
+      };
+      pickJa();
+      if (!this.voicesBound && synth.addEventListener) {
+        this.voicesBound = true;
+        synth.addEventListener('voiceschanged', pickJa);
+      }
+      if (!this.speechUnlocked) {
+        this.speechUnlocked = true;
+        const silent = new SpeechSynthesisUtterance(' ');
+        silent.lang = 'ja-JP';
+        silent.volume = 0;
+        silent.rate = 1.5;
+        synth.speak(silent);
+      }
     } catch (_) {}
   }
 
@@ -998,6 +1029,14 @@ export class SoundEngine {
 
   /** Stop any ongoing Japanese speech synthesis */
   stopSpeech() {
+    if (this.speechTimer) {
+      clearTimeout(this.speechTimer);
+      this.speechTimer = null;
+    }
+    if (this.speechWatchdog) {
+      clearTimeout(this.speechWatchdog);
+      this.speechWatchdog = null;
+    }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       try { window.speechSynthesis.cancel(); } catch (_) {}
     }
@@ -1005,29 +1044,75 @@ export class SoundEngine {
 
   /**
    * Speak Japanese clearly with character voice (Web Speech API ja-JP)
-   * and automatic Web Audio formant-speech fallback if TTS is unavailable.
+   * hardened for iOS Safari / iPadOS PWA, with automatic formant fallback.
    */
   speakJapanese(text, { pitch = 1.25, rate = 1.02, fallbackPitch = 380 } = {}) {
     if (this.muted || !text) return;
+    if (this.speechTimer) { clearTimeout(this.speechTimer); this.speechTimer = null; }
+    if (this.speechWatchdog) { clearTimeout(this.speechWatchdog); this.speechWatchdog = null; }
+
     if (typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
       try {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'ja-JP';
-        utter.pitch = Math.max(0.5, Math.min(2.0, pitch));
-        utter.rate = Math.max(0.6, Math.min(1.5, rate));
-        utter.volume = 1.0;
+        const synth = window.speechSynthesis;
+        const doSpeak = () => {
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.lang = 'ja-JP';
+          utter.pitch = Math.max(0.5, Math.min(2.0, pitch));
+          utter.rate = Math.max(0.6, Math.min(1.5, rate));
+          utter.volume = 1.0;
 
-        const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
-        const jaVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja'));
-        if (jaVoice) utter.voice = jaVoice;
+          if (!this.jaVoice && synth.getVoices) {
+            const list = synth.getVoices();
+            this.jaVoice =
+              list.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja') && /kyoko|o-ren|hattori|otoya|haruka|nanami|google/i.test(v.name || '')) ||
+              list.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja')) ||
+              null;
+          }
+          if (this.jaVoice) utter.voice = this.jaVoice;
 
-        let started = false;
-        utter.onstart = () => { started = true; };
-        utter.onerror = () => {
-          if (!started) this.playJapaneseFormantSpeech(text, fallbackPitch);
+          // Keep strong reference so Safari/Chrome never GC the utterance mid-speech
+          this.lastUtterance = utter;
+
+          let started = false;
+          utter.onstart = () => {
+            started = true;
+            if (this.speechWatchdog) {
+              clearTimeout(this.speechWatchdog);
+              this.speechWatchdog = null;
+            }
+          };
+          utter.onerror = () => {
+            if (!started) {
+              started = true;
+              if (this.speechWatchdog) {
+                clearTimeout(this.speechWatchdog);
+                this.speechWatchdog = null;
+              }
+              this.playJapaneseFormantSpeech(text, fallbackPitch);
+            }
+          };
+
+          if (synth.paused) {
+            try { synth.resume(); } catch (_) {}
+          }
+          synth.speak(utter);
+
+          // Watchdog: if iOS silently drops speechSynthesis without firing onerror, play formant speech
+          this.speechWatchdog = setTimeout(() => {
+            this.speechWatchdog = null;
+            if (!started && !synth.speaking) {
+              this.playJapaneseFormantSpeech(text, fallbackPitch);
+            }
+          }, 700);
         };
-        window.speechSynthesis.speak(utter);
+
+        // Avoid iOS Safari bug where cancel() + immediate speak() drops the new utterance
+        if (synth.speaking || synth.pending) {
+          synth.cancel();
+          this.speechTimer = setTimeout(doSpeak, 70);
+        } else {
+          doSpeak();
+        }
         return;
       } catch (_) {
         // Fall through to formant synth

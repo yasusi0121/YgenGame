@@ -739,12 +739,16 @@ export default class AnimalPhoneGame {
     this.rootEl.querySelectorAll('[data-act]').forEach((btn) => {
       btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
+        this.sound.unlock();
         const act = btn.dataset.act;
         const info = animal.actions[act];
         if (!info) return;
 
         const bubble = this.rootEl.querySelector('#ap-speech-bubble');
-        if (bubble) bubble.textContent = `「${info.text}」`;
+        if (bubble) {
+          bubble.textContent = `「${info.text}」`;
+          bubble.dataset.speech = info.speech;
+        }
 
         if (act === 'snack') {
           this.sound.playCountPip(6);
@@ -753,11 +757,11 @@ export default class AnimalPhoneGame {
         } else if (act === 'music') {
           this.sound.playSuccessFanfare();
           this.triggerAvatarAnim('is-dance');
-          this.addTimer(() => this.sound.speakJapanese(info.speech, animal.voice), 350);
+          this.sound.speakJapanese(info.speech, animal.voice);
         } else if (act === 'tickle') {
           this.sound.playAnimalCry(animal.id);
           this.triggerAvatarAnim('is-wiggle');
-          this.addTimer(() => this.sound.speakJapanese(info.speech, animal.voice), 260);
+          this.sound.speakJapanese(info.speech, animal.voice);
         } else if (act === 'bye') {
           this.sound.speakJapanese(info.speech, animal.voice);
           this.triggerAvatarAnim('is-wiggle');
@@ -766,7 +770,7 @@ export default class AnimalPhoneGame {
             if (isMissionClear) {
               this.showMissionCelebration(animal);
             }
-          }, 950);
+          }, 1250);
         }
       });
     });
@@ -799,6 +803,7 @@ export default class AnimalPhoneGame {
 
   showCallOverlay({ bg, tag, avatarHtml, avatarClass = '', speech, controlsHtml, isIncoming = false }) {
     this.closeCallOverlay();
+    const rawSpeech = speech.replace(/^「|」$/g, '');
     const overlay = document.createElement('div');
     overlay.className = 'ap-call-overlay';
     overlay.id = 'ap-call-overlay';
@@ -807,13 +812,24 @@ export default class AnimalPhoneGame {
         <div class="ap-call-stage" style="background:${bg};">
           <div class="ap-call-tag">${tag}</div>
           <div class="ap-call-avatar ${avatarClass}" id="ap-call-avatar">${avatarHtml}</div>
-          <div class="ap-speech-bubble" id="ap-speech-bubble">${speech}</div>
+          <button class="ap-speech-bubble" id="ap-speech-bubble" type="button" data-speech="${rawSpeech}" style="cursor:pointer;">${speech}</button>
         </div>
         <div class="ap-call-controls ${isIncoming ? 'is-incoming' : ''}">
           ${controlsHtml}
         </div>
       </div>
     `;
+    const bubbleBtn = overlay.querySelector('#ap-speech-bubble');
+    if (bubbleBtn) {
+      bubbleBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.sound.unlock();
+        const text = bubbleBtn.dataset.speech || rawSpeech;
+        const voice = (this.callState && this.callState.animal) ? this.callState.animal.voice : { pitch: 1.32, rate: 1.04 };
+        this.triggerAvatarAnim('is-bounce');
+        this.sound.speakJapanese(text, voice);
+      });
+    }
     this.rootEl.appendChild(overlay);
   }
 
