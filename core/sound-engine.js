@@ -100,17 +100,18 @@ export class SoundEngine {
     } catch (_) {}
   }
 
-  /** Unlock iOS Safari / iPadOS Web Speech API within a synchronous user gesture */
+  /** Preload local Japanese voices without queuing a silent utterance (which can freeze iOS Safari) */
   unlockSpeech() {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     try {
       const synth = window.speechSynthesis;
       const pickJa = () => {
         const list = synth.getVoices ? synth.getVoices() : [];
         if (list && list.length > 0) {
+          const jaLocal = list.filter((v) => v.lang && v.lang.toLowerCase().startsWith('ja') && v.localService !== false);
           this.jaVoice =
-            list.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja') && /kyoko|o-ren|hattori|otoya|haruka|nanami|google/i.test(v.name || '')) ||
-            list.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja')) ||
+            jaLocal.find((v) => /kyoko|o-ren|hattori|otoya/i.test(v.name || '')) ||
+            jaLocal[0] ||
             null;
         }
       };
@@ -118,14 +119,6 @@ export class SoundEngine {
       if (!this.voicesBound && synth.addEventListener) {
         this.voicesBound = true;
         synth.addEventListener('voiceschanged', pickJa);
-      }
-      if (!this.speechUnlocked) {
-        this.speechUnlocked = true;
-        const silent = new SpeechSynthesisUtterance(' ');
-        silent.lang = 'ja-JP';
-        silent.volume = 0;
-        silent.rate = 1.5;
-        synth.speak(silent);
       }
     } catch (_) {}
   }
@@ -986,44 +979,48 @@ export class SoundEngine {
     const ctx = this.ensureContext();
     if (!ctx || this.muted) return;
     const formants = {
-      a: [800, 1200], i: [320, 2300], u: [360, 1100], e: [520, 1900], o: [500, 900]
+      a: [780, 1220], i: [310, 2320], u: [350, 1120], e: [510, 1920], o: [490, 920]
     };
     const vowelOf = (ch) => {
-      if ('あかがさざただなはばぱまやらわぁゃ'.includes(ch)) return 'a';
-      if ('いきぎしじちぢにひびぴみりぃ'.includes(ch)) return 'i';
-      if ('うくぐすずつづぬふぶぷむゆるぅゅん'.includes(ch)) return 'u';
-      if ('えけげせぜてでねへべぺめれぇ'.includes(ch)) return 'e';
-      if ('おこごそぞとどのほぼぽもよろをぉょ'.includes(ch)) return 'o';
+      if ('あかがさざただなはばぱまやらわぁゃアカガサザタダナハバパマヤラワァャ'.includes(ch)) return 'a';
+      if ('いきぎしじちぢにひびぴみりぃイキギシジチヂニヒビピミリィ'.includes(ch)) return 'i';
+      if ('うくぐすずつづぬふぶぷむゆるぅゅんウクグスズツヅヌフブプムユルゥュン'.includes(ch)) return 'u';
+      if ('えけげせぜてでねへべぺめれぇエケゲセゼテデネヘベペメレェ'.includes(ch)) return 'e';
+      if ('おこごそぞとどのほぼぽもよろをぉょオコゴソゾトドノホボポモヨロヲォョ'.includes(ch)) return 'o';
       return null;
     };
 
-    const chars = Array.from(text).filter((c) => vowelOf(c)).slice(0, 14);
+    const chars = Array.from(text).filter((c) => vowelOf(c)).slice(0, 18);
     const now = ctx.currentTime;
     chars.forEach((ch, idx) => {
       const v = vowelOf(ch);
       const [f1, f2] = formants[v];
-      const t = now + idx * 0.095;
-      const pitchMod = basePitch * (0.94 + ((idx * 17) % 13) * 0.014);
+      const t = now + idx * 0.105;
+      // Natural Japanese-like rising/falling phrase intonation
+      const phrasePos = idx / Math.max(1, chars.length - 1);
+      const contour = phrasePos < 0.2 ? 1.06 : (phrasePos > 0.85 ? 1.14 : 0.96 + ((idx * 13) % 7) * 0.02);
+      const pitchMod = basePitch * contour;
 
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(pitchMod, t);
-      osc.frequency.linearRampToValueAtTime(pitchMod * (idx === chars.length - 1 ? 1.12 : 0.98), t + 0.08);
+      osc.frequency.linearRampToValueAtTime(pitchMod * 0.96, t + 0.088);
 
       const bp1 = ctx.createBiquadFilter();
-      bp1.type = 'bandpass'; bp1.frequency.setValueAtTime(f1, t); bp1.Q.value = 4.5;
+      bp1.type = 'bandpass'; bp1.frequency.setValueAtTime(f1, t); bp1.Q.value = 3.2;
       const bp2 = ctx.createBiquadFilter();
-      bp2.type = 'bandpass'; bp2.frequency.setValueAtTime(f2, t); bp2.Q.value = 5.5;
+      bp2.type = 'bandpass'; bp2.frequency.setValueAtTime(f2, t); bp2.Q.value = 4.0;
 
       const g = ctx.createGain();
       g.gain.setValueAtTime(0.001, t);
-      g.gain.linearRampToValueAtTime(0.18, t + 0.015);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.085);
+      g.gain.linearRampToValueAtTime(0.55, t + 0.014);
+      g.gain.setValueAtTime(0.48, t + 0.065);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.095);
 
       osc.connect(bp1); osc.connect(bp2);
       bp1.connect(g); bp2.connect(g);
       g.connect(this.dryBus); g.connect(this.wetBus);
-      osc.start(t); osc.stop(t + 0.09);
+      osc.start(t); osc.stop(t + 0.1);
     });
   }
 
@@ -1063,17 +1060,26 @@ export class SoundEngine {
 
           if (!this.jaVoice && synth.getVoices) {
             const list = synth.getVoices();
+            const jaLocal = list.filter((v) => v.lang && v.lang.toLowerCase().startsWith('ja') && v.localService !== false);
             this.jaVoice =
-              list.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja') && /kyoko|o-ren|hattori|otoya|haruka|nanami|google/i.test(v.name || '')) ||
-              list.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja')) ||
+              jaLocal.find((v) => /kyoko|o-ren|hattori|otoya/i.test(v.name || '')) ||
+              jaLocal[0] ||
               null;
           }
           if (this.jaVoice) utter.voice = this.jaVoice;
 
-          // Keep strong reference so Safari/Chrome never GC the utterance mid-speech
           this.lastUtterance = utter;
 
           let started = false;
+          let fellBack = false;
+          const triggerFallback = () => {
+            if (started || fellBack) return;
+            fellBack = true;
+            if (this.speechWatchdog) { clearTimeout(this.speechWatchdog); this.speechWatchdog = null; }
+            try { synth.cancel(); } catch (_) {}
+            this.playJapaneseFormantSpeech(text, fallbackPitch);
+          };
+
           utter.onstart = () => {
             started = true;
             if (this.speechWatchdog) {
@@ -1081,35 +1087,23 @@ export class SoundEngine {
               this.speechWatchdog = null;
             }
           };
-          utter.onerror = () => {
-            if (!started) {
-              started = true;
-              if (this.speechWatchdog) {
-                clearTimeout(this.speechWatchdog);
-                this.speechWatchdog = null;
-              }
-              this.playJapaneseFormantSpeech(text, fallbackPitch);
-            }
-          };
+          utter.onerror = triggerFallback;
 
           if (synth.paused) {
             try { synth.resume(); } catch (_) {}
           }
           synth.speak(utter);
 
-          // Watchdog: if iOS silently drops speechSynthesis without firing onerror, play formant speech
+          // Strict 450ms watchdog: if iOS PWA stalls or blocks TTS silently, fall back immediately
           this.speechWatchdog = setTimeout(() => {
             this.speechWatchdog = null;
-            if (!started && !synth.speaking) {
-              this.playJapaneseFormantSpeech(text, fallbackPitch);
-            }
-          }, 700);
+            if (!started) triggerFallback();
+          }, 450);
         };
 
-        // Avoid iOS Safari bug where cancel() + immediate speak() drops the new utterance
         if (synth.speaking || synth.pending) {
           synth.cancel();
-          this.speechTimer = setTimeout(doSpeak, 70);
+          this.speechTimer = setTimeout(doSpeak, 60);
         } else {
           doSpeak();
         }

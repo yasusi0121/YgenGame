@@ -480,9 +480,7 @@ export default class AnimalPhoneGame {
         if (!a) return;
         this.sound.playAnimalCry(a.id);
         const num = this.getNumberFor(a);
-        this.addTimer(() => {
-          this.sound.speakJapanese(`${a.name}だよ！ばんごうは ${num.split('').join('、')} だよ！`, a.voice);
-        }, 260);
+        this.sound.speakJapanese(`${a.name}だよ！ばんごうは ${num.split('').join('、')} だよ！`, a.voice);
       });
     });
   }
@@ -558,7 +556,7 @@ export default class AnimalPhoneGame {
       } else {
         this.connectSurpriseCall();
       }
-    }, 1050);
+    }, 700);
   }
 
   connectAnimalCall(animal) {
@@ -581,9 +579,7 @@ export default class AnimalPhoneGame {
     });
 
     this.sound.playAnimalCry(animal.id);
-    this.addTimer(() => {
-      this.sound.speakJapanese(sit.speech, animal.voice);
-    }, 360);
+    this.sound.speakJapanese(sit.speech, animal.voice);
 
     this.bindCallActions(animal, isMissionClear);
   }
@@ -604,9 +600,7 @@ export default class AnimalPhoneGame {
     });
 
     this.sound.playSuccessFanfare();
-    this.addTimer(() => {
-      this.sound.speakJapanese(speech, { pitch: 1.38, rate: 1.06, fallbackPitch: 440 });
-    }, 450);
+    this.sound.speakJapanese(speech, { pitch: 1.38, rate: 1.06, fallbackPitch: 440 });
 
     const cheerBtn = this.rootEl.querySelector('#ap-party-cheer');
     if (cheerBtn) {
@@ -622,7 +616,7 @@ export default class AnimalPhoneGame {
       byeBtn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         this.sound.speakJapanese('また あそぼうね！バイバーイ！', { pitch: 1.38, rate: 1.06 });
-        this.addTimer(() => this.endCall(), 900);
+        this.addTimer(() => this.endCall(), 1100);
       });
     }
   }
@@ -644,9 +638,7 @@ export default class AnimalPhoneGame {
         `
       });
       this.sound.playAnimalCry('alien');
-      this.addTimer(() => {
-        this.sound.speakJapanese(speech, { pitch: 1.85, rate: 1.2, fallbackPitch: 640 });
-      }, 380);
+      this.sound.speakJapanese(speech, { pitch: 1.85, rate: 1.2, fallbackPitch: 640 });
       const talkBtn = this.rootEl.querySelector('#ap-alien-talk');
       if (talkBtn) {
         talkBtn.addEventListener('pointerdown', (e) => {
