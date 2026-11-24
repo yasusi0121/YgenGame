@@ -256,6 +256,36 @@ export const GAME_REGISTRY = [
     load: () => import('./watch-maker.js').then((m) => m.default)
   },
   {
+    id: 'animal-phone',
+    title: 'もしもし でんわ',
+    sub: 'ANIMAL PHONE',
+    desc: 'ばんごうを おして どうぶつと おはなし！',
+    badge: '',
+    cta: 'あそぶ',
+    bg: '#0EA5E9',
+    shadow: '#0369A1',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Chunky kids smartphone -->
+        <rect x="22" y="10" width="52" height="76" rx="14" fill="#1E293B" stroke="#FFFFFF" stroke-width="3.5"/>
+        <rect x="28" y="18" width="40" height="44" rx="8" fill="#FFF3E0"/>
+        <!-- Cute fox face on screen -->
+        <path d="M34 36 L33 22 L45 29 Z" fill="#F97316"/>
+        <path d="M62 36 L63 22 L51 29 Z" fill="#F97316"/>
+        <ellipse cx="48" cy="40" rx="15" ry="13" fill="#F97316"/>
+        <path d="M33 41 C35 50 41 53 48 53 C55 53 61 50 63 41 C57 45 52 44 48 45 C44 44 39 45 33 41 Z" fill="#FFEDD5"/>
+        <circle cx="42" cy="39" r="2.6" fill="#292524"/>
+        <circle cx="54" cy="39" r="2.6" fill="#292524"/>
+        <circle cx="48" cy="44" r="2.2" fill="#292524"/>
+        <!-- Big green call button -->
+        <circle cx="48" cy="74" r="8" fill="#22C55E" stroke="#FFFFFF" stroke-width="2"/>
+        <path d="M44.5 72.5 C46.5 75.5 49.5 76.5 51.5 75.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    `,
+    load: () => import('./animal-phone.js').then((m) => m.default)
+  },
+  {
     id: 'coming-next',
     title: 'つぎの あそび',
     sub: 'COMING SOON',

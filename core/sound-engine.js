@@ -779,4 +779,260 @@ export class SoundEngine {
       osc.stop(now + n.start + n.dur + 0.02);
     }
   }
+
+  /** Authentic ITU-T DTMF dual-tone telephone keypad sound */
+  playDtmf(digit) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const map = {
+      '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+      '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+      '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+      '*': [941, 1209], '0': [941, 1336], '#': [941, 1477]
+    };
+    const freqs = map[String(digit)] || [697, 1209];
+    const now = ctx.currentTime;
+    freqs.forEach((f) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, now);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, now);
+      g.gain.linearRampToValueAtTime(0.14, now + 0.008);
+      g.gain.setValueAtTime(0.14, now + 0.11);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      osc.connect(g); g.connect(this.dryBus);
+      osc.start(now); osc.stop(now + 0.15);
+    });
+  }
+
+  /** Telephone ringback / incoming bell ("Purururu!") */
+  playPhoneRing() {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+    for (let i = 0; i < 6; i++) {
+      const t = now + i * 0.09;
+      [660, 880].forEach((f) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(f, t);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.linearRampToValueAtTime(0.12, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.075);
+        osc.connect(g); g.connect(this.dryBus); g.connect(this.wetBus);
+        osc.start(t); osc.stop(t + 0.08);
+      });
+    }
+  }
+
+  /** Receiver pickup click ("Gacha!") */
+  playPhonePickup() {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(420, now);
+    osc.frequency.exponentialRampToValueAtTime(760, now + 0.06);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.22, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+    osc.connect(g); g.connect(this.dryBus);
+    osc.start(now); osc.stop(now + 0.08);
+  }
+
+  /** Receiver hangup two-tone goodbye */
+  playPhoneHangup() {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+    [520, 360].forEach((f, i) => {
+      const t = now + i * 0.09;
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, t);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.16, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.085);
+      osc.connect(g); g.connect(this.dryBus);
+      osc.start(t); osc.stop(t + 0.095);
+    });
+  }
+
+  /** Expressive Web Audio animal sound effects */
+  playAnimalCry(animalId) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+
+    if (animalId === 'fox') {
+      // Cute "Kon-kon!"
+      [0, 0.16].forEach((off) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(740, now + off);
+        osc.frequency.exponentialRampToValueAtTime(1080, now + off + 0.05);
+        osc.frequency.exponentialRampToValueAtTime(620, now + off + 0.12);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.2, now + off);
+        g.gain.exponentialRampToValueAtTime(0.001, now + off + 0.13);
+        osc.connect(g); g.connect(this.dryBus); g.connect(this.wetBus);
+        osc.start(now + off); osc.stop(now + off + 0.14);
+      });
+    } else if (animalId === 'pig') {
+      // Playful "Bu-bu!"
+      [0, 0.18].forEach((off) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(210, now + off);
+        osc.frequency.linearRampToValueAtTime(320, now + off + 0.07);
+        osc.frequency.linearRampToValueAtTime(190, now + off + 0.13);
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'bandpass';
+        lp.frequency.setValueAtTime(620, now + off);
+        lp.Q.value = 3.2;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.26, now + off);
+        g.gain.exponentialRampToValueAtTime(0.001, now + off + 0.14);
+        osc.connect(lp); lp.connect(g); g.connect(this.dryBus);
+        osc.start(now + off); osc.stop(now + off + 0.15);
+      });
+    } else if (animalId === 'cow') {
+      // Gentle "Moooo!"
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(145, now);
+      osc.frequency.linearRampToValueAtTime(175, now + 0.18);
+      osc.frequency.linearRampToValueAtTime(132, now + 0.48);
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(480, now);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, now);
+      g.gain.linearRampToValueAtTime(0.24, now + 0.06);
+      g.gain.setValueAtTime(0.22, now + 0.34);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.52);
+      osc.connect(lp); lp.connect(g); g.connect(this.dryBus); g.connect(this.wetBus);
+      osc.start(now); osc.stop(now + 0.54);
+    } else if (animalId === 'dog') {
+      // Cheerful "Wan-wan!"
+      [0, 0.16].forEach((off) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(460, now + off);
+        osc.frequency.exponentialRampToValueAtTime(680, now + off + 0.04);
+        osc.frequency.exponentialRampToValueAtTime(340, now + off + 0.11);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.24, now + off);
+        g.gain.exponentialRampToValueAtTime(0.001, now + off + 0.12);
+        osc.connect(g); g.connect(this.dryBus); g.connect(this.wetBus);
+        osc.start(now + off); osc.stop(now + off + 0.13);
+      });
+    } else if (animalId === 'alien') {
+      // Sci-fi "Pi-po-pa-po!"
+      [980, 1420, 760, 1580, 1120].forEach((f, i) => {
+        const t = now + i * 0.07;
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, t);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.14, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.065);
+        osc.connect(g); g.connect(this.dryBus); g.connect(this.wetBus);
+        osc.start(t); osc.stop(t + 0.07);
+      });
+    }
+  }
+
+  /**
+   * Vowel-formant Japanese-like expressive babble synth (fallback & character flair).
+   * Maps each hiragana syllable to its Japanese vowel formant (A/I/U/E/O) so it sounds
+   * like a cute character speaking Japanese phrases!
+   */
+  playJapaneseFormantSpeech(text, basePitch = 360) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const formants = {
+      a: [800, 1200], i: [320, 2300], u: [360, 1100], e: [520, 1900], o: [500, 900]
+    };
+    const vowelOf = (ch) => {
+      if ('あかがさざただなはばぱまやらわぁゃ'.includes(ch)) return 'a';
+      if ('いきぎしじちぢにひびぴみりぃ'.includes(ch)) return 'i';
+      if ('うくぐすずつづぬふぶぷむゆるぅゅん'.includes(ch)) return 'u';
+      if ('えけげせぜてでねへべぺめれぇ'.includes(ch)) return 'e';
+      if ('おこごそぞとどのほぼぽもよろをぉょ'.includes(ch)) return 'o';
+      return null;
+    };
+
+    const chars = Array.from(text).filter((c) => vowelOf(c)).slice(0, 14);
+    const now = ctx.currentTime;
+    chars.forEach((ch, idx) => {
+      const v = vowelOf(ch);
+      const [f1, f2] = formants[v];
+      const t = now + idx * 0.095;
+      const pitchMod = basePitch * (0.94 + ((idx * 17) % 13) * 0.014);
+
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(pitchMod, t);
+      osc.frequency.linearRampToValueAtTime(pitchMod * (idx === chars.length - 1 ? 1.12 : 0.98), t + 0.08);
+
+      const bp1 = ctx.createBiquadFilter();
+      bp1.type = 'bandpass'; bp1.frequency.setValueAtTime(f1, t); bp1.Q.value = 4.5;
+      const bp2 = ctx.createBiquadFilter();
+      bp2.type = 'bandpass'; bp2.frequency.setValueAtTime(f2, t); bp2.Q.value = 5.5;
+
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.18, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.085);
+
+      osc.connect(bp1); osc.connect(bp2);
+      bp1.connect(g); bp2.connect(g);
+      g.connect(this.dryBus); g.connect(this.wetBus);
+      osc.start(t); osc.stop(t + 0.09);
+    });
+  }
+
+  /** Stop any ongoing Japanese speech synthesis */
+  stopSpeech() {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+  }
+
+  /**
+   * Speak Japanese clearly with character voice (Web Speech API ja-JP)
+   * and automatic Web Audio formant-speech fallback if TTS is unavailable.
+   */
+  speakJapanese(text, { pitch = 1.25, rate = 1.02, fallbackPitch = 380 } = {}) {
+    if (this.muted || !text) return;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'ja-JP';
+        utter.pitch = Math.max(0.5, Math.min(2.0, pitch));
+        utter.rate = Math.max(0.6, Math.min(1.5, rate));
+        utter.volume = 1.0;
+
+        const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+        const jaVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('ja'));
+        if (jaVoice) utter.voice = jaVoice;
+
+        let started = false;
+        utter.onstart = () => { started = true; };
+        utter.onerror = () => {
+          if (!started) this.playJapaneseFormantSpeech(text, fallbackPitch);
+        };
+        window.speechSynthesis.speak(utter);
+        return;
+      } catch (_) {
+        // Fall through to formant synth
+      }
+    }
+    this.playJapaneseFormantSpeech(text, fallbackPitch);
+  }
 }
