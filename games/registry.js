@@ -316,6 +316,35 @@ export const GAME_REGISTRY = [
     load: (v) => loadMod('./alexa-builder.js', v)
   },
   {
+    id: 'wire-craft',
+    title: 'はいせん クラフト',
+    sub: 'WIRE CRAFT',
+    desc: 'きばんに ケーブルを つないで うごかそう！',
+    badge: '',
+    cta: 'あそぶ',
+    bg: '#15803D',
+    shadow: '#14532D',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Green circuit board -->
+        <rect x="10" y="14" width="76" height="68" rx="14" fill="#166534" stroke="#4ADE80" stroke-width="3.5"/>
+        <!-- Colorful curved jumper wires -->
+        <path d="M24 30 C44 30 52 64 72 64" stroke="#FF4757" stroke-width="6" stroke-linecap="round" fill="none"/>
+        <path d="M24 48 C46 48 50 30 72 30" stroke="#FFD12E" stroke-width="6" stroke-linecap="round" fill="none"/>
+        <path d="M24 66 C48 66 52 48 72 48" stroke="#00D2FF" stroke-width="6" stroke-linecap="round" fill="none"/>
+        <!-- Glowing connector ports -->
+        <circle cx="24" cy="30" r="7" fill="#FF4757" stroke="#FFFFFF" stroke-width="2.5"/>
+        <circle cx="72" cy="64" r="7" fill="#FF4757" stroke="#FFFFFF" stroke-width="2.5"/>
+        <circle cx="24" cy="48" r="7" fill="#FFD12E" stroke="#FFFFFF" stroke-width="2.5"/>
+        <circle cx="72" cy="30" r="7" fill="#FFD12E" stroke="#FFFFFF" stroke-width="2.5"/>
+        <circle cx="24" cy="66" r="7" fill="#00D2FF" stroke="#FFFFFF" stroke-width="2.5"/>
+        <circle cx="72" cy="48" r="7" fill="#00D2FF" stroke="#FFFFFF" stroke-width="2.5"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./wire-craft.js', v)
+  },
+  {
     id: 'coming-next',
     title: 'つぎの あそび',
     sub: 'COMING SOON',
