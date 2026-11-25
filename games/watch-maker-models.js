@@ -736,29 +736,104 @@ export const CLOCK_MODELS = [
 
 /** Build the ordered part list for any (clock, level) combination */
 export function getClockStageParts(clock, levelId) {
+  const dc = clock.dialCenter;
+
+  const buildExtendedFace = (prevReq) => {
+    const face = clock.getFaceParts(prevReq);
+    // Insert waterproof O-ring gasket right before the glass (or at end if no glass)
+    const glassIdx = face.findIndex((p) => p.kind === 'custom-glass');
+    if (glassIdx > 0) {
+      const prevId = face[glassIdx - 1].id;
+      const gasket = {
+        id: 'gasket',
+        label: 'ぼうすいパッキン',
+        ruby: 'ゴム輪',
+        kind: 'gasket',
+        x: dc.x,
+        y: dc.y,
+        r: Math.min(dc.r - 2, 130),
+        thumbBox: `${-(dc.r + 6)} ${-(dc.r + 6)} ${(dc.r + 6) * 2} ${(dc.r + 6) * 2}`,
+        req: prevId,
+        phase: 'face'
+      };
+      const glassPatched = { ...face[glassIdx], req: 'gasket' };
+      return [...face.slice(0, glassIdx), gasket, glassPatched, ...face.slice(glassIdx + 1)];
+    }
+    return face;
+  };
+
+  const buildExtendedMech = () => {
+    const base = clock.getMechParts();
+    // Prepend ruby jewel bearing press-fit step at dial center
+    const jewels = {
+      id: 'jewels',
+      label: 'ルビーじくうけ',
+      ruby: '人工ルビー',
+      kind: 'ruby-jewels',
+      x: dc.x,
+      y: dc.y,
+      r: 34,
+      thumbBox: '-42 -32 84 68',
+      req: null,
+      phase: 'mech'
+    };
+    const shifted = base.map((p, idx) => (idx === 0 ? { ...p, req: 'jewels' } : p));
+    const lastId = shifted[shifted.length - 1].id;
+
+    // Append rotor/lubrication + precision blued screws fastening step!
+    const oil = {
+      id: 'oiler',
+      label: 'ちゅうゆ(あぶら)',
+      ruby: 'オイラー',
+      kind: 'oil-drop',
+      x: dc.x,
+      y: dc.y,
+      r: 32,
+      thumbBox: '-34 -34 68 70',
+      req: lastId,
+      phase: 'mech'
+    };
+    const screws = {
+      id: 'screws',
+      label: 'せいみつネジ',
+      ruby: '3ほん 固定',
+      kind: 'screw-set',
+      x: dc.x,
+      y: dc.y,
+      r: 52,
+      thumbBox: '-60 -42 120 96',
+      req: 'oiler',
+      phase: 'mech'
+    };
+    return [jewels, ...shifted, oil, screws];
+  };
+
   if (levelId === 'exterior') {
-    const face = clock.getFaceParts(null);
-    // For steampunk exterior, also include the iconic red valve!
+    const face = buildExtendedFace(null);
     if (clock.id === 'steampunk-pipe') {
       const valve = { id: 'valve', label: 'あかいバルブ', kind: 'valve', x: 242, y: 316, r: 28, thumbBox: '-36 -36 72 72', req: face[face.length - 1].id, phase: 'face' };
       return [...face, valve];
     }
-    // For pendulum exterior, also include the iconic swinging brass pendulum!
     if (clock.id === 'pendulum-clock') {
       const pend = { id: 'pendulum', label: 'ふりこ', kind: 'pendulum', x: 280, y: 226, r: 42, thumbBox: '-42 -6 84 132', req: null, phase: 'face' };
-      const shifted = face.map((p, idx) => idx === 0 ? { ...p, req: 'pendulum' } : p);
+      const shifted = face.map((p, idx) => (idx === 0 ? { ...p, req: 'pendulum' } : p));
       return [pend, ...shifted];
     }
     return face;
   }
 
   if (levelId === 'geartrain') {
+    return buildExtendedMech();
+  }
+
+  if (levelId === 'repair') {
+    // Multi-fault overhaul mode uses the full internal mechanism!
     return clock.getMechParts();
   }
 
-  // 'movement' (3. ほんもの): Full internal mechanism FIRST, then dial, hands, and glass!
-  const mech = clock.getMechParts();
+  // 'movement' (3. ほんもの): Full extended internal mechanism (8-9 parts) + extended dial/hands/gasket/glass (6-8 parts) = 14-17 steps!
+  const mech = buildExtendedMech();
   const lastMechId = mech[mech.length - 1].id;
-  const face = clock.getFaceParts(lastMechId);
+  const face = buildExtendedFace(lastMechId);
   return [...mech, ...face];
 }

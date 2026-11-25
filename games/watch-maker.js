@@ -6,7 +6,8 @@ import { renderMechPartSvg, renderClockHandSvg } from './watch-maker-parts.js';
 const LEVELS = [
   { id: 'exterior',  label: 'がいけん', stars: 1 },
   { id: 'geartrain', label: 'はぐるま', stars: 2 },
-  { id: 'movement',  label: 'ほんもの', stars: 3 }
+  { id: 'movement',  label: 'ほんもの', stars: 3 },
+  { id: 'repair',    label: 'しゅうり', stars: 4 }
 ];
 
 export default class WatchMakerGame {
@@ -19,6 +20,8 @@ export default class WatchMakerGame {
     this.levelIndex = 0;
     this.stageParts = [];
     this.installed = new Set();
+    this.brokenIds = new Set();
+    this.hintOn = true;
     this.completed = false;
     this.skeletonMode = false;
     this.phaseNotified = false;
@@ -254,6 +257,7 @@ export default class WatchMakerGame {
           `).join('')}
         </div>
         <div class="wm-top-right">
+          <button class="wm-skeleton-btn is-on" id="wm-hint-btn" type="button">ひんと：ON</button>
           <button class="wm-skeleton-btn" id="wm-skeleton-btn" type="button" style="display:none;">なかを みる</button>
           <div class="wm-progress-pill" id="wm-progress">0 / 5</div>
         </div>
@@ -282,6 +286,16 @@ export default class WatchMakerGame {
     this.bannerEl = root.querySelector('#wm-banner');
     this.progressEl = root.querySelector('#wm-progress');
     this.skeletonBtn = root.querySelector('#wm-skeleton-btn');
+    this.hintBtn = root.querySelector('#wm-hint-btn');
+
+    this.hintBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      this.hintOn = !this.hintOn;
+      this.hintBtn.classList.toggle('is-on', this.hintOn);
+      this.hintBtn.textContent = `ひんと：${this.hintOn ? 'ON' : 'OFF'}`;
+      this.sound.playButtonDown('yellow');
+      this.renderAll();
+    });
 
     root.querySelectorAll('#wm-tabs .pm-tab-btn').forEach((btn) => {
       btn.addEventListener('pointerdown', (e) => {
@@ -364,6 +378,7 @@ export default class WatchMakerGame {
     this.levelIndex = levelIdx;
     this.stageParts = getClockStageParts(this.getClock(), this.getLevel().id);
     this.installed.clear();
+    this.brokenIds.clear();
     this.completed = false;
     this.skeletonMode = false;
     this.phaseNotified = false;
@@ -372,6 +387,17 @@ export default class WatchMakerGame {
     this.escapeStepAngle = 0;
     this.gearAngles = {};
     this.cuckooPlayed = false;
+
+    // In Repair/Overhaul mode: pre-install all parts, then randomly break 2-3 parts!
+    if (this.getLevel().id === 'repair') {
+      const candidates = this.stageParts.filter((p) => p.kind !== 'bridge' && p.kind !== 'bridge-gold');
+      const shuffled = candidates.slice().sort(() => Math.random() - 0.5);
+      const breakCount = Math.min(3, Math.max(2, Math.floor(candidates.length / 2)));
+      shuffled.slice(0, breakCount).forEach((p) => this.brokenIds.add(p.id));
+      this.stageParts.forEach((p) => {
+        if (!this.brokenIds.has(p.id)) this.installed.add(p.id);
+      });
+    }
 
     this.rootEl.querySelectorAll('#wm-tabs .pm-tab-btn').forEach((btn) => {
       btn.classList.toggle('is-active', Number(btn.dataset.lv) === levelIdx);
@@ -404,19 +430,30 @@ export default class WatchMakerGame {
     const level = this.getLevel();
     const next = this.getNextPart();
 
-    // Show "skeleton peek" button whenever movement level has dial installed
     const canSkeleton = level.id === 'movement' && this.installed.has('dial');
     this.skeletonBtn.style.display = canSkeleton ? 'inline-block' : 'none';
 
-    this.progressEl.textContent = `${this.installed.size} / ${this.stageParts.length}`;
-
-    if (this.completed) {
-      this.bannerEl.innerHTML = `<span>${clock.name} かんせい！</span><span class="wm-mech-chip">${clock.mechLabel}</span>`;
-    } else if (next) {
-      const phaseTag = level.id === 'movement'
-        ? (next.phase === 'mech' ? 'ステップ1：なかみ' : 'ステップ2：もじばん・はり')
-        : clock.mechLabel;
-      this.bannerEl.innerHTML = `<span>「${next.label}」を ドラッグ して はめよう！</span><span class="wm-mech-chip">${phaseTag}</span>`;
+    if (level.id === 'repair') {
+      const totalBroken = this.brokenIds.size + (this.stageParts.length - this.installed.size - this.brokenIds.size);
+      const fixed = this.stageParts.length - this.brokenIds.size;
+      this.progressEl.textContent = this.completed ? 'しゅうり OK' : `あと ${this.brokenIds.size} こ`;
+      this.bannerEl.innerHTML = this.completed
+        ? `<span>${clock.name} しゅうり かんりょう！</span><span class="wm-mech-chip">${clock.mechLabel}</span>`
+        : `<span>あかく こわれた ぶひん（あと${this.brokenIds.size}こ）を あたらしい ぶひんに かえよう！</span><span class="wm-mech-chip">オーバーホール</span>`;
+      void totalBroken; void fixed;
+    } else {
+      this.progressEl.textContent = `${this.installed.size} / ${this.stageParts.length}`;
+      if (this.completed) {
+        this.bannerEl.innerHTML = `<span>${clock.name} かんせい！</span><span class="wm-mech-chip">${clock.mechLabel}</span>`;
+      } else if (next) {
+        const phaseTag = level.id === 'movement'
+          ? (next.phase === 'mech' ? 'ステップ1：なかみ・ネジ' : 'ステップ2：もじばん・パッキン')
+          : clock.mechLabel;
+        const msg = this.hintOn
+          ? `「${next.label}」を ドラッグ して はめよう！`
+          : `つぎの ぶひんを じぶんで みつけて はめよう！`;
+        this.bannerEl.innerHTML = `<span>${msg}</span><span class="wm-mech-chip">${phaseTag}</span>`;
+      }
     }
 
     this.renderWatchSvg();
@@ -427,7 +464,7 @@ export default class WatchMakerGame {
     const clock = this.getClock();
     const level = this.getLevel();
     const nextPart = this.getNextPart();
-    const showPlate = level.id === 'geartrain' || level.id === 'movement';
+    const showPlate = level.id === 'geartrain' || level.id === 'movement' || level.id === 'repair';
 
     let plateSvg = '';
     if (showPlate) {
@@ -435,7 +472,7 @@ export default class WatchMakerGame {
       const seenPos = new Set();
       for (const p of this.stageParts) {
         if (p.phase !== 'mech') continue;
-        if (p.kind === 'bridge' || p.kind === 'bridge-gold' || p.kind === 'pendulum') continue;
+        if (p.kind === 'bridge' || p.kind === 'bridge-gold' || p.kind === 'pendulum' || p.kind === 'ruby-jewels' || p.kind === 'oil-drop' || p.kind === 'screw-set') continue;
         const key = `${p.x},${p.y}`;
         if (seenPos.has(key)) continue;
         seenPos.add(key);
@@ -447,14 +484,15 @@ export default class WatchMakerGame {
       }
     }
 
-    // Installed parts in layer order (mech parts first, then face parts)
+    // Installed parts in layer order (plus broken parts in repair mode!)
     let installedSvg = '';
     for (const p of this.stageParts) {
-      if (!this.installed.has(p.id)) continue;
+      const isBroken = level.id === 'repair' && this.brokenIds.has(p.id);
+      if (!this.installed.has(p.id) && !isBroken) continue;
       const angle = this.gearAngles[p.id] ?? p.initAngle ?? 0;
       const isFaceOverlay = p.kind === 'custom-dial' || p.kind === 'sub-hygro' || p.kind === 'sub-thermo';
-      const opacityAttr = (this.skeletonMode && isFaceOverlay) ? ' opacity="0.28"' : '';
-      // If cuckoo clock is completed, pop shutters open and show bird!
+      const opacityAttr = (this.skeletonMode && isFaceOverlay) ? ' opacity="0.28"' : (isBroken ? ' opacity="0.52"' : '');
+
       if (clock.id === 'cuckoo-white' && p.id === 'door' && this.completed) {
         installedSvg += `
           <g id="wm-part-door" transform="translate(${p.x} ${p.y})">
@@ -472,9 +510,17 @@ export default class WatchMakerGame {
           ${this.renderPartContent(p)}
         </g>
       `;
+      if (isBroken) {
+        installedSvg += `
+          <g class="wm-target-pulse" pointer-events="none" transform="translate(${p.x} ${p.y})">
+            <circle cx="0" cy="0" r="${Math.min(p.r + 4, 40)}" fill="rgba(239,68,68,0.2)" stroke="#EF4444" stroke-width="4" stroke-dasharray="8 5"/>
+            <line x1="-12" y1="-12" x2="12" y2="12" stroke="#EF4444" stroke-width="5" stroke-linecap="round"/>
+            <line x1="12" y1="-12" x2="-12" y2="12" stroke="#EF4444" stroke-width="5" stroke-linecap="round"/>
+          </g>
+        `;
+      }
     }
 
-    // Pulsing radio waves overlay when radio clock runs!
     let fxSvg = '';
     if (clock.id === 'round-radio' && this.completed) {
       fxSvg = `
@@ -485,21 +531,23 @@ export default class WatchMakerGame {
       `;
     }
 
-    // Target snap guide ring
+    // Target snap guide ring (only shown when Hint is ON and not in repair mode)
     let guideSvg = '';
-    const activeTarget = this.dragState
-      ? this.stageParts.find((p) => p.id === this.dragState.partId)
-      : nextPart;
+    if (this.hintOn && level.id !== 'repair') {
+      const activeTarget = this.dragState
+        ? this.stageParts.find((p) => p.id === this.dragState.partId)
+        : nextPart;
 
-    if (!this.completed && activeTarget) {
-      const ringR = Math.min(Math.max(activeTarget.r, 24), 134);
-      guideSvg = `
-        <g class="wm-target-pulse" pointer-events="none">
-          <circle cx="${activeTarget.x}" cy="${activeTarget.y}" r="${ringR}"
-            fill="rgba(251,191,36,0.12)" stroke="#FBBF24" stroke-width="4" stroke-dasharray="10 7"/>
-          <circle cx="${activeTarget.x}" cy="${activeTarget.y}" r="7" fill="#FBBF24"/>
-        </g>
-      `;
+      if (!this.completed && activeTarget) {
+        const ringR = Math.min(Math.max(activeTarget.r, 24), 134);
+        guideSvg = `
+          <g class="wm-target-pulse" pointer-events="none">
+            <circle cx="${activeTarget.x}" cy="${activeTarget.y}" r="${ringR}"
+              fill="rgba(251,191,36,0.12)" stroke="#FBBF24" stroke-width="4" stroke-dasharray="10 7"/>
+            <circle cx="${activeTarget.x}" cy="${activeTarget.y}" r="7" fill="#FBBF24"/>
+          </g>
+        `;
+      }
     }
 
     this.svgEl.innerHTML = `
@@ -535,6 +583,36 @@ export default class WatchMakerGame {
       return;
     }
 
+    // Repair mode: show all broken replacements + 2 decoy spare parts!
+    if (level.id === 'repair') {
+      const brokenParts = this.stageParts.filter((p) => this.brokenIds.has(p.id));
+      const decoys = this.stageParts.filter((p) => !this.brokenIds.has(p.id)).slice(0, 2);
+      const trayParts = [...brokenParts, ...decoys].sort((a, b) => a.id.localeCompare(b.id));
+
+      this.trayEl.innerHTML = trayParts.map((p) => {
+        const isBroken = this.brokenIds.has(p.id);
+        return `
+          <div class="wm-part-card ${this.hintOn && isBroken ? 'is-next' : ''}"
+            data-part-id="${p.id}" role="button" aria-label="${p.label}">
+            <svg width="48" height="48" viewBox="${p.thumbBox}">
+              ${this.renderPartContent(p)}
+            </svg>
+            <div class="wm-part-label">${p.label}</div>
+            ${p.ruby ? `<div class="wm-part-sub">${p.ruby}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      this.trayEl.querySelectorAll('.wm-part-card').forEach((card) => {
+        card.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          const part = this.stageParts.find((p) => p.id === card.dataset.partId);
+          if (part) this.startDrag(e, part, card);
+        });
+      });
+      return;
+    }
+
     // In 3. ほんもの, show Phase 1 (mech) parts first, then Phase 2 (face) parts cleanly!
     const currentPhase = (level.id === 'movement' && !this.isMechPhaseDone()) ? 'mech' : 'face';
     const remaining = this.stageParts.filter((p) => {
@@ -545,9 +623,9 @@ export default class WatchMakerGame {
 
     this.trayEl.innerHTML = remaining.map((p) => {
       const unlocked = this.isPartUnlocked(p);
-      const isNext = nextPart && nextPart.id === p.id;
+      const isNext = this.hintOn && nextPart && nextPart.id === p.id;
       return `
-        <div class="wm-part-card ${isNext ? 'is-next' : ''} ${unlocked ? '' : 'is-locked'}"
+        <div class="wm-part-card ${isNext ? 'is-next' : ''} ${this.hintOn && !unlocked ? 'is-locked' : ''}"
           data-part-id="${p.id}" role="button" aria-label="${p.label}">
           <svg width="48" height="48" viewBox="${p.thumbBox}">
             ${this.renderPartContent(p)}
@@ -608,6 +686,23 @@ export default class WatchMakerGame {
     const svgPt = this.clientToSvg(e.clientX, e.clientY);
     const dist = Math.hypot(svgPt.x - part.x, svgPt.y - part.y);
     const snapRadius = Math.max(66, Math.min(part.r + 28, 145));
+
+    if (this.getLevel().id === 'repair') {
+      if (this.brokenIds.has(part.id) && dist <= snapRadius) {
+        this.brokenIds.delete(part.id);
+        this.installed.add(part.id);
+        this.sound.playMetalClick();
+        if (this.brokenIds.size === 0) {
+          this.onStageComplete();
+        } else {
+          this.renderAll();
+        }
+      } else {
+        this.sound.playGentleNudge();
+        this.renderWatchSvg();
+      }
+      return;
+    }
 
     if (dist <= snapRadius) {
       this.installed.add(part.id);

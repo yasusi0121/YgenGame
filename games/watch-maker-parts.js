@@ -343,6 +343,50 @@ export function renderMechPartSvg(kind, r = 34) {
         <circle cx="0" cy="0" r="4" fill="#334155"/>
       `;
     }
+    case 'ruby-jewels':
+      return `
+        <circle cx="-24" cy="-12" r="10" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+        <circle cx="-24" cy="-12" r="6" fill="#E11D48" stroke="#9F1239" stroke-width="1.5"/>
+        <circle cx="24" cy="-12" r="10" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+        <circle cx="24" cy="-12" r="6" fill="#E11D48" stroke="#9F1239" stroke-width="1.5"/>
+        <circle cx="0" cy="18" r="11" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
+        <circle cx="0" cy="18" r="6.5" fill="#E11D48" stroke="#9F1239" stroke-width="1.5"/>
+      `;
+    case 'rotor-magnet':
+      return `
+        <circle cx="0" cy="0" r="20" fill="#E2E8F0" stroke="#475569" stroke-width="2.4"/>
+        <path d="M -16 0 A 16 16 0 0 1 16 0 Z" fill="#EF4444"/>
+        <path d="M 16 0 A 16 16 0 0 1 -16 0 Z" fill="#2563EB"/>
+        <circle cx="0" cy="0" r="6" fill="#FFFFFF" stroke="#334155" stroke-width="2"/>
+      `;
+    case 'oil-drop':
+      return `
+        <line x1="-24" y1="-24" x2="6" y2="6" stroke="#94A3B8" stroke-width="5" stroke-linecap="round"/>
+        <line x1="-26" y1="-26" x2="-12" y2="-12" stroke="#1D4ED8" stroke-width="7" stroke-linecap="round"/>
+        <path d="M 12 4 C 12 4 22 15 22 21 C 22 27 17.5 31 12 31 C 6.5 31 2 27 2 21 C 2 15 12 4 12 4 Z"
+          fill="#FBBF24" stroke="#B45309" stroke-width="2.2"/>
+        <circle cx="9" cy="20" r="2.5" fill="#FFFBEB"/>
+      `;
+    case 'gasket':
+      return `
+        <circle cx="0" cy="0" r="${r}" fill="none" stroke="#18181B" stroke-width="7"/>
+        <circle cx="0" cy="0" r="${r}" fill="none" stroke="#52525B" stroke-width="2" stroke-dasharray="10 8"/>
+      `;
+    case 'screw-set':
+      return `
+        <g transform="translate(-44, -22)">
+          <circle cx="0" cy="0" r="9" fill="#1D4ED8" stroke="#0F172A" stroke-width="2"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#DBEAFE" stroke-width="2.4"/>
+        </g>
+        <g transform="translate(44, -22)">
+          <circle cx="0" cy="0" r="9" fill="#1D4ED8" stroke="#0F172A" stroke-width="2"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#DBEAFE" stroke-width="2.4"/>
+        </g>
+        <g transform="translate(0, 38)">
+          <circle cx="0" cy="0" r="9" fill="#1D4ED8" stroke="#0F172A" stroke-width="2"/>
+          <line x1="-6" y1="0" x2="6" y2="0" stroke="#DBEAFE" stroke-width="2.4"/>
+        </g>
+      `;
     default:
       return '';
   }
