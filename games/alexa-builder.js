@@ -1,11 +1,13 @@
 import { FLAT_ICONS } from '../core/flat-icons.js';
-import { showCelebrationOverlay } from '../core/celebration.js';
+import { Pseudo3DController, buildLayeredRigHtml, showSideCelebration } from '../core/pseudo-3d-viewer.js';
 import { ALEXA_DEVICES, DOT_COLORS, buildAlexaPcbPath, renderAlexaPartSvg } from './alexa-builder-parts.js';
 
 function ensureAlexaStyles() {
-  if (document.getElementById('ab-styles-v2')) return;
+  if (document.getElementById('ab-styles-v3')) return;
+  const old = document.getElementById('ab-styles-v2');
+  if (old) old.remove();
   const style = document.createElement('style');
-  style.id = 'ab-styles-v2';
+  style.id = 'ab-styles-v3';
   style.textContent = `
     .ab-root {
       position: relative;
@@ -82,6 +84,11 @@ function ensureAlexaStyles() {
       display: inline-flex; align-items: center; gap: 10px;
       text-align: center;
     }
+    .ab-banner.is-done {
+      background: linear-gradient(180deg, #FEF08A 0%, #FACC15 100%);
+      color: #422006;
+      box-shadow: 0 5px 0 #CA8A04;
+    }
     .ab-stage-wrap {
       flex: 1 1 auto; min-height: 0;
       width: 100%; max-width: 780px;
@@ -130,8 +137,8 @@ function ensureAlexaStyles() {
     .ab-test-btn {
       display: inline-flex; align-items: center; gap: 6px;
       border: 3px solid #FFFFFF; border-radius: 18px;
-      padding: 9px 16px; cursor: pointer;
-      font-family: var(--font-rounded); font-size: 15px; font-weight: 900;
+      padding: 8px 14px; cursor: pointer;
+      font-family: var(--font-rounded); font-size: 14.5px; font-weight: 900;
       color: #FFFFFF; transition: transform 0.1s ease;
     }
     .ab-test-btn:active { transform: translateY(3px); }
@@ -139,7 +146,11 @@ function ensureAlexaStyles() {
     .ab-t-weather { background: #0EA5E9; box-shadow: 0 5px 0 #0369A1; }
     .ab-t-timer   { background: #F97316; box-shadow: 0 5px 0 #C2410C; }
     .ab-t-xray    { background: #14B8A6; box-shadow: 0 5px 0 #0F766E; }
-    .ab-t-next    { background: #22C55E; box-shadow: 0 5px 0 #15803D; }
+    .ab-t-reset   { background: #64748B; box-shadow: 0 5px 0 #334155; }
+    .ab-t-next    {
+      background: #22C55E; box-shadow: 0 5px 0 #15803D, 0 0 0 3px rgba(34, 197, 94, 0.35);
+      font-size: 17.5px; padding: 10px 24px;
+    }
     .ab-pulse { animation: abPulse 1.15s ease-in-out infinite; }
     @keyframes abPulse {
       0%, 100% { opacity: 0.95; }
@@ -206,7 +217,12 @@ export default class AlexaBuilderGame {
         <div class="ab-banner" id="ab-banner"></div>
 
         <div class="ab-stage-wrap">
-          <svg class="ab-svg" id="ab-svg" viewBox="0 0 560 360" aria-label="アレクサ つくり"></svg>
+          <div class="p3d-scene" id="ab-p3d-scene">
+            <div class="p3d-rig" id="ab-p3d-rig">
+              <svg class="ab-svg" id="ab-svg" viewBox="0 0 560 360" aria-label="アレクサ つくり"></svg>
+            </div>
+            <div class="p3d-hint-chip is-hidden" id="ab-3d-hint">ゆびで くるくる まわして みてみよう！</div>
+          </div>
         </div>
 
         <div class="ab-tray" id="ab-tray"></div>
@@ -215,11 +231,22 @@ export default class AlexaBuilderGame {
 
     this.rootEl = this.container.querySelector('#ab-root');
     this.bannerEl = this.container.querySelector('#ab-banner');
+    this.p3dScene = this.container.querySelector('#ab-p3d-scene');
+    this.p3dRig = this.container.querySelector('#ab-p3d-rig');
+    this.p3dHint = this.container.querySelector('#ab-3d-hint');
     this.svgEl = this.container.querySelector('#ab-svg');
     this.trayEl = this.container.querySelector('#ab-tray');
     this.dotColorsWrap = this.container.querySelector('#ab-dot-colors');
     this.hintBtn = this.container.querySelector('#ab-hint-btn');
     this.progEl = this.container.querySelector('#ab-prog-pill');
+
+    this.p3d = new Pseudo3DController(this.p3dScene, this.p3dRig, {
+      maxYaw: 56,
+      maxPitch: 36,
+      onFirstDrag: () => {
+        if (this.p3dHint) this.p3dHint.classList.add('is-hidden');
+      }
+    });
 
     this.container.querySelectorAll('[data-abmode]').forEach((btn) => {
       btn.addEventListener('pointerdown', (e) => {
@@ -276,6 +303,10 @@ export default class AlexaBuilderGame {
   unmount() {
     this.clearTimers();
     this.clearDrag();
+    if (this.p3d) {
+      this.p3d.destroy();
+      this.p3d = null;
+    }
     window.removeEventListener('pointermove', this.boundMove);
     window.removeEventListener('pointerup', this.boundUp);
     window.removeEventListener('pointercancel', this.boundUp);
@@ -284,6 +315,7 @@ export default class AlexaBuilderGame {
 
   onPause() {
     this.clearTimers();
+    if (this.p3d) this.p3d.stopLoop();
   }
 
   onResume() {}
@@ -311,6 +343,8 @@ export default class AlexaBuilderGame {
   resetStage() {
     this.clearTimers();
     this.clearDrag();
+    if (this.p3d) this.p3d.setEnabled(false);
+    if (this.p3dHint) this.p3dHint.classList.add('is-hidden');
     this.installed.clear();
     this.wired.clear();
     this.brokenIds.clear();
@@ -356,8 +390,9 @@ export default class AlexaBuilderGame {
       this.progEl.textContent = `${fixed} / ${this.totalFaults}`;
     }
 
+    this.bannerEl.classList.toggle('is-done', this.completed);
     if (this.completed) {
-      this.bannerEl.textContent = `${dev.name} きどうしたよ！ボタンで テストしよう！`;
+      this.bannerEl.textContent = `${dev.name} かんせい！ くるくる まわして ボタンで テストしよう！`;
     } else if (this.mode === 'assemble') {
       const next = dev.assembleParts.find((p) => !this.installed.has(p.id));
       const left = dev.assembleParts.length - this.installed.size;
@@ -385,7 +420,48 @@ export default class AlexaBuilderGame {
       timeStr: this.getNowTimeStr()
     };
 
-    let inner = dev.renderChassis();
+    const chassisSvg = dev.renderChassis();
+
+    // Completed mode: render multi-layer pseudo-3D hardware with physical thickness!
+    if (this.completed) {
+      let baseLayer = '';
+      let boardLayer = '';
+      let sensorLayer = '';
+      let frontLayer = '';
+
+      for (const p of dev.assembleParts) {
+        const isCover = p.id === 'screen' || p.id === 'shell';
+        const op = (this.xray && isCover) ? ' opacity="0.22"' : '';
+        const chunk = `<g transform="translate(${p.x} ${p.y})"${op}>${renderAlexaPartSvg(p.kind, renderOpts)}</g>`;
+
+        if (p.id === 'led' || p.id === 'pwrboard' || p.id === 'plug') {
+          baseLayer += chunk;
+        } else if (p.id === 'mic' || p.id === 'camera') {
+          sensorLayer += chunk;
+        } else if (isCover || p.id === 'buttons') {
+          frontLayer += chunk;
+        } else {
+          boardLayer += chunk;
+        }
+      }
+
+      const layers = [
+        { z: -24, html: chassisSvg, cls: 'p3d-slice-deep' },
+        { z: -16, html: chassisSvg, cls: 'p3d-slice' },
+        { z: -8,  html: chassisSvg, cls: 'p3d-slice' },
+        { z: 0,   html: `${chassisSvg}${baseLayer}` }
+      ];
+      if (boardLayer) layers.push({ z: 12, html: boardLayer });
+      if (sensorLayer) layers.push({ z: 22, html: sensorLayer });
+      if (frontLayer) layers.push({ z: 32, html: frontLayer });
+
+      this.p3dRig.innerHTML = buildLayeredRigHtml(layers, '0 0 560 360', 'ab-svg');
+      this.svgEl = this.p3dRig.querySelector('svg');
+      if (this.p3d) this.p3d.applyLayerDepths();
+      return;
+    }
+
+    let inner = chassisSvg;
 
     if (this.mode === 'assemble') {
       for (const p of dev.assembleParts) {
@@ -394,7 +470,7 @@ export default class AlexaBuilderGame {
         const op = (this.xray && isCover) ? ' opacity="0.24"' : '';
         inner += `<g transform="translate(${p.x} ${p.y})"${op}>${renderAlexaPartSvg(p.kind, renderOpts)}</g>`;
       }
-      if (!this.completed && this.hintOn) {
+      if (this.hintOn) {
         const active = this.dragPart
           ? dev.assembleParts.find((p) => p.id === this.dragPart.id)
           : dev.assembleParts.find((p) => !this.installed.has(p.id));
@@ -412,57 +488,51 @@ export default class AlexaBuilderGame {
       const cx = this.deviceId === 'show8' ? 250 : 260;
       const cy = this.deviceId === 'show8' ? 192 : 196;
 
-      if (this.completed && !this.xray) {
-        for (const p of dev.assembleParts) {
-          inner += `<g transform="translate(${p.x} ${p.y})">${renderAlexaPartSvg(p.kind, renderOpts)}</g>`;
-        }
-      } else {
-        // Subtle PCB grid lines inside chassis
-        inner += `<g opacity="0.16" pointer-events="none" stroke="#94A3B8" stroke-width="1">
-          <line x1="126" y1="130" x2="374" y2="130"/><line x1="126" y1="192" x2="374" y2="192"/><line x1="126" y1="254" x2="374" y2="254"/>
-          <line x1="186" y1="106" x2="186" y2="278"/><line x1="250" y1="106" x2="250" y2="278"/><line x1="314" y1="106" x2="314" y2="278"/>
-        </g>`;
+      // Subtle PCB grid lines inside chassis
+      inner += `<g opacity="0.16" pointer-events="none" stroke="#94A3B8" stroke-width="1">
+        <line x1="126" y1="130" x2="374" y2="130"/><line x1="126" y1="192" x2="374" y2="192"/><line x1="126" y1="254" x2="374" y2="254"/>
+        <line x1="186" y1="106" x2="186" y2="278"/><line x1="250" y1="106" x2="250" y2="278"/><line x1="314" y1="106" x2="314" y2="278"/>
+      </g>`;
 
-        // Central AI CPU chip
-        inner += `<g transform="translate(${cx} ${cy})">${renderAlexaPartSvg('ai-chip', { ...renderOpts, powered: this.wired.size > 0 })}</g>`;
+      // Central AI CPU chip
+      inner += `<g transform="translate(${cx} ${cy})">${renderAlexaPartSvg('ai-chip', { ...renderOpts, powered: this.wired.size > 0 })}</g>`;
 
-        // 6 authentic 90/45-degree PCB traces & solder pads
-        for (const n of dev.wireNodes) {
-          const isDone = this.wired.has(n.id);
-          const d = buildAlexaPcbPath(n.from[0], n.from[1], n.to[0], n.to[1]);
-          inner += `<g transform="translate(${n.x} ${n.y}) scale(0.66)">${renderAlexaPartSvg(n.kind, { ...renderOpts, powered: isDone })}</g>`;
-          if (isDone) {
-            inner += `<path d="${d}" fill="none" stroke="${n.color}" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>`;
-            inner += `<path d="${d}" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-dasharray="7 7" stroke-linecap="round"/>`;
-          } else if (this.hintOn) {
-            inner += `<path d="${d}" fill="none" stroke="rgba(255,255,255,0.26)" stroke-width="3.5" stroke-dasharray="5 5"/>`;
-          }
-
-          // Gold solder pad rings + interactive color-coded terminal pads
-          inner += `
-            <circle cx="${n.from[0]}" cy="${n.from[1]}" r="13.5" fill="none" stroke="#FBBF24" stroke-width="2.5" pointer-events="none"/>
-            <circle class="ab-wire-port ${isDone ? '' : 'ab-pulse'}" data-port="${n.id}" data-end="from"
-              cx="${n.from[0]}" cy="${n.from[1]}" r="11"
-              fill="${n.color}" stroke="#0F172A" stroke-width="2" style="cursor:pointer;"/>
-            <circle cx="${n.to[0]}" cy="${n.to[1]}" r="15" fill="none" stroke="#FBBF24" stroke-width="2.5" pointer-events="none"/>
-            <circle class="ab-wire-port ${isDone ? '' : 'ab-pulse'}" data-port="${n.id}" data-end="to"
-              cx="${n.to[0]}" cy="${n.to[1]}" r="12.5"
-              fill="${n.color}" stroke="#0F172A" stroke-width="2" style="cursor:pointer;"/>
-            <text x="${n.to[0]}" y="${n.to[1] + 29}" text-anchor="middle" font-size="11.5" font-weight="900" fill="#F8FAFC" font-family="sans-serif">${n.label}</text>
-          `;
+      // 6 authentic 90/45-degree PCB traces & solder pads
+      for (const n of dev.wireNodes) {
+        const isDone = this.wired.has(n.id);
+        const d = buildAlexaPcbPath(n.from[0], n.from[1], n.to[0], n.to[1]);
+        inner += `<g transform="translate(${n.x} ${n.y}) scale(0.66)">${renderAlexaPartSvg(n.kind, { ...renderOpts, powered: isDone })}</g>`;
+        if (isDone) {
+          inner += `<path d="${d}" fill="none" stroke="${n.color}" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>`;
+          inner += `<path d="${d}" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-dasharray="7 7" stroke-linecap="round"/>`;
+        } else if (this.hintOn) {
+          inner += `<path d="${d}" fill="none" stroke="rgba(255,255,255,0.26)" stroke-width="3.5" stroke-dasharray="5 5"/>`;
         }
 
-        // Live dragging 90/45-degree PCB wire preview
-        if (this.wireDrag) {
-          const liveD = buildAlexaPcbPath(this.wireDrag.x1, this.wireDrag.y1, this.wireDrag.x2, this.wireDrag.y2);
-          inner += `<path id="ab-live-wire" d="${liveD}" fill="none" stroke="${this.wireDrag.color}" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>`;
-        }
+        // Gold solder pad rings + interactive color-coded terminal pads
+        inner += `
+          <circle cx="${n.from[0]}" cy="${n.from[1]}" r="13.5" fill="none" stroke="#FBBF24" stroke-width="2.5" pointer-events="none"/>
+          <circle class="ab-wire-port ${isDone ? '' : 'ab-pulse'}" data-port="${n.id}" data-end="from"
+            cx="${n.from[0]}" cy="${n.from[1]}" r="11"
+            fill="${n.color}" stroke="#0F172A" stroke-width="2" style="cursor:pointer;"/>
+          <circle cx="${n.to[0]}" cy="${n.to[1]}" r="15" fill="none" stroke="#FBBF24" stroke-width="2.5" pointer-events="none"/>
+          <circle class="ab-wire-port ${isDone ? '' : 'ab-pulse'}" data-port="${n.id}" data-end="to"
+            cx="${n.to[0]}" cy="${n.to[1]}" r="12.5"
+            fill="${n.color}" stroke="#0F172A" stroke-width="2" style="cursor:pointer;"/>
+          <text x="${n.to[0]}" y="${n.to[1] + 29}" text-anchor="middle" font-size="11.5" font-weight="900" fill="#F8FAFC" font-family="sans-serif">${n.label}</text>
+        `;
+      }
+
+      // Live dragging 90/45-degree PCB wire preview
+      if (this.wireDrag) {
+        const liveD = buildAlexaPcbPath(this.wireDrag.x1, this.wireDrag.y1, this.wireDrag.x2, this.wireDrag.y2);
+        inner += `<path id="ab-live-wire" d="${liveD}" fill="none" stroke="${this.wireDrag.color}" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>`;
       }
     } else if (this.mode === 'repair') {
       for (const p of dev.assembleParts) {
-        const isBroken = !this.completed && this.brokenIds.has(p.id);
+        const isBroken = this.brokenIds.has(p.id);
         const isCover = (p.id === 'screen' || p.id === 'shell') && !isBroken;
-        const op = ((!this.completed || this.xray) && isCover) ? ' opacity="0.2"' : '';
+        const op = isCover ? ' opacity="0.2"' : '';
         inner += `<g transform="translate(${p.x} ${p.y})"${op}>${renderAlexaPartSvg(p.kind, { ...renderOpts, broken: isBroken })}</g>`;
         if (isBroken) {
           inner += `
@@ -474,10 +544,11 @@ export default class AlexaBuilderGame {
       }
     }
 
-    this.svgEl.innerHTML = inner;
+    this.p3dRig.innerHTML = `<svg class="ab-svg" id="ab-svg" viewBox="0 0 560 360" aria-label="アレクサ つくり">${inner}</svg>`;
+    this.svgEl = this.p3dRig.querySelector('#ab-svg');
 
     // Bind wire drag ports in wiring mode
-    if (this.mode === 'wire' && !this.completed) {
+    if (this.mode === 'wire') {
       this.svgEl.querySelectorAll('.ab-wire-port').forEach((el) => {
         el.addEventListener('pointerdown', (e) => {
           e.preventDefault();
@@ -508,11 +579,12 @@ export default class AlexaBuilderGame {
 
     if (this.completed) {
       this.trayEl.innerHTML = `
-        <button class="ab-test-btn ab-t-music" type="button" data-test="music">${FLAT_ICONS.note(20, '#FFFFFF')}<span>おんがく</span></button>
-        <button class="ab-test-btn ab-t-weather" type="button" data-test="weather">${FLAT_ICONS.sun(20)}<span>おてんき</span></button>
-        <button class="ab-test-btn ab-t-timer" type="button" data-test="timer">${FLAT_ICONS.sparkle(20)}<span>タイマー</span></button>
+        <button class="ab-test-btn ab-t-music" type="button" data-test="music">${FLAT_ICONS.note(18, '#FFFFFF')}<span>おんがく</span></button>
+        <button class="ab-test-btn ab-t-weather" type="button" data-test="weather">${FLAT_ICONS.sun(18)}<span>おてんき</span></button>
+        <button class="ab-test-btn ab-t-timer" type="button" data-test="timer">${FLAT_ICONS.sparkle(18)}<span>タイマー</span></button>
         <button class="ab-test-btn ab-t-xray" type="button" id="ab-xray-btn"><span>${this.xray ? 'カバーを もどす' : 'なかを みる'}</span></button>
-        <button class="ab-test-btn ab-t-next" type="button" id="ab-finish-btn"><span>かんせい！</span></button>
+        <button class="ab-test-btn ab-t-reset" type="button" id="ab-reset-3d-btn"><span>しょうめん</span></button>
+        <button class="ab-test-btn ab-t-next" type="button" id="ab-next-mode-btn"><span>つぎの あそびへ</span></button>
       `;
       this.trayEl.querySelectorAll('[data-test]').forEach((btn) => {
         btn.addEventListener('pointerdown', (e) => {
@@ -524,11 +596,21 @@ export default class AlexaBuilderGame {
         e.preventDefault();
         this.xray = !this.xray;
         this.sound.playButtonDown('yellow');
+        if (this.p3d) this.p3d.setExploded(this.xray);
         this.renderAll();
       });
-      this.trayEl.querySelector('#ab-finish-btn').addEventListener('pointerdown', (e) => {
+      this.trayEl.querySelector('#ab-reset-3d-btn').addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        this.showClearCelebration();
+        this.sound.playButtonDown('yellow');
+        if (this.p3d) this.p3d.resetView();
+      });
+      this.trayEl.querySelector('#ab-next-mode-btn').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        const modes = ['assemble', 'wire', 'repair'];
+        const nextIdx = (modes.indexOf(this.mode) + 1) % modes.length;
+        this.mode = modes[nextIdx];
+        this.sound.playPageTurn(1);
+        this.resetStage();
       });
       return;
     }
@@ -708,7 +790,15 @@ export default class AlexaBuilderGame {
     this.completed = true;
     this.testMode = 'idle';
     this.sound.playSuccessFanfare();
+    showSideCelebration(this.rootEl);
     this.renderAll();
+    if (this.p3d) {
+      this.p3d.setEnabled(true);
+      this.p3d.introPose(-18, 10);
+    }
+    if (this.p3dHint) {
+      this.p3dHint.classList.remove('is-hidden');
+    }
   }
 
   runAlexaTest(kind) {
@@ -728,7 +818,8 @@ export default class AlexaBuilderGame {
       this.bannerEl.textContent = 'ミニ タイマー：3…';
       this.timerInterval = setInterval(() => {
         n--;
-        const tEl = this.svgEl.querySelector('#ab-timer-text');
+        const scope = this.p3dRig || this.svgEl;
+        const tEl = scope && scope.querySelector('#ab-timer-text');
         if (n > 0) {
           this.sound.playCountPip(6 - n);
           if (tEl) tEl.textContent = String(n);
@@ -742,22 +833,5 @@ export default class AlexaBuilderGame {
         }
       }, 750);
     }
-  }
-
-  showClearCelebration() {
-    const dev = this.getDevice();
-    const modes = ['assemble', 'wire', 'repair'];
-    const nextIdx = (modes.indexOf(this.mode) + 1) % modes.length;
-    showCelebrationOverlay(this.rootEl, {
-      title: `${dev.name} かんせい！`,
-      subtitle: 'ばっちり うごいたね！ さすが エンジニア！',
-      centerHtml: this.deviceId === 'show8' ? FLAT_ICONS.echoShow(70) : FLAT_ICONS.echoDot(70, this.getDotColor().id),
-      btnLabel: 'つぎの あそびへ',
-      sound: this.sound,
-      onNext: () => {
-        this.mode = modes[nextIdx];
-        this.resetStage();
-      }
-    });
   }
 }

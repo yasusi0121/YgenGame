@@ -1,5 +1,5 @@
 import { FLAT_ICONS } from '../core/flat-icons.js';
-import { showCelebrationOverlay } from '../core/celebration.js';
+import { Pseudo3DController, buildLayeredRigHtml, showSideCelebration } from '../core/pseudo-3d-viewer.js';
 import { CLOCK_MODELS, getClockStageParts } from './watch-maker-models.js';
 import { renderMechPartSvg, renderClockHandSvg } from './watch-maker-parts.js';
 
@@ -208,15 +208,33 @@ export default class WatchMakerGame {
         transform: translate(-50%, -50%) scale(1.12);
       }
       .wm-target-pulse { animation: wmPulseRing 1.15s ease-in-out infinite; }
+      .wm-banner.is-done {
+        background: linear-gradient(180deg, #FEF08A 0%, #FACC15 100%);
+        border-color: #FFFFFF;
+        color: #422006;
+        box-shadow: 0 5px 0 #CA8A04;
+      }
       .wm-done-actions {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
       }
       .wm-replay-btn {
         background: #F59E0B; color: #FFFFFF;
         border: 3px solid #FFFFFF; border-bottom: 6px solid #B45309;
-        border-radius: 18px; padding: 9px 20px;
+        border-radius: 18px; padding: 9px 18px;
         font-family: var(--font-rounded);
-        font-size: 16px; font-weight: 900; cursor: pointer;
+        font-size: 15.5px; font-weight: 900; cursor: pointer;
+        transition: transform 0.1s ease;
+      }
+      .wm-replay-btn.is-green {
+        background: #22C55E; border-bottom-color: #15803D; color: #FFFFFF;
+        font-size: 18px; padding: 11px 26px;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
+      }
+      .wm-replay-btn.is-teal {
+        background: #14B8A6; border-bottom-color: #0F766E; color: #FFFFFF;
+      }
+      .wm-replay-btn.is-slate {
+        background: #64748B; border-bottom-color: #334155; color: #FFFFFF;
       }
       .wm-replay-btn.is-blue {
         background: #38BDF8; border-bottom-color: #0284C7; color: #0F172A;
@@ -273,7 +291,12 @@ export default class WatchMakerGame {
           `).join('')}
         </div>
         <div class="wm-stage-wrap">
-          <svg class="wm-svg" id="wm-svg" viewBox="0 0 560 400" aria-label="とけい くみたて"></svg>
+          <div class="p3d-scene" id="wm-p3d-scene">
+            <div class="p3d-rig" id="wm-p3d-rig">
+              <svg class="wm-svg" id="wm-svg" viewBox="0 0 560 400" aria-label="とけい くみたて"></svg>
+            </div>
+            <div class="p3d-hint-chip is-hidden" id="wm-3d-hint">ゆびで くるくる まわして みてみよう！</div>
+          </div>
         </div>
       </div>
       <div class="wm-tray" id="wm-tray"></div>
@@ -281,12 +304,23 @@ export default class WatchMakerGame {
     this.container.appendChild(root);
 
     this.rootEl = root;
+    this.p3dScene = root.querySelector('#wm-p3d-scene');
+    this.p3dRig = root.querySelector('#wm-p3d-rig');
+    this.p3dHint = root.querySelector('#wm-3d-hint');
     this.svgEl = root.querySelector('#wm-svg');
     this.trayEl = root.querySelector('#wm-tray');
     this.bannerEl = root.querySelector('#wm-banner');
     this.progressEl = root.querySelector('#wm-progress');
     this.skeletonBtn = root.querySelector('#wm-skeleton-btn');
     this.hintBtn = root.querySelector('#wm-hint-btn');
+
+    this.p3d = new Pseudo3DController(this.p3dScene, this.p3dRig, {
+      maxYaw: 56,
+      maxPitch: 36,
+      onFirstDrag: () => {
+        if (this.p3dHint) this.p3dHint.classList.add('is-hidden');
+      }
+    });
 
     this.hintBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -319,12 +353,7 @@ export default class WatchMakerGame {
 
     this.skeletonBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      this.skeletonMode = !this.skeletonMode;
-      this.skeletonBtn.classList.toggle('is-on', this.skeletonMode);
-      this.skeletonBtn.textContent = this.skeletonMode ? 'もじばん を もどす' : 'なかを みる';
-      this.sound.playButtonDown('yellow');
-      this.renderWatchSvg();
-      if (this.completed) this.startWatchAnimation();
+      this.toggleSkeletonMode();
     });
 
     window.addEventListener('pointermove', this.boundMove);
@@ -334,11 +363,28 @@ export default class WatchMakerGame {
     this.loadSetup(0, 0);
   }
 
+  toggleSkeletonMode() {
+    this.skeletonMode = !this.skeletonMode;
+    this.skeletonBtn.classList.toggle('is-on', this.skeletonMode);
+    this.skeletonBtn.textContent = this.skeletonMode ? 'もじばん を もどす' : 'なかを みる';
+    this.sound.playButtonDown('yellow');
+    this.renderWatchSvg();
+    if (this.completed) {
+      if (this.p3d) this.p3d.setExploded(this.skeletonMode);
+      this.renderTray();
+      this.startWatchAnimation();
+    }
+  }
+
   unmount() {
     this.stopAnimation();
     if (this.celebTimer) {
       clearTimeout(this.celebTimer);
       this.celebTimer = null;
+    }
+    if (this.p3d) {
+      this.p3d.destroy();
+      this.p3d = null;
     }
     this.clearDrag();
     window.removeEventListener('pointermove', this.boundMove);
@@ -373,6 +419,8 @@ export default class WatchMakerGame {
       this.celebTimer = null;
     }
     this.clearDrag();
+    if (this.p3d) this.p3d.setEnabled(false);
+    if (this.p3dHint) this.p3dHint.classList.add('is-hidden');
 
     this.clockIndex = clockIdx;
     this.levelIndex = levelIdx;
@@ -409,9 +457,6 @@ export default class WatchMakerGame {
     this.skeletonBtn.classList.remove('is-on');
     this.skeletonBtn.textContent = 'なかを みる';
 
-    const existingOverlay = this.container.querySelector('.celeb-overlay');
-    if (existingOverlay) existingOverlay.remove();
-
     this.renderAll();
   }
 
@@ -433,18 +478,17 @@ export default class WatchMakerGame {
     const canSkeleton = level.id === 'movement' && this.installed.has('dial');
     this.skeletonBtn.style.display = canSkeleton ? 'inline-block' : 'none';
 
+    this.bannerEl.classList.toggle('is-done', this.completed);
+
     if (level.id === 'repair') {
-      const totalBroken = this.brokenIds.size + (this.stageParts.length - this.installed.size - this.brokenIds.size);
-      const fixed = this.stageParts.length - this.brokenIds.size;
       this.progressEl.textContent = this.completed ? 'しゅうり OK' : `あと ${this.brokenIds.size} こ`;
       this.bannerEl.innerHTML = this.completed
-        ? `<span>${clock.name} しゅうり かんりょう！</span><span class="wm-mech-chip">${clock.mechLabel}</span>`
+        ? `<span>${clock.name} しゅうり かんりょう！ くるくる まわして みてみよう！</span><span class="wm-mech-chip">${clock.mechLabel}</span>`
         : `<span>あかく こわれた ぶひん（あと${this.brokenIds.size}こ）を あたらしい ぶひんに かえよう！</span><span class="wm-mech-chip">オーバーホール</span>`;
-      void totalBroken; void fixed;
     } else {
       this.progressEl.textContent = `${this.installed.size} / ${this.stageParts.length}`;
       if (this.completed) {
-        this.bannerEl.innerHTML = `<span>${clock.name} かんせい！</span><span class="wm-mech-chip">${clock.mechLabel}</span>`;
+        this.bannerEl.innerHTML = `<span>${clock.name} かんせい！ くるくる まわして みてみよう！</span><span class="wm-mech-chip">${clock.mechLabel}</span>`;
       } else if (next) {
         const phaseTag = level.id === 'movement'
           ? (next.phase === 'mech' ? 'ステップ1：なかみ・ネジ' : 'ステップ2：もじばん・パッキン')
@@ -465,6 +509,7 @@ export default class WatchMakerGame {
     const level = this.getLevel();
     const nextPart = this.getNextPart();
     const showPlate = level.id === 'geartrain' || level.id === 'movement' || level.id === 'repair';
+    const caseBg = clock.renderCaseBg();
 
     let plateSvg = '';
     if (showPlate) {
@@ -484,17 +529,23 @@ export default class WatchMakerGame {
       }
     }
 
-    // Installed parts in layer order (plus broken parts in repair mode!)
+    // Group installed parts by depth layer for pseudo-3D view when completed
+    let mechLayer = '';
+    let dialLayer = '';
+    let handLayer = '';
+    let glassLayer = '';
     let installedSvg = '';
+
     for (const p of this.stageParts) {
       const isBroken = level.id === 'repair' && this.brokenIds.has(p.id);
       if (!this.installed.has(p.id) && !isBroken) continue;
       const angle = this.gearAngles[p.id] ?? p.initAngle ?? 0;
       const isFaceOverlay = p.kind === 'custom-dial' || p.kind === 'sub-hygro' || p.kind === 'sub-thermo';
-      const opacityAttr = (this.skeletonMode && isFaceOverlay) ? ' opacity="0.28"' : (isBroken ? ' opacity="0.52"' : '');
+      const opacityAttr = (this.skeletonMode && isFaceOverlay) ? ' opacity="0.24"' : (isBroken ? ' opacity="0.52"' : '');
 
+      let chunk = '';
       if (clock.id === 'cuckoo-white' && p.id === 'door' && this.completed) {
-        installedSvg += `
+        chunk = `
           <g id="wm-part-door" transform="translate(${p.x} ${p.y})">
             <rect x="-42" y="-10" width="18" height="28" rx="2" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
             <rect x="24" y="-10" width="18" height="28" rx="2" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
@@ -503,21 +554,33 @@ export default class WatchMakerGame {
             </g>
           </g>
         `;
-        continue;
+      } else {
+        chunk = `
+          <g id="wm-part-${p.id}" transform="translate(${p.x} ${p.y}) rotate(${angle})"${opacityAttr}>
+            ${this.renderPartContent(p)}
+          </g>
+        `;
       }
-      installedSvg += `
-        <g id="wm-part-${p.id}" transform="translate(${p.x} ${p.y}) rotate(${angle})"${opacityAttr}>
-          ${this.renderPartContent(p)}
-        </g>
-      `;
+
       if (isBroken) {
-        installedSvg += `
+        chunk += `
           <g class="wm-target-pulse" pointer-events="none" transform="translate(${p.x} ${p.y})">
             <circle cx="0" cy="0" r="${Math.min(p.r + 4, 40)}" fill="rgba(239,68,68,0.2)" stroke="#EF4444" stroke-width="4" stroke-dasharray="8 5"/>
             <line x1="-12" y1="-12" x2="12" y2="12" stroke="#EF4444" stroke-width="5" stroke-linecap="round"/>
             <line x1="12" y1="-12" x2="-12" y2="12" stroke="#EF4444" stroke-width="5" stroke-linecap="round"/>
           </g>
         `;
+      }
+
+      installedSvg += chunk;
+      if (p.kind === 'custom-glass' || p.kind === 'gasket') {
+        glassLayer += chunk;
+      } else if (p.kind && (p.kind.startsWith('hand-') || p.id === 'door')) {
+        handLayer += chunk;
+      } else if (isFaceOverlay) {
+        dialLayer += chunk;
+      } else {
+        mechLayer += chunk;
       }
     }
 
@@ -531,6 +594,25 @@ export default class WatchMakerGame {
       `;
     }
 
+    // Completed mode: render multi-layer pseudo-3D clock with physical case thickness!
+    if (this.completed) {
+      const layers = [
+        { z: -24, html: caseBg, cls: 'p3d-slice-deep' },
+        { z: -16, html: caseBg, cls: 'p3d-slice' },
+        { z: -8,  html: caseBg, cls: 'p3d-slice' },
+        { z: 0,   html: `${caseBg}${plateSvg}` }
+      ];
+      if (mechLayer) layers.push({ z: 12, html: mechLayer });
+      if (dialLayer) layers.push({ z: 22, html: dialLayer });
+      if (handLayer) layers.push({ z: 30, html: handLayer });
+      if (glassLayer || fxSvg) layers.push({ z: 38, html: `${glassLayer}${fxSvg}` });
+
+      this.p3dRig.innerHTML = buildLayeredRigHtml(layers, '0 0 560 400', 'wm-svg');
+      this.svgEl = this.p3dRig.querySelector('svg');
+      if (this.p3d) this.p3d.applyLayerDepths();
+      return;
+    }
+
     // Target snap guide ring (only shown when Hint is ON and not in repair mode)
     let guideSvg = '';
     if (this.hintOn && level.id !== 'repair') {
@@ -538,7 +620,7 @@ export default class WatchMakerGame {
         ? this.stageParts.find((p) => p.id === this.dragState.partId)
         : nextPart;
 
-      if (!this.completed && activeTarget) {
+      if (activeTarget) {
         const ringR = Math.min(Math.max(activeTarget.r, 24), 134);
         guideSvg = `
           <g class="wm-target-pulse" pointer-events="none">
@@ -550,13 +632,8 @@ export default class WatchMakerGame {
       }
     }
 
-    this.svgEl.innerHTML = `
-      ${clock.renderCaseBg()}
-      ${plateSvg}
-      ${installedSvg}
-      ${fxSvg}
-      ${guideSvg}
-    `;
+    this.p3dRig.innerHTML = `<svg class="wm-svg" id="wm-svg" viewBox="0 0 560 400" aria-label="とけい くみたて">${caseBg}${plateSvg}${installedSvg}${fxSvg}${guideSvg}</svg>`;
+    this.svgEl = this.p3dRig.querySelector('#wm-svg');
   }
 
   renderTray() {
@@ -564,21 +641,41 @@ export default class WatchMakerGame {
     const nextPart = this.getNextPart();
 
     if (this.completed) {
+      const hasNextLevel = this.levelIndex < LEVELS.length - 1;
+      const canExplode = this.stageParts.some((p) => p.kind === 'custom-dial') || level.id === 'movement';
       this.trayEl.innerHTML = `
         <div class="wm-done-actions">
-          <button class="wm-replay-btn" id="wm-replay-btn" type="button">もういっかい つくる</button>
-          <button class="wm-replay-btn is-blue" id="wm-next-clock-btn" type="button">つぎの とけいへ</button>
+          <button class="wm-replay-btn is-green" id="wm-next-btn" type="button">${hasNextLevel ? 'つぎの レベルへ' : 'つぎの とけいへ'}</button>
+          ${canExplode ? `<button class="wm-replay-btn is-teal" id="wm-explode-btn" type="button">${this.skeletonMode ? 'カバーを もどす' : 'なかを みる'}</button>` : ''}
+          <button class="wm-replay-btn is-slate" id="wm-reset-3d-btn" type="button">しょうめん</button>
+          <button class="wm-replay-btn is-blue" id="wm-replay-btn" type="button">もういっかい</button>
         </div>
       `;
+      this.trayEl.querySelector('#wm-next-btn').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.sound.playPageTurn(1);
+        if (hasNextLevel) {
+          this.loadSetup(this.clockIndex, this.levelIndex + 1);
+        } else {
+          this.loadSetup((this.clockIndex + 1) % CLOCK_MODELS.length, 0);
+        }
+      });
+      const expBtn = this.trayEl.querySelector('#wm-explode-btn');
+      if (expBtn) {
+        expBtn.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          this.toggleSkeletonMode();
+        });
+      }
+      this.trayEl.querySelector('#wm-reset-3d-btn').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.sound.playButtonDown('yellow');
+        if (this.p3d) this.p3d.resetView();
+      });
       this.trayEl.querySelector('#wm-replay-btn').addEventListener('pointerdown', (e) => {
         e.preventDefault();
         this.sound.playPageTurn(1);
         this.loadSetup(this.clockIndex, this.levelIndex);
-      });
-      this.trayEl.querySelector('#wm-next-clock-btn').addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        this.sound.playPageTurn(1);
-        this.loadSetup((this.clockIndex + 1) % CLOCK_MODELS.length, this.levelIndex);
       });
       return;
     }
@@ -789,35 +886,27 @@ export default class WatchMakerGame {
     if (this.installed.has('minute')) this.gearAngles.minute = nowAngles.minute;
     if (this.installed.has('second')) this.gearAngles.second = nowAngles.second;
 
+    this.sound.playSuccessFanfare();
+    showSideCelebration(this.rootEl);
+
     this.renderAll();
     this.startWatchAnimation();
 
-    const hasNextLevel = this.levelIndex < LEVELS.length - 1;
+    if (this.p3d) {
+      this.p3d.setEnabled(true);
+      this.p3d.introPose(-18, 10);
+    }
+    if (this.p3dHint) {
+      this.p3dHint.classList.remove('is-hidden');
+    }
 
     if (clock.id === 'cuckoo-white') {
-      setTimeout(() => {
+      this.celebTimer = setTimeout(() => {
         if (this.completed && this.getClock().id === 'cuckoo-white') {
           this.sound.playCuckoo();
         }
-      }, 320);
+      }, 420);
     }
-
-    this.celebTimer = setTimeout(() => {
-      showCelebrationOverlay(this.container, {
-        title: `${clock.name} かんせい！`,
-        subtitle: `${this.getLevel().label} クリア！ ${clock.mechLabel}`,
-        centerHtml: `<div style="width:70px;height:70px;">${clock.thumbSvg}</div>`,
-        btnLabel: hasNextLevel ? 'つぎの レベルへ' : 'つぎの とけいへ',
-        sound: this.sound,
-        onNext: () => {
-          if (hasNextLevel) {
-            this.loadSetup(this.clockIndex, this.levelIndex + 1);
-          } else {
-            this.loadSetup((this.clockIndex + 1) % CLOCK_MODELS.length, 0);
-          }
-        }
-      });
-    }, 2400);
   }
 
   startWatchAnimation() {
@@ -825,14 +914,15 @@ export default class WatchMakerGame {
     this.lastFrameTime = performance.now();
     this.lastRealSec = -1;
 
-    // Cache SVG elements once to eliminate per-frame querySelector overhead
+    // Cache SVG elements across all 3D layers to eliminate per-frame querySelector overhead
+    const scope = this.p3dRig || this.svgEl;
     this.partEls = new Map();
     for (const p of this.stageParts) {
-      const el = this.svgEl && this.svgEl.querySelector(`#wm-part-${p.id}`);
+      const el = scope && scope.querySelector(`#wm-part-${p.id}`);
       if (el) this.partEls.set(p.id, el);
     }
-    this.cuckooPopEl = this.svgEl && this.svgEl.querySelector('#wm-cuckoo-pop');
-    this.radioWaveEl = this.svgEl && this.svgEl.querySelector('#wm-radio-waves');
+    this.cuckooPopEl = scope && scope.querySelector('#wm-cuckoo-pop');
+    this.radioWaveEl = scope && scope.querySelector('#wm-radio-waves');
 
     const clock = this.getClock();
     const dc = clock.dialCenter;
@@ -941,6 +1031,7 @@ export default class WatchMakerGame {
   onPause() {
     this.paused = true;
     this.stopAnimation();
+    if (this.p3d) this.p3d.stopLoop();
   }
 
   onResume() {
@@ -952,7 +1043,8 @@ export default class WatchMakerGame {
   }
 
   updatePartTransform(partId, x, y, angle) {
-    const el = (this.partEls && this.partEls.get(partId)) || (this.svgEl && this.svgEl.querySelector(`#wm-part-${partId}`));
+    const scope = this.p3dRig || this.svgEl;
+    const el = (this.partEls && this.partEls.get(partId)) || (scope && scope.querySelector(`#wm-part-${partId}`));
     if (el) {
       el.setAttribute('transform', `translate(${x} ${y}) rotate(${angle.toFixed(1)})`);
     }
