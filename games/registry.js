@@ -351,6 +351,39 @@ export const GAME_REGISTRY = [
     load: (v) => loadMod('./wire-craft.js', v)
   },
   {
+    id: 'power-lab',
+    title: 'でんき ラボ 3D',
+    sub: 'HOW ITS WIRED',
+    desc: '3Dの スイッチや ぶんでんばんを パチパチ そうさ！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#D97706',
+    shadow: '#92400E',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Warm isometric-style breaker box & power unit -->
+        <rect x="12" y="16" width="72" height="64" rx="10" fill="#FAF3E3" stroke="#1E293B" stroke-width="3.5"/>
+        <rect x="19" y="23" width="58" height="44" rx="5" fill="#475569" stroke="#1E293B" stroke-width="2.5"/>
+        <!-- Main red breaker + RCD + 2 sub breakers -->
+        <rect x="24" y="29" width="14" height="24" rx="2.5" fill="#F8FAFC" stroke="#1E293B" stroke-width="2"/>
+        <rect x="26" y="38" width="10" height="7" rx="1.5" fill="#EF4444"/>
+        <rect x="41" y="29" width="14" height="24" rx="2.5" fill="#F8FAFC" stroke="#1E293B" stroke-width="2"/>
+        <rect x="43" y="33" width="5" height="5" rx="1" fill="#FACC15"/>
+        <rect x="44" y="40" width="8" height="6" rx="1.5" fill="#1E293B"/>
+        <rect x="58" y="29" width="14" height="24" rx="2.5" fill="#F8FAFC" stroke="#1E293B" stroke-width="2"/>
+        <rect x="61" y="38" width="8" height="7" rx="1.5" fill="#1E293B"/>
+        <!-- Brown live & blue neutral wires -->
+        <path d="M24 58 H72" stroke="#2563EB" stroke-width="4" stroke-linecap="round"/>
+        <path d="M28 58 H54" stroke="#FACC15" stroke-width="2" stroke-dasharray="5 5" stroke-linecap="round"/>
+        <!-- Lightning badge -->
+        <circle cx="76" cy="72" r="13" fill="#FACC15" stroke="#1E293B" stroke-width="3"/>
+        <path d="M78 64 L71 73 H76 L74 80 L81 71 H76 Z" fill="#1E293B"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./power-lab.js', v)
+  },
+  {
     id: 'coming-next',
     title: 'つぎの あそび',
     sub: 'COMING SOON',

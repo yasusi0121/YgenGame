@@ -1126,4 +1126,96 @@ export class SoundEngine {
     }
     useSynth();
   }
+
+  /** Heavy electrical breaker / rocker switch mechanical clack */
+  playBreakerClack(isOn = true) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(isOn ? 1650 : 1200, now);
+    bp.Q.value = 2.0;
+
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.42, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.036);
+    noise.connect(bp);
+    bp.connect(ng);
+    ng.connect(this.dryBus);
+    noise.start(now);
+    noise.stop(now + 0.045);
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(isOn ? 210 : 155, now);
+    osc.frequency.exponentialRampToValueAtTime(isOn ? 92 : 68, now + 0.065);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.35, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+    osc.connect(og);
+    og.connect(this.dryBus);
+    osc.start(now);
+    osc.stop(now + 0.085);
+  }
+
+  /** Overload / RCD breaker trip snap + electric buzz */
+  playBreakerTrip() {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+
+    // Sharp metallic snap
+    const noise = ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.setValueAtTime(900, now);
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.55, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    noise.connect(hp);
+    hp.connect(ng);
+    ng.connect(this.dryBus);
+    noise.start(now);
+    noise.stop(now + 0.09);
+
+    // Heavy spring thud
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(48, now + 0.14);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.32, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    osc.connect(og);
+    og.connect(this.dryBus);
+    osc.start(now);
+    osc.stop(now + 0.18);
+  }
+
+  /** Playful rising pop for 3D objects sprouting from the workbench */
+  playSproutPop(index = 0) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.muted) return;
+    const now = ctx.currentTime;
+    const scale = [330, 392, 440, 523.25, 587.33, 659.25, 783.99, 880];
+    const base = scale[index % scale.length];
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(base * 0.65, now);
+    osc.frequency.exponentialRampToValueAtTime(base * 1.12, now + 0.075);
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.11, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+    osc.connect(g);
+    g.connect(this.dryBus);
+    osc.start(now);
+    osc.stop(now + 0.11);
+  }
 }
