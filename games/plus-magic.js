@@ -1,6 +1,6 @@
 import { FLAT_ICONS } from "../core/flat-icons.js";
 
-const PLUS_THEME_ICONS = ['apple', 'strawberry', 'orange', 'star', 'chick'];
+const PLUS_THEME_ICONS = ['echoDot', 'echoShow'];
 
 export default class PlusMagicGame {
   constructor(container, app) {
@@ -25,7 +25,7 @@ export default class PlusMagicGame {
     this.qB = 1;
     this.qChoices = [];
     this.qSolved = false;
-    this.qIconKey = 'apple';
+    this.qIconKey = 'echoDot';
 
     // Concept drag state
     this.drag = null;
@@ -39,12 +39,12 @@ export default class PlusMagicGame {
     this.container.innerHTML = `
       <div class="pm-root">
         <div class="lb-title-area" style="margin-top:2px;">
-          <h2 class="lb-circuit-name">りんご たしざん</h2>
-          <p class="lb-circuit-tip" id="pm-tip">りんご を カゴ に いれたり だしたり しよう！</p>
+          <h2 class="lb-circuit-name">アレクサ たしざん</h2>
+          <p class="lb-circuit-tip" id="pm-tip">アレクサ を ひっぱって いれたり だしたり しよう！</p>
         </div>
 
         <div class="pm-mode-tabs" id="pm-tabs">
-          <button class="pm-tab-btn is-active" type="button" data-mode="concept">${FLAT_ICONS.apple(20)}<span>わかる</span></button>
+          <button class="pm-tab-btn is-active" type="button" data-mode="concept">${FLAT_ICONS.echoDot(22, 'blue')}<span>わかる</span></button>
           <button class="pm-tab-btn" type="button" data-mode="step">${FLAT_ICONS.stars(1)}<span>ステップ</span></button>
           <button class="pm-tab-btn" type="button" data-mode="random">${FLAT_ICONS.stars(2)}<span>ランダム</span></button>
         </div>
@@ -135,7 +135,7 @@ export default class PlusMagicGame {
     if (mode === 'concept') {
       this.app.setGameBackground('#22A06B');
       this.cMerged = false;
-      this.tipEl.textContent = 'りんご を ひっぱって カゴ に いれたり だしたり しよう！';
+      this.tipEl.textContent = 'アレクサ を ひっぱって いれたり だしたり しよう！';
       this.renderConcept();
     } else if (mode === 'step') {
       this.app.setGameBackground('#0EA5E9');
@@ -161,7 +161,7 @@ export default class PlusMagicGame {
 
     const ghost = document.createElement('div');
     ghost.className = 'pm-drag-ghost';
-    ghost.innerHTML = side === 'a' ? FLAT_ICONS.apple(54) : FLAT_ICONS.greenApple(54);
+    ghost.innerHTML = side === 'a' ? FLAT_ICONS.echoDot(56, 'blue') : FLAT_ICONS.echoShow(56);
     ghost.style.left = `${e.clientX}px`;
     ghost.style.top = `${e.clientY}px`;
     document.body.appendChild(ghost);
@@ -211,7 +211,6 @@ export default class PlusMagicGame {
         this.cB++;
         this.sound.playCountPip(this.cB);
       } else if (d.side === 'a' && !inB && this.cA < 6) {
-        // Gentle fallback: if user dragged upward toward basket A
         const rA = bA && bA.getBoundingClientRect();
         if (rA && e.clientY < rA.bottom + 50 && e.clientX < window.innerWidth / 2) {
           this.cA++;
@@ -225,7 +224,6 @@ export default class PlusMagicGame {
         }
       }
     } else if (d.source === 'basket') {
-      // Dragged out of its own basket -> remove 1 apple!
       if (d.side === 'a' && !inA && this.cA > 0) {
         this.cA--;
         this.sound.playGearRemove();
@@ -247,13 +245,13 @@ export default class PlusMagicGame {
   renderConcept() {
     const sum = this.cA + this.cB;
     const itemsA = this.cA > 0
-      ? Array.from({ length: this.cA }, () => `<span class="pm-item is-draggable" data-basket-apple="a">${FLAT_ICONS.apple(40)}</span>`).join('')
+      ? Array.from({ length: this.cA }, () => `<span class="pm-item is-draggable" data-basket-apple="a">${FLAT_ICONS.echoDot(42, 'blue')}</span>`).join('')
       : `<span style="color:#CBD5E1;font-weight:900;font-size:14px;">ここに いれてね</span>`;
     const itemsB = this.cB > 0
-      ? Array.from({ length: this.cB }, () => `<span class="pm-item is-draggable" data-basket-apple="b">${FLAT_ICONS.greenApple(40)}</span>`).join('')
+      ? Array.from({ length: this.cB }, () => `<span class="pm-item is-draggable" data-basket-apple="b">${FLAT_ICONS.echoShow(42)}</span>`).join('')
       : `<span style="color:#CBD5E1;font-weight:900;font-size:14px;">ここに いれてね</span>`;
     const mergedItems = Array.from({ length: sum }, (_, i) =>
-      `<span class="pm-item" data-count-idx="${i}">${i < this.cA ? FLAT_ICONS.apple(40) : FLAT_ICONS.greenApple(40)}</span>`
+      `<span class="pm-item" data-count-idx="${i}">${i < this.cA ? FLAT_ICONS.echoDot(42, 'blue') : FLAT_ICONS.echoShow(42)}</span>`
     ).join('');
 
     this.boardEl.innerHTML = `
@@ -278,8 +276,8 @@ export default class PlusMagicGame {
       </div>
 
       <div class="pm-concept-controls">
-        <div class="pm-supply-tray" data-supply="a" style="--tr-border:#FCA5A5;">
-          ${FLAT_ICONS.apple(42)}
+        <div class="pm-supply-tray" data-supply="a" style="--tr-border:#93C5FD;">
+          ${FLAT_ICONS.echoDot(44, 'blue')}
           <span class="pm-supply-label">ひっぱる</span>
         </div>
 
@@ -287,8 +285,8 @@ export default class PlusMagicGame {
           ${this.cMerged ? 'わける' : `${FLAT_ICONS.sparkle(24)}<span>あわせる！</span>`}
         </button>
 
-        <div class="pm-supply-tray" data-supply="b" style="--tr-border:#86EFAC;">
-          ${FLAT_ICONS.greenApple(42)}
+        <div class="pm-supply-tray" data-supply="b" style="--tr-border:#38BDF8;">
+          ${FLAT_ICONS.echoShow(44)}
           <span class="pm-supply-label">ひっぱる</span>
         </div>
       </div>

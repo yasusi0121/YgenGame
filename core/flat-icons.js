@@ -161,6 +161,44 @@ export const FLAT_ICONS = {
     const one = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 L14.9 8.6 L21.6 9.5 L16.7 14.1 L17.9 20.8 L12 17.6 L6.1 20.8 L7.3 14.1 L2.4 9.5 L9.1 8.6 Z" fill="#F59E0B" stroke="#92400E" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
     return `<span class="toy-stars" aria-hidden="true">${one.repeat(count)}</span>`;
   },
+  echoDot(size = 44, variant = 'white') {
+    const body = variant === 'black' ? '#27272A' : (variant === 'blue' ? '#3B4D7A' : '#E2E8F0');
+    const fabric = variant === 'black' ? '#3F3F46' : (variant === 'blue' ? '#51679E' : '#F8FAFC');
+    const base = variant === 'black' ? '#18181B' : (variant === 'blue' ? '#1E293B' : '#CBD5E1');
+    return this.svg(`
+      <ellipse cx="32" cy="52" rx="20" ry="6.5" fill="${base}"/>
+      <path d="M14 50 Q32 58 50 50" stroke="#00D2FF" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+      <circle cx="32" cy="31" r="22" fill="${body}" stroke="#FFFFFF" stroke-width="2.5"/>
+      <path d="M12 31 A20 20 0 0 1 52 31 Q32 37 12 31 Z" fill="${fabric}" opacity="0.85"/>
+      <circle cx="24" cy="18" r="1.8" fill="#64748B"/>
+      <circle cx="32" cy="16" r="1.8" fill="#64748B"/>
+      <circle cx="40" cy="18" r="1.8" fill="#64748B"/>
+    `, size);
+  },
+  echoShow(size = 44) {
+    return this.svg(`
+      <path d="M46 18 L57 25 Q60 44 52 52 L44 52 Z" fill="#CBD5E1" stroke="#64748B" stroke-width="2"/>
+      <rect x="7" y="13" width="44" height="36" rx="7" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2.5"/>
+      <rect x="11" y="17" width="36" height="27" rx="3.5" fill="#0C4A6E"/>
+      <text x="20" y="27" font-size="8" font-weight="900" fill="#E0F2FE" font-family="sans-serif">2:06</text>
+      <path d="M12 42 Q26 35 46 42 L46 44 L12 44 Z" fill="#38BDF8" opacity="0.55"/>
+      <line x1="13" y1="43" x2="45" y2="43" stroke="#00D2FF" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="44" cy="15.5" r="1.4" fill="#475569"/>
+    `, size);
+  },
+  sun(size = 24) {
+    return this.svg(`
+      <circle cx="32" cy="32" r="14" fill="#FFD12E" stroke="#FFFFFF" stroke-width="3.5"/>
+      <line x1="32" y1="7" x2="32" y2="14" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="32" y1="50" x2="32" y2="57" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="7" y1="32" x2="14" y2="32" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="50" y1="32" x2="57" y2="32" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="14" y1="14" x2="19" y2="19" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="45" y1="45" x2="50" y2="50" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="50" y1="14" x2="45" y2="19" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="19" y1="45" x2="14" y2="50" stroke="#FFD12E" stroke-width="4.5" stroke-linecap="round"/>
+    `, size);
+  },
   starEmpty(size = 26) {
     return this.svg(`
       <path d="M32 7 L39.5 23 L57 25.5 L44 37.5 L47.5 55 L32 46.5 L16.5 55 L20 37.5 L7 25.5 L24.5 23 Z" fill="rgba(148,163,184,0.28)" stroke="#94A3B8" stroke-width="3.5" stroke-linejoin="round"/>

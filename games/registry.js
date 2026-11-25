@@ -142,9 +142,9 @@ export const GAME_REGISTRY = [
   },
   {
     id: 'plus-magic',
-    title: 'りんご たしざん',
-    sub: 'PLUS MAGIC',
-    desc: 'りんごを あわせて かぞえよう！',
+    title: 'アレクサ たしざん',
+    sub: 'ALEXA PLUS',
+    desc: 'アレクサを あわせて かぞえよう！',
     badge: '',
     cta: 'あそぶ',
     bg: '#F59E0B',
@@ -152,18 +152,18 @@ export const GAME_REGISTRY = [
     available: true,
     iconSvg: `
       <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
-        <!-- Left apple -->
-        <path d="M27 32 C27 25 32 21 37 22 C35 28 31 32 27 32 Z" fill="#4ADE80"/>
-        <circle cx="27" cy="48" r="16" fill="#FF4757" stroke="#FFFFFF" stroke-width="3"/>
-        <circle cx="21" cy="43" r="4" fill="#FFFFFF" opacity="0.5"/>
-        <!-- Plus sign in center -->
+        <!-- Mini Echo Dot on left -->
+        <ellipse cx="27" cy="56" rx="14" ry="4.5" fill="#1E293B"/>
+        <path d="M15 55 Q27 61 39 55" stroke="#00D2FF" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <circle cx="27" cy="40" r="16" fill="#3B4D7A" stroke="#FFFFFF" stroke-width="2.5"/>
+        <!-- Mini Echo Show 8 on right -->
+        <rect x="52" y="24" width="34" height="28" rx="6" fill="#FFFFFF" stroke="#64748B" stroke-width="2.5"/>
+        <rect x="56" y="28" width="26" height="20" rx="3" fill="#0C4A6E"/>
+        <line x1="58" y1="46" x2="80" y2="46" stroke="#00D2FF" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Plus badge in center bottom -->
         <circle cx="48" cy="68" r="14" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
         <line x1="48" y1="61" x2="48" y2="75" stroke="#D97706" stroke-width="4.5" stroke-linecap="round"/>
         <line x1="41" y1="68" x2="55" y2="68" stroke="#D97706" stroke-width="4.5" stroke-linecap="round"/>
-        <!-- Right apple -->
-        <path d="M69 32 C69 25 74 21 79 22 C77 28 73 32 69 32 Z" fill="#4ADE80"/>
-        <circle cx="69" cy="48" r="16" fill="#FF4757" stroke="#FFFFFF" stroke-width="3"/>
-        <circle cx="63" cy="43" r="4" fill="#FFFFFF" opacity="0.5"/>
       </svg>
     `,
     load: () => import('./plus-magic.js').then((m) => m.default)
@@ -284,6 +284,33 @@ export const GAME_REGISTRY = [
       </svg>
     `,
     load: () => import('./animal-phone.js').then((m) => m.default)
+  },
+  {
+    id: 'alexa-builder',
+    title: 'アレクサ つくり',
+    sub: 'ALEXA BUILDER',
+    desc: 'くみたて・はいせん・しゅうり に ちょうせん！',
+    badge: '',
+    cta: 'あそぶ',
+    bg: '#0284C7',
+    shadow: '#0369A1',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Echo Show 8 in back-left -->
+        <path d="M54 22 L66 30 Q68 50 60 58 L52 58 Z" fill="#CBD5E1" stroke="#64748B" stroke-width="2"/>
+        <rect x="8" y="16" width="50" height="40" rx="8" fill="#FFFFFF" stroke="#64748B" stroke-width="2.5"/>
+        <rect x="13" y="21" width="40" height="30" rx="4" fill="#0B556B"/>
+        <text x="20" y="34" font-size="10" font-weight="900" fill="#E0F2FE" font-family="sans-serif">2:06</text>
+        <line x1="15" y1="49" x2="51" y2="49" stroke="#00D2FF" stroke-width="3" stroke-linecap="round"/>
+        <!-- Echo Dot in front-right -->
+        <ellipse cx="66" cy="78" rx="18" ry="5.5" fill="#1E293B"/>
+        <path d="M50 76 Q66 84 82 76" stroke="#00D2FF" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <circle cx="66" cy="59" r="20" fill="#E2E8F0" stroke="#FFFFFF" stroke-width="2.5"/>
+        <path d="M48 59 A18 18 0 0 1 84 59 Q66 64 48 59 Z" fill="#F8FAFC"/>
+      </svg>
+    `,
+    load: () => import('./alexa-builder.js').then((m) => m.default)
   },
   {
     id: 'coming-next',
