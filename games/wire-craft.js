@@ -1,19 +1,21 @@
 import { FLAT_ICONS } from '../core/flat-icons.js';
-import { showCelebrationOverlay } from '../core/celebration.js';
 import {
   buildPcbTracePoints,
   generateCircuitStage,
   pointsToSvgPath,
   renderComponentSvg,
+  renderLiveMachineStage,
   renderMachineSvg
 } from './wire-craft-data.js';
 
 function ensureWireCraftStyles() {
-  if (document.getElementById('wc-styles-v2')) return;
+  if (document.getElementById('wc-styles-v3')) return;
+  const old2 = document.getElementById('wc-styles-v2');
+  if (old2) old2.remove();
   const old = document.getElementById('wc-styles-v1');
   if (old) old.remove();
   const style = document.createElement('style');
-  style.id = 'wc-styles-v2';
+  style.id = 'wc-styles-v3';
   style.textContent = `
     .wc-root {
       position: relative;
@@ -64,11 +66,6 @@ function ensureWireCraftStyles() {
       border: 4px solid #FFFFFF; border-radius: 22px;
       box-shadow: 0 6px 0 rgba(15,23,42,0.18);
       padding: 4px 16px 4px 10px;
-      transition: transform 0.2s ease, background 0.2s ease;
-    }
-    .wc-machine-card.is-powered {
-      background: #FEF9C3; border-color: #FFD12E;
-      animation: wcCelebrateHop 0.45s ease-in-out 3;
     }
     .wc-machine-name {
       font-size: clamp(14px, 1.9vw, 18px); font-weight: 900; color: #1E293B;
@@ -78,17 +75,16 @@ function ensureWireCraftStyles() {
     }
     .wc-power-switch {
       display: inline-flex; align-items: center; gap: 8px;
-      border: 4px solid #FFFFFF; border-radius: 20px;
-      padding: 9px 20px; cursor: pointer;
-      font-family: var(--font-rounded); font-size: 17px; font-weight: 900;
-      color: #FFFFFF;
+      border: 4px solid #FFFFFF; border-radius: 22px;
+      padding: 12px 26px; min-height: 54px; cursor: pointer;
+      font-family: var(--font-rounded); font-size: 19px; font-weight: 900;
+      color: #FFFFFF; touch-action: manipulation;
       background: #EF4444; box-shadow: 0 6px 0 #B91C1C;
       transition: transform 0.1s ease, background 0.15s ease;
     }
     .wc-power-switch:active { transform: translateY(3px); }
     .wc-power-switch.is-ready {
       background: #22C55E; box-shadow: 0 6px 0 #15803D;
-      animation: wcSwitchPulse 0.85s ease-in-out infinite alternate;
     }
     .wc-power-switch.is-disabled {
       background: #94A3B8; box-shadow: 0 5px 0 #64748B;
@@ -108,18 +104,65 @@ function ensureWireCraftStyles() {
       touch-action: none;
     }
     .wc-port-pulse { animation: wcPulse 1.1s ease-in-out infinite; }
-    @keyframes wcPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.42; }
+
+    /* Live Machine Action Stage Overlay */
+    .wc-live-overlay {
+      position: absolute; inset: 0; z-index: 50;
+      background: rgba(15, 23, 42, 0.62);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
     }
-    @keyframes wcSwitchPulse {
-      from { transform: scale(1); }
-      to   { transform: scale(1.06); }
+    .wc-live-card {
+      width: min(92vw, 460px);
+      background: #FFFFFF;
+      border: 6px solid #FFD12E;
+      border-radius: 34px;
+      box-shadow: 0 12px 0 #C28A00;
+      padding: 18px 20px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      text-align: center;
     }
-    @keyframes wcCelebrateHop {
-      0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-10px) scale(1.06); }
+    .wc-live-svg {
+      width: 100%; max-width: 340px; height: auto;
+      border-radius: 20px; overflow: hidden;
+      border: 3px solid #E2E8F0;
     }
+    .wc-live-title {
+      margin: 0; font-size: clamp(22px, 3vw, 28px); font-weight: 900; color: #1E293B;
+    }
+    .wc-live-sub {
+      margin: 0; font-size: 16px; font-weight: 800; color: #475569;
+    }
+    /* Lightweight GPU transform/opacity machine animations */
+    .wc-anim-launch { animation: wcLaunch 1.6s ease-in-out infinite; }
+    .wc-anim-flame  { transform-origin: 160px 144px; animation: wcFlame 0.22s ease-in-out infinite alternate; }
+    .wc-anim-drive  { animation: wcDrive 1.8s ease-in-out infinite; }
+    .wc-anim-fly    { animation: wcFly 1.6s ease-in-out infinite alternate; }
+    .wc-anim-prop   { transform-origin: 97px 108px; animation: wcProp 0.16s linear infinite; }
+    .wc-anim-bounce { animation: wcHop 0.55s ease-in-out infinite alternate; }
+    .wc-anim-wave   { transform-origin: 160px 108px; animation: wcWave 0.9s ease-in-out infinite alternate; }
+    .wc-anim-wave2  { transform-origin: 160px 108px; animation: wcWave 0.9s 0.35s ease-in-out infinite alternate; }
+
+    @keyframes wcPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.42; } }
+    @keyframes wcLaunch {
+      0%   { transform: translateY(18px); }
+      25%  { transform: translateY(14px) translateX(-2px); }
+      40%  { transform: translateY(14px) translateX(2px); }
+      100% { transform: translateY(-76px); }
+    }
+    @keyframes wcFlame { from { transform: scaleY(0.82); } to { transform: scaleY(1.22); } }
+    @keyframes wcDrive {
+      0%   { transform: translateX(-64px); }
+      50%  { transform: translateX(0px) translateY(-3px); }
+      100% { transform: translateX(68px); }
+    }
+    @keyframes wcFly {
+      from { transform: translate(-18px, 12px) rotate(-4deg); }
+      to   { transform: translate(18px, -16px) rotate(4deg); }
+    }
+    @keyframes wcProp { from { transform: scaleY(1); } to { transform: scaleY(0.2); } }
+    @keyframes wcHop  { from { transform: translateY(4px) scale(0.98); } to { transform: translateY(-10px) scale(1.04); } }
+    @keyframes wcWave { from { opacity: 0.35; transform: scale(0.92); } to { opacity: 1; transform: scale(1.06); } }
   `;
   document.head.appendChild(style);
 }
@@ -231,7 +274,7 @@ export default class WireCraftGame {
     this.switchOn = false;
     this.powered = false;
 
-    const existing = this.rootEl.querySelector('.celeb-overlay');
+    const existing = this.rootEl.querySelector('.wc-live-overlay, .celeb-overlay');
     if (existing) existing.remove();
 
     this.rootEl.classList.toggle('is-wide', this.mode === 'wide');
@@ -264,18 +307,18 @@ export default class WireCraftGame {
     const statusText = this.powered
       ? st.machine.msg
       : (allDone && st.hasSwitch
-        ? 'はいせん かんりょう！ スイッチを ON にしよう！'
+        ? 'はいせん かんりょう！ スイッチを おそう！'
         : `おなじ いろの ランドを つなごう！（${this.connected.size} / ${st.pairs.length}）`);
 
     let switchHtml = '';
     if (st.hasSwitch) {
       const cls = this.powered ? 'is-ready' : (allDone ? 'is-ready' : 'is-disabled');
-      const lbl = this.powered ? 'SW1: ON' : 'SW1: でんげん';
-      switchHtml = `<button class="wc-power-switch ${cls}" type="button" id="wc-power-btn">${FLAT_ICONS.sparkle(18)}<span>${lbl}</span></button>`;
+      const lbl = this.powered ? 'SW1: ON' : 'SW1: でんげん ON';
+      switchHtml = `<button class="wc-power-switch ${cls}" type="button" id="wc-power-btn">${FLAT_ICONS.sparkle(20)}<span>${lbl}</span></button>`;
     }
 
     this.hudEl.innerHTML = `
-      <div class="wc-machine-card ${this.powered ? 'is-powered' : ''}">
+      <div class="wc-machine-card">
         ${renderMachineSvg(st.machine.id, this.powered, mSize)}
         <div>
           <div class="wc-machine-name">${st.machine.name} きばん（${st.theme.name}）</div>
@@ -287,8 +330,9 @@ export default class WireCraftGame {
 
     const swBtn = this.hudEl.querySelector('#wc-power-btn');
     if (swBtn) {
-      swBtn.addEventListener('pointerdown', (e) => {
+      const handleSwitch = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         this.sound.unlock();
         if (this.powered) return;
         if (!this.allWired()) {
@@ -298,7 +342,9 @@ export default class WireCraftGame {
         this.switchOn = true;
         this.sound.playSwitchToggle(true);
         this.triggerPowerOn();
-      });
+      };
+      swBtn.addEventListener('pointerdown', handleSwitch);
+      swBtn.addEventListener('click', handleSwitch);
     }
   }
 
@@ -496,15 +542,36 @@ export default class WireCraftGame {
 
     const st = this.stage;
     this.celebTimer = setTimeout(() => {
-      showCelebrationOverlay(this.rootEl, {
-        title: `ステージ ${this.stageNum} クリア！`,
-        subtitle: st.machine.msg,
-        centerHtml: renderMachineSvg(st.machine.id, true, 76),
-        btnLabel: 'つぎの きばんへ',
-        sound: this.sound,
-        onNext: () => this.nextStage(true)
-      });
-    }, 1450);
+      this.sound.playCrackerPop();
+      const overlay = document.createElement('div');
+      overlay.className = 'wc-live-overlay';
+      overlay.innerHTML = `
+        <div class="wc-live-card">
+          <div class="celeb-icons-row">
+            <span class="celeb-cracker-l">${FLAT_ICONS.cracker(46)}</span>
+            <h3 class="wc-live-title">ステージ ${this.stageNum} クリア！</h3>
+            <span class="celeb-cracker-r">${FLAT_ICONS.cracker(46)}</span>
+          </div>
+          ${renderLiveMachineStage(st.machine.id)}
+          <p class="wc-live-sub">${st.machine.msg}</p>
+          <button class="celeb-next-btn" type="button" id="wc-live-next">
+            <span>つぎの きばんへ</span>
+            ${FLAT_ICONS.arrowRight(26)}
+          </button>
+        </div>
+      `;
+      const nextBtn = overlay.querySelector('#wc-live-next');
+      const goNext = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.sound.playPageTurn(1);
+        overlay.remove();
+        this.nextStage(true);
+      };
+      nextBtn.addEventListener('pointerdown', goNext);
+      nextBtn.addEventListener('click', goNext);
+      this.rootEl.appendChild(overlay);
+    }, 520);
   }
 
   clientToSvg(clientX, clientY) {

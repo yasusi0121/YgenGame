@@ -368,3 +368,146 @@ export function generateCircuitStage(stageNum, mode = 'normal', prevMachineId = 
     traces
   };
 }
+
+/** Large animated action stage shown when the PCB powers on each target machine */
+export function renderLiveMachineStage(id) {
+  switch (id) {
+    case 'rocket':
+      return `
+        <svg class="wc-live-svg" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+          <rect width="320" height="200" rx="20" fill="#0F172A"/>
+          <circle cx="48" cy="36" r="3" fill="#FEF08A"/><circle cx="268" cy="48" r="3.5" fill="#FEF08A"/>
+          <circle cx="96" cy="24" r="2.5" fill="#BAE6FD"/><circle cx="220" cy="30" r="2.5" fill="#FFFFFF"/>
+          <rect x="0" y="170" width="320" height="30" fill="#334155"/>
+          <g class="wc-anim-launch">
+            <polygon class="wc-anim-flame" points="142,144 160,188 178,144" fill="#FF7043"/>
+            <polygon class="wc-anim-flame" points="149,144 160,174 171,144" fill="#FFD12E"/>
+            <path d="M134 126 L114 148 L140 140 Z" fill="#EF4444"/>
+            <path d="M186 126 L206 148 L180 140 Z" fill="#EF4444"/>
+            <path d="M160 44 C184 70 186 112 180 144 H140 C134 112 136 70 160 44 Z" fill="#F8FAFC" stroke="#334155" stroke-width="4"/>
+            <circle cx="160" cy="92" r="16" fill="#38BDF8" stroke="#1E293B" stroke-width="4"/>
+          </g>
+        </svg>
+      `;
+    case 'train':
+      return `
+        <svg class="wc-live-svg" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+          <rect width="320" height="200" rx="20" fill="#7DD3FC"/>
+          <ellipse cx="70" cy="42" rx="34" ry="14" fill="#FFFFFF" opacity="0.9"/>
+          <ellipse cx="240" cy="36" rx="38" ry="15" fill="#FFFFFF" opacity="0.9"/>
+          <rect x="0" y="156" width="320" height="44" fill="#4ADE80"/>
+          <rect x="0" y="152" width="320" height="8" fill="#64748B"/>
+          <g class="wc-anim-drive">
+            <polygon points="228,118 286,102 286,142" fill="#FEF08A" opacity="0.55"/>
+            <rect x="78" y="82" width="152" height="62" rx="14" fill="#22C55E" stroke="#FFFFFF" stroke-width="4"/>
+            <rect x="94" y="94" width="36" height="26" rx="6" fill="#E0F2FE"/>
+            <rect x="140" y="94" width="36" height="26" rx="6" fill="#E0F2FE"/>
+            <rect x="186" y="94" width="32" height="26" rx="6" fill="#E0F2FE"/>
+            <circle cx="222" cy="128" r="7" fill="#FFD12E"/>
+            <circle cx="108" cy="148" r="13" fill="#1E293B" stroke="#FFFFFF" stroke-width="3"/>
+            <circle cx="154" cy="148" r="13" fill="#1E293B" stroke="#FFFFFF" stroke-width="3"/>
+            <circle cx="200" cy="148" r="13" fill="#1E293B" stroke="#FFFFFF" stroke-width="3"/>
+          </g>
+        </svg>
+      `;
+    case 'car':
+      return `
+        <svg class="wc-live-svg" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+          <rect width="320" height="200" rx="20" fill="#38BDF8"/>
+          <rect x="0" y="144" width="320" height="56" fill="#334155"/>
+          <line x1="16" y1="172" x2="304" y2="172" stroke="#FFD12E" stroke-width="5" stroke-dasharray="22 18"/>
+          <g class="wc-anim-drive">
+            <polygon points="226,120 290,104 290,144" fill="#FEF08A" opacity="0.6"/>
+            <path d="M106 108 L124 76 H194 L214 108 Z" fill="#EF4444" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
+            <rect x="86" y="106" width="144" height="34" rx="12" fill="#EF4444" stroke="#FFFFFF" stroke-width="4"/>
+            <rect x="130" y="84" width="56" height="20" rx="5" fill="#E0F2FE"/>
+            <circle cx="220" cy="122" r="7" fill="#FFD12E"/>
+            <circle cx="118" cy="142" r="16" fill="#1E293B" stroke="#FFFFFF" stroke-width="4"/>
+            <circle cx="198" cy="142" r="16" fill="#1E293B" stroke="#FFFFFF" stroke-width="4"/>
+          </g>
+        </svg>
+      `;
+    case 'plane':
+      return `
+        <svg class="wc-live-svg" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+          <rect width="320" height="200" rx="20" fill="#38BDF8"/>
+          <ellipse cx="64" cy="48" rx="34" ry="14" fill="#FFFFFF" opacity="0.88"/>
+          <ellipse cx="250" cy="154" rx="44" ry="16" fill="#FFFFFF" opacity="0.88"/>
+          <g class="wc-anim-fly">
+            <polygon points="154,96 184,96 196,46 138,46" fill="#0284C7" stroke="#FFFFFF" stroke-width="4"/>
+            <ellipse cx="166" cy="108" rx="68" ry="26" fill="#F8FAFC" stroke="#0369A1" stroke-width="4"/>
+            <circle cx="152" cy="104" r="9" fill="#BAE6FD"/>
+            <circle cx="180" cy="104" r="9" fill="#BAE6FD"/>
+            <circle cx="98" cy="108" r="10" fill="#F59E0B"/>
+            <rect class="wc-anim-prop" x="92" y="66" width="10" height="84" rx="5" fill="#FFD12E" stroke="#B45309" stroke-width="2"/>
+          </g>
+        </svg>
+      `;
+    case 'alexa':
+      return `
+        <svg class="wc-live-svg" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+          <rect width="320" height="200" rx="20" fill="#0F172A"/>
+          <circle class="wc-anim-wave" cx="160" cy="108" r="64" fill="none" stroke="#00D2FF" stroke-width="5"/>
+          <circle class="wc-anim-wave2" cx="160" cy="108" r="82" fill="none" stroke="#38BDF8" stroke-width="4"/>
+          <ellipse cx="160" cy="156" rx="52" ry="14" fill="#1E293B"/>
+          <path d="M112 152 Q160 172 208 152" stroke="#00D2FF" stroke-width="9" stroke-linecap="round" fill="none"/>
+          <circle cx="160" cy="104" r="54" fill="#E2E8F0" stroke="#FFFFFF" stroke-width="4"/>
+          <path d="M110 104 A50 50 0 0 1 210 104 Q160 118 110 104 Z" fill="#F8FAFC"/>
+        </svg>
+      `;
+    case 'lamp':
+      return `
+        <svg class="wc-live-svg" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+          <rect width="320" height="200" rx="20" fill="#1E293B"/>
+          <g class="wc-anim-wave">
+            <circle cx="160" cy="86" r="76" fill="#FEF08A" opacity="0.28"/>
+            <line x1="160" y1="8" x2="160" y2="26" stroke="#FFD12E" stroke-width="7" stroke-linecap="round"/>
+            <line x1="88" y1="36" x2="102" y2="48" stroke="#FFD12E" stroke-width="7" stroke-linecap="round"/>
+            <line x1="232" y1="36" x2="218" y2="48" stroke="#FFD12E" stroke-width="7" stroke-linecap="round"/>
+            <line x1="68" y1="88" x2="88" y2="88" stroke="#FFD12E" stroke-width="7" stroke-linecap="round"/>
+            <line x1="252" y1="88" x2="232" y2="88" stroke="#FFD12E" stroke-width="7" stroke-linecap="round"/>
+          </g>
+          <circle cx="160" cy="88" r="46" fill="#FFD12E" stroke="#FFFFFF" stroke-width="5"/>
+          <circle cx="144" cy="74" r="11" fill="#FFFFFF" opacity="0.7"/>
+          <rect x="138" y="132" width="44" height="24" rx="7" fill="#94A3B8" stroke="#FFFFFF" stroke-width="3"/>
+          <rect x="145" y="156" width="30" height="12" rx="5" fill="#64748B"/>
+        </svg>
+      `;
+    case 'boombox':
+      return `
+        <svg class="wc-live-svg" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+          <rect width="320" height="200" rx="20" fill="#3B0764"/>
+          <g class="wc-anim-bounce">
+            <path d="M114 70 V50 H206 V70" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" fill="none"/>
+            <rect x="64" y="70" width="192" height="100" rx="18" fill="#8B5CF6" stroke="#FFFFFF" stroke-width="4"/>
+            <circle cx="110" cy="120" r="30" fill="#1E293B" stroke="#FFD12E" stroke-width="5"/>
+            <circle cx="110" cy="120" r="12" fill="#38BDF8"/>
+            <circle cx="210" cy="120" r="30" fill="#1E293B" stroke="#FFD12E" stroke-width="5"/>
+            <circle cx="210" cy="120" r="12" fill="#38BDF8"/>
+            <rect x="148" y="96" width="24" height="26" rx="5" fill="#4ADE80"/>
+          </g>
+          <circle class="wc-anim-wave" cx="84" cy="40" r="10" fill="#FFD12E"/>
+          <circle class="wc-anim-wave2" cx="236" cy="36" r="10" fill="#38BDF8"/>
+        </svg>
+      `;
+    case 'robot':
+    default:
+      return `
+        <svg class="wc-live-svg" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+          <rect width="320" height="200" rx="20" fill="#0F172A"/>
+          <g class="wc-anim-bounce">
+            <line x1="160" y1="18" x2="160" y2="40" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+            <circle class="wc-anim-wave" cx="160" cy="16" r="10" fill="#FF4757"/>
+            <rect x="108" y="40" width="104" height="72" rx="18" fill="#60A5FA" stroke="#FFFFFF" stroke-width="4"/>
+            <circle class="wc-anim-wave" cx="138" cy="74" r="12" fill="#FFD12E"/>
+            <circle class="wc-anim-wave" cx="182" cy="74" r="12" fill="#FFD12E"/>
+            <rect x="134" y="94" width="52" height="8" rx="4" fill="#FFFFFF"/>
+            <rect x="120" y="118" width="80" height="58" rx="12" fill="#3B82F6" stroke="#FFFFFF" stroke-width="4"/>
+            <rect x="86" y="122" width="24" height="14" rx="7" fill="#93C5FD" stroke="#FFFFFF" stroke-width="3"/>
+            <rect x="210" y="122" width="24" height="14" rx="7" fill="#93C5FD" stroke="#FFFFFF" stroke-width="3"/>
+            <circle cx="160" cy="146" r="10" fill="#4ADE80"/>
+          </g>
+        </svg>
+      `;
+  }
+}
