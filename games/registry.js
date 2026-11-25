@@ -327,19 +327,25 @@ export const GAME_REGISTRY = [
     available: true,
     iconSvg: `
       <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
-        <!-- Green circuit board -->
-        <rect x="10" y="14" width="76" height="68" rx="14" fill="#166534" stroke="#4ADE80" stroke-width="3.5"/>
-        <!-- Colorful curved jumper wires -->
-        <path d="M24 30 C44 30 52 64 72 64" stroke="#FF4757" stroke-width="6" stroke-linecap="round" fill="none"/>
-        <path d="M24 48 C46 48 50 30 72 30" stroke="#FFD12E" stroke-width="6" stroke-linecap="round" fill="none"/>
-        <path d="M24 66 C48 66 52 48 72 48" stroke="#00D2FF" stroke-width="6" stroke-linecap="round" fill="none"/>
-        <!-- Glowing connector ports -->
-        <circle cx="24" cy="30" r="7" fill="#FF4757" stroke="#FFFFFF" stroke-width="2.5"/>
-        <circle cx="72" cy="64" r="7" fill="#FF4757" stroke="#FFFFFF" stroke-width="2.5"/>
-        <circle cx="24" cy="48" r="7" fill="#FFD12E" stroke="#FFFFFF" stroke-width="2.5"/>
-        <circle cx="72" cy="30" r="7" fill="#FFD12E" stroke="#FFFFFF" stroke-width="2.5"/>
-        <circle cx="24" cy="66" r="7" fill="#00D2FF" stroke="#FFFFFF" stroke-width="2.5"/>
-        <circle cx="72" cy="48" r="7" fill="#00D2FF" stroke="#FFFFFF" stroke-width="2.5"/>
+        <!-- Authentic green PCB with corner mounting holes -->
+        <rect x="8" y="12" width="80" height="72" rx="10" fill="#0E4F2F" stroke="#4ADE80" stroke-width="3"/>
+        <circle cx="15" cy="19" r="3" fill="#FBBF24"/>
+        <circle cx="81" cy="19" r="3" fill="#FBBF24"/>
+        <circle cx="15" cy="77" r="3" fill="#FBBF24"/>
+        <circle cx="81" cy="77" r="3" fill="#FBBF24"/>
+        <!-- 90deg / 45deg straight copper traces -->
+        <path d="M18 32 H28 L34 38 H38" stroke="#FF3B4E" stroke-width="4.5" stroke-linejoin="miter" fill="none"/>
+        <path d="M18 64 H28 L34 58 H38" stroke="#FFD12E" stroke-width="4.5" stroke-linejoin="miter" fill="none"/>
+        <path d="M58 38 H64 L70 32 H78" stroke="#00D2FF" stroke-width="4.5" stroke-linejoin="miter" fill="none"/>
+        <path d="M58 58 H64 L70 64 H78" stroke="#4ADE80" stroke-width="4.5" stroke-linejoin="miter" fill="none"/>
+        <!-- Central QFP CPU chip -->
+        <rect x="36" y="34" width="24" height="28" rx="4" fill="#1E293B" stroke="#CBD5E1" stroke-width="2.2"/>
+        <text x="48" y="52" text-anchor="middle" font-size="10" font-weight="900" fill="#38BDF8" font-family="monospace">CPU</text>
+        <!-- Gold solder pads -->
+        <circle cx="18" cy="32" r="5" fill="#FF3B4E" stroke="#FBBF24" stroke-width="2"/>
+        <circle cx="18" cy="64" r="5" fill="#FFD12E" stroke="#FBBF24" stroke-width="2"/>
+        <circle cx="78" cy="32" r="5" fill="#00D2FF" stroke="#FBBF24" stroke-width="2"/>
+        <circle cx="78" cy="64" r="5" fill="#4ADE80" stroke="#FBBF24" stroke-width="2"/>
       </svg>
     `,
     load: (v) => loadMod('./wire-craft.js', v)

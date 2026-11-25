@@ -1,15 +1,19 @@
 import { FLAT_ICONS } from '../core/flat-icons.js';
 import { showCelebrationOverlay } from '../core/celebration.js';
 import {
+  buildPcbTracePoints,
   generateCircuitStage,
-  renderMachineSvg,
-  renderPartIconSvg
+  pointsToSvgPath,
+  renderComponentSvg,
+  renderMachineSvg
 } from './wire-craft-data.js';
 
 function ensureWireCraftStyles() {
-  if (document.getElementById('wc-styles-v1')) return;
+  if (document.getElementById('wc-styles-v2')) return;
+  const old = document.getElementById('wc-styles-v1');
+  if (old) old.remove();
   const style = document.createElement('style');
-  style.id = 'wc-styles-v1';
+  style.id = 'wc-styles-v2';
   style.textContent = `
     .wc-root {
       position: relative;
@@ -53,15 +57,13 @@ function ensureWireCraftStyles() {
       display: flex; align-items: center; justify-content: center;
       gap: 12px; flex-wrap: wrap;
     }
-    .wc-root.is-wide .wc-hud {
-      max-width: 100%;
-    }
+    .wc-root.is-wide .wc-hud { max-width: 100%; }
     .wc-machine-card {
       display: inline-flex; align-items: center; gap: 10px;
       background: #FFFFFF; color: #1E293B;
-      border: 4px solid #FFFFFF; border-radius: 24px;
+      border: 4px solid #FFFFFF; border-radius: 22px;
       box-shadow: 0 6px 0 rgba(15,23,42,0.18);
-      padding: 5px 16px 5px 10px;
+      padding: 4px 16px 4px 10px;
       transition: transform 0.2s ease, background 0.2s ease;
     }
     .wc-machine-card.is-powered {
@@ -69,16 +71,16 @@ function ensureWireCraftStyles() {
       animation: wcCelebrateHop 0.45s ease-in-out 3;
     }
     .wc-machine-name {
-      font-size: clamp(15px, 2vw, 19px); font-weight: 900; color: #1E293B;
+      font-size: clamp(14px, 1.9vw, 18px); font-weight: 900; color: #1E293B;
     }
     .wc-machine-sub {
-      font-size: 12px; font-weight: 800; color: #64748B;
+      font-size: 12px; font-weight: 800; color: #475569;
     }
     .wc-power-switch {
       display: inline-flex; align-items: center; gap: 8px;
-      border: 4px solid #FFFFFF; border-radius: 22px;
-      padding: 10px 22px; cursor: pointer;
-      font-family: var(--font-rounded); font-size: 18px; font-weight: 900;
+      border: 4px solid #FFFFFF; border-radius: 20px;
+      padding: 9px 20px; cursor: pointer;
+      font-family: var(--font-rounded); font-size: 17px; font-weight: 900;
       color: #FFFFFF;
       background: #EF4444; box-shadow: 0 6px 0 #B91C1C;
       transition: transform 0.1s ease, background 0.15s ease;
@@ -86,7 +88,7 @@ function ensureWireCraftStyles() {
     .wc-power-switch:active { transform: translateY(3px); }
     .wc-power-switch.is-ready {
       background: #22C55E; box-shadow: 0 6px 0 #15803D;
-      animation: wcSwitchPulse 0.9s ease-in-out infinite alternate;
+      animation: wcSwitchPulse 0.85s ease-in-out infinite alternate;
     }
     .wc-power-switch.is-disabled {
       background: #94A3B8; box-shadow: 0 5px 0 #64748B;
@@ -94,25 +96,21 @@ function ensureWireCraftStyles() {
     }
     .wc-board-wrap {
       flex: 1 1 auto; min-height: 0;
-      width: 100%; max-width: 960px;
+      width: 100%; max-width: 980px;
       display: flex; align-items: center; justify-content: center;
     }
-    .wc-root.is-wide .wc-board-wrap {
-      max-width: 100%;
-    }
+    .wc-root.is-wide .wc-board-wrap { max-width: 100%; }
     .wc-svg {
       width: 100%; height: 100%;
-      border-radius: 26px;
-      border: 5px solid #FFFFFF;
-      box-shadow: 0 10px 0 rgba(15, 23, 42, 0.28);
+      border-radius: 18px;
+      border: 4px solid #CBD5E1;
+      box-shadow: 0 10px 0 rgba(15, 23, 42, 0.34);
       touch-action: none;
     }
-    .wc-port-pulse {
-      animation: wcPulse 1.1s ease-in-out infinite;
-    }
+    .wc-port-pulse { animation: wcPulse 1.1s ease-in-out infinite; }
     @keyframes wcPulse {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.45; }
+      50% { opacity: 0.42; }
     }
     @keyframes wcSwitchPulse {
       from { transform: scale(1); }
@@ -124,14 +122,6 @@ function ensureWireCraftStyles() {
     }
   `;
   document.head.appendChild(style);
-}
-
-function wireCurvePath(x1, y1, x2, y2) {
-  const dx = Math.abs(x2 - x1);
-  const bend = Math.max(36, dx * 0.42);
-  const cx1 = x1 + (x2 >= x1 ? bend : -bend);
-  const cx2 = x2 - (x2 >= x1 ? bend : -bend);
-  return `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${cx1.toFixed(1)} ${y1.toFixed(1)}, ${cx2.toFixed(1)} ${y2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`;
 }
 
 export default class WireCraftGame {
@@ -147,7 +137,7 @@ export default class WireCraftGame {
     this.switchOn = false;
     this.powered = false;
 
-    this.drag = null; // { pairId, end, x1, y1, x2, y2, color }
+    this.drag = null; // { pairId, end, x1, y1, x2, y2, color, laneX }
     this.celebTimer = null;
 
     this.boundMove = (e) => this.onPointerMove(e);
@@ -175,7 +165,7 @@ export default class WireCraftGame {
         <div class="wc-hud" id="wc-hud"></div>
 
         <div class="wc-board-wrap">
-          <svg class="wc-svg" id="wc-svg" viewBox="0 0 680 400" aria-label="はいせん きばん"></svg>
+          <svg class="wc-svg" id="wc-svg" viewBox="0 0 740 420" aria-label="プリント きばん"></svg>
         </div>
       </div>
     `;
@@ -221,10 +211,7 @@ export default class WireCraftGame {
     this.container.innerHTML = '';
   }
 
-  onPause() {
-    this.clearTimers();
-  }
-
+  onPause() { this.clearTimers(); }
   onResume() {}
 
   clearTimers() {
@@ -259,6 +246,12 @@ export default class WireCraftGame {
     return this.stage && this.connected.size === this.stage.pairs.length;
   }
 
+  isComponentPowered(compId) {
+    if (this.powered) return true;
+    if (compId === 'cpu') return this.connected.size > 0;
+    return this.stage.pairs.some((p) => this.connected.has(p.id) && (p.a.compId === compId || p.b.compId === compId));
+  }
+
   renderAll() {
     this.renderHud();
     this.renderBoard();
@@ -267,25 +260,25 @@ export default class WireCraftGame {
   renderHud() {
     const st = this.stage;
     const allDone = this.allWired();
-    const mSize = this.mode === 'wide' ? 46 : 58;
+    const mSize = this.mode === 'wide' ? 44 : 54;
     const statusText = this.powered
       ? st.machine.msg
       : (allDone && st.hasSwitch
-        ? 'ぜんぶ つながった！スイッチを おそう！'
-        : `おなじ いろ を つなごう！（${this.connected.size} / ${st.pairs.length}）`);
+        ? 'はいせん かんりょう！ スイッチを ON にしよう！'
+        : `おなじ いろの ランドを つなごう！（${this.connected.size} / ${st.pairs.length}）`);
 
     let switchHtml = '';
     if (st.hasSwitch) {
       const cls = this.powered ? 'is-ready' : (allDone ? 'is-ready' : 'is-disabled');
-      const lbl = this.powered ? 'でんげん ON！' : 'でんげん スイッチ';
-      switchHtml = `<button class="wc-power-switch ${cls}" type="button" id="wc-power-btn">${FLAT_ICONS.sparkle(20)}<span>${lbl}</span></button>`;
+      const lbl = this.powered ? 'SW1: ON' : 'SW1: でんげん';
+      switchHtml = `<button class="wc-power-switch ${cls}" type="button" id="wc-power-btn">${FLAT_ICONS.sparkle(18)}<span>${lbl}</span></button>`;
     }
 
     this.hudEl.innerHTML = `
       <div class="wc-machine-card ${this.powered ? 'is-powered' : ''}">
         ${renderMachineSvg(st.machine.id, this.powered, mSize)}
         <div>
-          <div class="wc-machine-name">${st.machine.name} を うごかそう！</div>
+          <div class="wc-machine-name">${st.machine.name} きばん（${st.theme.name}）</div>
           <div class="wc-machine-sub">${statusText}</div>
         </div>
       </div>
@@ -313,91 +306,120 @@ export default class WireCraftGame {
     const st = this.stage;
     const { width: W, height: H, theme } = st;
 
-    // Subtle PCB grid lines (low-cost SVG lines)
+    // Fine PCB reference grid
     let gridLines = '';
-    for (let x = 40; x < W; x += 40) {
-      gridLines += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${theme.grid}" stroke-width="1.5"/>`;
+    for (let x = 32; x < W; x += 32) {
+      gridLines += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${theme.grid}" stroke-width="1"/>`;
     }
-    for (let y = 40; y < H; y += 40) {
-      gridLines += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${theme.grid}" stroke-width="1.5"/>`;
+    for (let y = 32; y < H; y += 32) {
+      gridLines += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${theme.grid}" stroke-width="1"/>`;
     }
 
-    // Decorative background PCB traces
-    const tracesHtml = st.traces.map((d) =>
-      `<path d="${d}" fill="none" stroke="${theme.trace}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>`
+    // Silkscreen perimeter frame & authentic PCB markings
+    const silkFrame = `
+      <rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="8" fill="none" stroke="${theme.silk}" stroke-width="2"/>
+      <text x="52" y="28" font-size="11" font-weight="900" fill="${theme.silk}" font-family="monospace">YGEN-PCB REV.${this.stageNum}.0  //  ${st.machine.id.toUpperCase()}-CTRL</text>
+      <text x="${W - 52}" y="${H - 18}" text-anchor="end" font-size="10" font-weight="800" fill="${theme.silk}" font-family="monospace">+5V / GND  OK</text>
+    `;
+
+    // Background copper traces (strictly 90deg + 45deg!)
+    const bgTraces = st.traces.map((d) =>
+      `<path d="${d}" fill="none" stroke="${theme.copper}" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter" opacity="0.7"/>`
     ).join('');
 
-    // Corner PCB mounting holes
-    const holes = [[24, 24], [W - 24, 24], [24, H - 24], [W - 24, H - 24]].map(([hx, hy]) =>
-      `<circle cx="${hx}" cy="${hy}" r="9" fill="#0F172A" stroke="#FBBF24" stroke-width="3"/>`
-    ).join('');
+    // Gold-plated mounting holes at 4 corners
+    const holes = [[28, 28], [W - 28, 28], [28, H - 28], [W - 28, H - 28]].map(([hx, hy]) => `
+      <circle cx="${hx}" cy="${hy}" r="11" fill="#D97706" stroke="#FDE68A" stroke-width="2.5"/>
+      <circle cx="${hx}" cy="${hy}" r="5.5" fill="#0F172A"/>
+    `).join('');
 
-    // Guide lines (faint dashed hints for unconnected pairs) & Connected glowing cables
+    // Authentic 90deg/45deg octilinear PCB traces & corner vias
     let wiresHtml = '';
     for (const p of st.pairs) {
       const isDone = this.connected.has(p.id);
-      const pathD = wireCurvePath(p.a.x, p.a.y, p.b.x, p.b.y);
+      const pts = buildPcbTracePoints(p.a.x, p.a.y, p.b.x, p.b.y, p.laneX);
+      const pathD = pointsToSvgPath(pts);
+
       if (isDone) {
         wiresHtml += `
-          <path d="${pathD}" fill="none" stroke="${p.color.dark}" stroke-width="14" stroke-linecap="round"/>
-          <path d="${pathD}" fill="none" stroke="${p.color.hex}" stroke-width="9" stroke-linecap="round"/>
-          <path d="${pathD}" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="10 10" stroke-linecap="round" opacity="${this.powered ? '0.95' : '0.65'}"/>
+          <path d="${pathD}" fill="none" stroke="${p.color.dark}" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter"/>
+          <path d="${pathD}" fill="none" stroke="${p.color.hex}" stroke-width="7.5" stroke-linecap="square" stroke-linejoin="miter"/>
+          <path d="${pathD}" fill="none" stroke="${p.color.copper}" stroke-width="2.4" stroke-dasharray="10 8" stroke-linecap="square" opacity="${this.powered ? '1' : '0.75'}"/>
         `;
+        // Place gold vias at intermediate bend points for authentic PCB look
+        if (pts.length >= 4) {
+          const v1 = pts[1];
+          const v2 = pts[pts.length - 2];
+          wiresHtml += `
+            <circle cx="${v1[0].toFixed(1)}" cy="${v1[1].toFixed(1)}" r="5" fill="#FBBF24" stroke="#92400E" stroke-width="1.5"/>
+            <circle cx="${v1[0].toFixed(1)}" cy="${v1[1].toFixed(1)}" r="2" fill="#0F172A"/>
+            <circle cx="${v2[0].toFixed(1)}" cy="${v2[1].toFixed(1)}" r="5" fill="#FBBF24" stroke="#92400E" stroke-width="1.5"/>
+            <circle cx="${v2[0].toFixed(1)}" cy="${v2[1].toFixed(1)}" r="2" fill="#0F172A"/>
+          `;
+        }
       } else {
+        // Subtle silkscreen guide trace showing the 45-degree PCB corridor
         wiresHtml += `
-          <path d="${pathD}" fill="none" stroke="${p.color.hex}" stroke-width="3.5" stroke-dasharray="7 9" opacity="0.26"/>
+          <path d="${pathD}" fill="none" stroke="${p.color.hex}" stroke-width="3" stroke-dasharray="6 7" stroke-linejoin="miter" opacity="0.28"/>
         `;
       }
     }
 
-    // Electronic component chips & interactive color ports
-    const portR = this.mode === 'wide' ? 20 : 21;
-    let portsHtml = '';
+    // Large realistic electronic components mounted on the PCB
+    const compsHtml = st.components.map((comp) => `
+      <g transform="translate(${comp.x} ${comp.y})">
+        ${renderComponentSvg(comp, this.isComponentPowered(comp.id))}
+      </g>
+    `).join('');
+
+    // Gold-plated through-hole solder pads (lands) with clear color coding
+    const padR = this.mode === 'wide' ? 16 : 17;
+    let padsHtml = '';
     for (const p of st.pairs) {
       const isDone = this.connected.has(p.id);
       const isDraggingThis = this.drag && this.drag.pairId === p.id;
       for (const endKey of ['a', 'b']) {
         const pt = p[endKey];
-        const isTargetHighlight = isDraggingThis && this.drag.end !== endKey;
-        const r = isTargetHighlight ? portR + 6 : portR;
-        const offsetChipX = endKey === 'a' && pt.kind !== 'relay' ? -36 : (endKey === 'b' && pt.kind !== 'relay' ? 36 : 0);
-        const chipSvg = pt.kind === 'relay'
-          ? `<g transform="translate(${pt.x} ${pt.y - 34}) scale(0.72)">${renderPartIconSvg('relay', isDone)}</g>`
-          : `<g transform="translate(${pt.x + offsetChipX} ${pt.y}) scale(0.85)">${renderPartIconSvg(pt.kind, isDone)}</g>`;
-
-        portsHtml += `
-          ${chipSvg}
+        const isTarget = isDraggingThis && this.drag.end !== endKey;
+        const r = isTarget ? padR + 5 : padR;
+        padsHtml += `
           <g class="wc-port" data-pair="${p.id}" data-end="${endKey}" style="cursor:pointer;">
-            <circle cx="${pt.x}" cy="${pt.y}" r="${r + 8}" fill="transparent"/>
-            <circle class="${!isDone ? 'wc-port-pulse' : ''}" cx="${pt.x}" cy="${pt.y}" r="${r}"
-              fill="${p.color.hex}" stroke="#FFFFFF" stroke-width="${isTargetHighlight ? 5.5 : 4}"/>
-            <circle cx="${pt.x}" cy="${pt.y}" r="${isDone ? 7 : 5}" fill="${isDone ? '#FFFFFF' : p.color.dark}"/>
+            <circle cx="${pt.x}" cy="${pt.y}" r="${r + 10}" fill="transparent"/>
+            <!-- Outer gold solder pad -->
+            <circle cx="${pt.x}" cy="${pt.y}" r="${r + 2.5}" fill="#F59E0B" stroke="#92400E" stroke-width="1.6"/>
+            <!-- Color-coded signal ring -->
+            <circle class="${!isDone ? 'wc-port-pulse' : ''}" cx="${pt.x}" cy="${pt.y}" r="${r - 1.5}"
+              fill="${p.color.hex}" stroke="#FFFFFF" stroke-width="${isTarget ? 4 : 2.5}"/>
+            <!-- Through-hole drill center -->
+            <circle cx="${pt.x}" cy="${pt.y}" r="${isDone ? 5 : 4.2}" fill="${isDone ? '#FFFFFF' : '#0F172A'}"/>
           </g>
         `;
       }
     }
 
-    // Live dragging wire
+    // Real-time 90deg/45deg octilinear dragging trace!
     let liveWireHtml = '';
     if (this.drag) {
-      const d = wireCurvePath(this.drag.x1, this.drag.y1, this.drag.x2, this.drag.y2);
+      const livePts = buildPcbTracePoints(this.drag.x1, this.drag.y1, this.drag.x2, this.drag.y2);
+      const d = pointsToSvgPath(livePts);
       liveWireHtml = `
-        <path id="wc-live-wire-bg" d="${d}" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" opacity="0.5"/>
-        <path id="wc-live-wire" d="${d}" fill="none" stroke="${this.drag.color.hex}" stroke-width="10" stroke-linecap="round"/>
+        <path id="wc-live-wire-bg" d="${d}" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter" opacity="0.5"/>
+        <path id="wc-live-wire" d="${d}" fill="none" stroke="${this.drag.color.hex}" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>
       `;
     }
 
     this.svgEl.innerHTML = `
       <rect width="${W}" height="${H}" fill="${theme.bg}"/>
       ${gridLines}
-      ${tracesHtml}
+      ${bgTraces}
+      ${silkFrame}
       ${holes}
       ${wiresHtml}
+      ${compsHtml}
       ${liveWireHtml}
-      ${portsHtml}
+      ${padsHtml}
     `;
 
-    // Bind pointerdown on unconnected ports
     this.svgEl.querySelectorAll('.wc-port').forEach((el) => {
       el.addEventListener('pointerdown', (e) => {
         e.preventDefault();
@@ -416,9 +438,10 @@ export default class WireCraftGame {
           y1: startPt.y,
           x2: curPt.x,
           y2: curPt.y,
-          color: pair.color
+          color: pair.color,
+          laneX: pair.laneX
         };
-        this.sound.playButtonDown('yellow');
+        this.sound.playMetalClick();
         this.renderBoard();
       });
     });
@@ -430,7 +453,9 @@ export default class WireCraftGame {
     const pt = this.clientToSvg(e.clientX, e.clientY);
     this.drag.x2 = pt.x;
     this.drag.y2 = pt.y;
-    const d = wireCurvePath(this.drag.x1, this.drag.y1, this.drag.x2, this.drag.y2);
+    // Live octilinear (90deg + 45deg) PCB routing as the finger moves!
+    const livePts = buildPcbTracePoints(this.drag.x1, this.drag.y1, this.drag.x2, this.drag.y2);
+    const d = pointsToSvgPath(livePts);
     const bgEl = this.svgEl.querySelector('#wc-live-wire-bg');
     const fgEl = this.svgEl.querySelector('#wc-live-wire');
     if (bgEl) bgEl.setAttribute('d', d);
@@ -450,7 +475,7 @@ export default class WireCraftGame {
     const pt = this.clientToSvg(e.clientX, e.clientY);
     const dist = Math.hypot(pt.x - targetPt.x, pt.y - targetPt.y);
 
-    if (dist <= 56) {
+    if (dist <= 54) {
       this.connected.add(pair.id);
       this.sound.playCountPip(this.connected.size + 3);
       if (this.allWired() && !this.stage.hasSwitch) {
