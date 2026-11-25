@@ -1,3 +1,6 @@
+const loadMod = (file, v = '') =>
+  import(`${file}${v ? `?v=${encodeURIComponent(v)}` : ''}`).then((m) => m.default);
+
 export const GAME_REGISTRY = [
   {
     id: 'logic-book',
@@ -26,7 +29,7 @@ export const GAME_REGISTRY = [
         <rect x="56" y="60" width="12" height="5" rx="2.5" fill="#64748B"/>
       </svg>
     `,
-    load: () => import('./logic-book.js').then((m) => m.default)
+    load: (v) => loadMod('./logic-book.js', v)
   },
   {
     id: 'big-babies',
@@ -53,7 +56,7 @@ export const GAME_REGISTRY = [
         <circle cx="64" cy="44" r="3.5" fill="#FFFFFF" opacity="0.85"/>
       </svg>
     `,
-    load: () => import('./logic-book-2.js').then((m) => m.default)
+    load: (v) => loadMod('./logic-book-2.js', v)
   },
   {
     id: 'color-mix',
@@ -82,7 +85,7 @@ export const GAME_REGISTRY = [
         <path d="M79 57 L86 48 C88 53 85 59 79 57 Z" fill="#FF595E" stroke="#FFFFFF" stroke-width="2"/>
       </svg>
     `,
-    load: () => import('./color-mix.js').then((m) => m.default)
+    load: (v) => loadMod('./color-mix.js', v)
   },
   {
     id: 'sound-magic',
@@ -110,7 +113,7 @@ export const GAME_REGISTRY = [
         <rect x="60" y="42" width="11" height="24" rx="4" fill="#1E293B"/>
       </svg>
     `,
-    load: () => import('./sound-magic.js').then((m) => m.default)
+    load: (v) => loadMod('./sound-magic.js', v)
   },
   {
     id: 'pitch-quiz',
@@ -138,7 +141,7 @@ export const GAME_REGISTRY = [
         <circle cx="47" cy="75" r="5" fill="#FF595E"/>
       </svg>
     `,
-    load: () => import('./pitch-quiz.js').then((m) => m.default)
+    load: (v) => loadMod('./pitch-quiz.js', v)
   },
   {
     id: 'plus-magic',
@@ -166,7 +169,7 @@ export const GAME_REGISTRY = [
         <line x1="41" y1="68" x2="55" y2="68" stroke="#D97706" stroke-width="4.5" stroke-linecap="round"/>
       </svg>
     `,
-    load: () => import('./plus-magic.js').then((m) => m.default)
+    load: (v) => loadMod('./plus-magic.js', v)
   },
   {
     id: 'gear-machine',
@@ -199,7 +202,7 @@ export const GAME_REGISTRY = [
         </g>
       </svg>
     `,
-    load: () => import('./gear-machine.js').then((m) => m.default)
+    load: (v) => loadMod('./gear-machine.js', v)
   },
   {
     id: 'typing-pc',
@@ -225,7 +228,7 @@ export const GAME_REGISTRY = [
         <rect x="60" y="70" width="21" height="8" rx="2.5" fill="#38BDF8"/>
       </svg>
     `,
-    load: () => import('./typing-pc.js').then((m) => m.default)
+    load: (v) => loadMod('./typing-pc.js', v)
   },
   {
     id: 'watch-maker',
@@ -253,7 +256,7 @@ export const GAME_REGISTRY = [
         <circle cx="54" cy="72" r="5.5" fill="#FFD12E" stroke="#B45309" stroke-width="1.8"/>
       </svg>
     `,
-    load: () => import('./watch-maker.js').then((m) => m.default)
+    load: (v) => loadMod('./watch-maker.js', v)
   },
   {
     id: 'animal-phone',
@@ -283,7 +286,7 @@ export const GAME_REGISTRY = [
         <path d="M44.5 72.5 C46.5 75.5 49.5 76.5 51.5 75.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
       </svg>
     `,
-    load: () => import('./animal-phone.js').then((m) => m.default)
+    load: (v) => loadMod('./animal-phone.js', v)
   },
   {
     id: 'alexa-builder',
@@ -310,7 +313,7 @@ export const GAME_REGISTRY = [
         <path d="M48 59 A18 18 0 0 1 84 59 Q66 64 48 59 Z" fill="#F8FAFC"/>
       </svg>
     `,
-    load: () => import('./alexa-builder.js').then((m) => m.default)
+    load: (v) => loadMod('./alexa-builder.js', v)
   },
   {
     id: 'coming-next',

@@ -7,10 +7,23 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="あそびば" />
   <meta name="theme-color" content="#FF7043" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <link rel="icon" type="image/svg+xml" href="./icon.svg" />
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles/main.css" />
+  <script>
+    (function () {
+      var p = new URLSearchParams(window.location.search);
+      var ver = p.get('r') || String(Date.now());
+      window.__YGEN_VER = ver;
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = './styles/main.css?v=' + encodeURIComponent(ver);
+      document.head.appendChild(link);
+    })();
+  </script>
   <title>ちいく あそびば</title>
 </head>
 <body>
@@ -73,7 +86,7 @@
       </main>
 
       <footer class="home-footer">
-        iPad マルチタッチたいおう ・ おとが でるよ
+        iPad マルチタッチたいおう ・ おとが でるよ ・ <span id="app-version"></span>
       </footer>
     </section>
 
@@ -105,6 +118,9 @@
     </section>
   </div>
 
-  <script type="module" src="./core/app-shell.js"></script>
+  <script type="module">
+    const ver = window.__YGEN_VER || String(Date.now());
+    import(`./core/app-shell.js?v=${encodeURIComponent(ver)}`);
+  </script>
 </body>
 </html>

@@ -1,11 +1,17 @@
 import { SoundEngine } from './sound-engine.js';
-import { GAME_REGISTRY } from '../games/registry.js';
+
+const APP_VERSION = 'v25.1';
+
+function getCacheVer() {
+  return (typeof window !== 'undefined' && window.__YGEN_VER) ? String(window.__YGEN_VER) : APP_VERSION;
+}
 
 export class AppShell {
   constructor() {
     this.sound = new SoundEngine();
     this.activeGame = null;
     this.isLaunching = false;
+    this.registry = [];
     this.homeScreen = document.getElementById('home-screen');
     this.gameScreen = document.getElementById('game-screen');
     this.gameGrid = document.getElementById('game-grid');
@@ -13,12 +19,28 @@ export class AppShell {
     this.closeGameBtn = document.getElementById('close-game-btn');
     this.reloadBtn = document.getElementById('app-reload-btn');
 
+    const verEl = document.getElementById('app-version');
+    if (verEl) verEl.textContent = APP_VERSION;
+
     this.initTouchGuards();
     this.initVisibilityGuards();
     this.initSoundButtons();
     this.initReloadButton();
     this.initCloseButton();
-    this.renderMenu();
+    this.loadRegistryAndRender();
+  }
+
+  async loadRegistryAndRender() {
+    try {
+      const ver = getCacheVer();
+      const mod = await import(`../games/registry.js?v=${encodeURIComponent(ver)}`);
+      this.registry = mod.GAME_REGISTRY || [];
+      this.renderMenu();
+    } catch (err) {
+      if (this.gameGrid) {
+        this.gameGrid.innerHTML = `<div class="noscript-banner" style="grid-column:1/-1;">メニューよみこみエラー: ${String(err && err.message ? err.message : err)}</div>`;
+      }
+    }
   }
 
   initVisibilityGuards() {
@@ -42,16 +64,34 @@ export class AppShell {
 
   initReloadButton() {
     if (!this.reloadBtn) return;
-    this.reloadBtn.addEventListener('pointerdown', (e) => {
+    this.reloadBtn.addEventListener('pointerdown', async (e) => {
       e.preventDefault();
       this.sound.unlock();
       this.reloadBtn.classList.add('is-pressed');
       this.sound.playPageTurn(1);
+
+      // Clear Cache Storage & any Service Workers (important for iPadOS 17 Standalone PWA)
+      try {
+        if ('caches' in window && window.caches && window.caches.keys) {
+          const keys = await window.caches.keys();
+          await Promise.all(keys.map((k) => window.caches.delete(k)));
+        }
+      } catch (_) {}
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        }
+      } catch (_) {}
+
+      const ts = String(Date.now());
       const url = new URL(window.location.href);
-      url.searchParams.set('r', String(Date.now()));
-      setTimeout(() => {
-        window.location.replace(url.toString());
-      }, 120);
+      url.searchParams.set('r', ts);
+      try {
+        await fetch(url.toString(), { cache: 'reload' });
+      } catch (_) {}
+
+      window.location.replace(url.toString());
     });
   }
 
@@ -106,7 +146,7 @@ export class AppShell {
 
   renderMenu() {
     this.gameGrid.innerHTML = '';
-    GAME_REGISTRY.forEach((item) => {
+    this.registry.forEach((item) => {
       const card = document.createElement('button');
       card.type = 'button';
       card.className = `game-card ${item.available ? '' : 'is-coming-soon'}`;
@@ -159,7 +199,7 @@ export class AppShell {
         this.activeGame.unmount();
         this.activeGame = null;
       }
-      const GameClass = await item.load();
+      const GameClass = await item.load(getCacheVer());
       this.activeGame = new GameClass(this.gameMount, this);
       this.activeGame.mount();
 
