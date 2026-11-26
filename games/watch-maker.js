@@ -1,5 +1,6 @@
 import { FLAT_ICONS } from '../core/flat-icons.js';
-import { Pseudo3DController, buildLayeredRigHtml, showSideCelebration } from '../core/pseudo-3d-viewer.js';
+import { showSideCelebration } from '../core/pseudo-3d-viewer.js';
+import { WatchMaker3DViewer } from './watch-maker-3d.js';
 import { CLOCK_MODELS, getClockStageParts } from './watch-maker-models.js';
 import { renderMechPartSvg, renderClockHandSvg } from './watch-maker-parts.js';
 
@@ -291,12 +292,9 @@ export default class WatchMakerGame {
           `).join('')}
         </div>
         <div class="wm-stage-wrap">
-          <div class="p3d-scene" id="wm-p3d-scene">
-            <div class="p3d-rig" id="wm-p3d-rig">
-              <svg class="wm-svg" id="wm-svg" viewBox="0 0 560 400" aria-label="とけい くみたて"></svg>
-            </div>
-            <div class="p3d-hint-chip is-hidden" id="wm-3d-hint">ゆびで くるくる まわして みてみよう！</div>
-          </div>
+          <svg class="wm-svg" id="wm-svg" viewBox="0 0 560 400" aria-label="とけい くみたて"></svg>
+          <div id="wm-3d-mount" style="display:none;width:100%;height:100%;"></div>
+          <div class="p3d-hint-chip is-hidden" id="wm-3d-hint">ゆびで 360ど くるくる まわして みてみよう！</div>
         </div>
       </div>
       <div class="wm-tray" id="wm-tray"></div>
@@ -304,23 +302,15 @@ export default class WatchMakerGame {
     this.container.appendChild(root);
 
     this.rootEl = root;
-    this.p3dScene = root.querySelector('#wm-p3d-scene');
-    this.p3dRig = root.querySelector('#wm-p3d-rig');
-    this.p3dHint = root.querySelector('#wm-3d-hint');
     this.svgEl = root.querySelector('#wm-svg');
+    this.mount3dEl = root.querySelector('#wm-3d-mount');
+    this.p3dHint = root.querySelector('#wm-3d-hint');
     this.trayEl = root.querySelector('#wm-tray');
     this.bannerEl = root.querySelector('#wm-banner');
     this.progressEl = root.querySelector('#wm-progress');
     this.skeletonBtn = root.querySelector('#wm-skeleton-btn');
     this.hintBtn = root.querySelector('#wm-hint-btn');
-
-    this.p3d = new Pseudo3DController(this.p3dScene, this.p3dRig, {
-      maxYaw: 56,
-      maxPitch: 36,
-      onFirstDrag: () => {
-        if (this.p3dHint) this.p3dHint.classList.add('is-hidden');
-      }
-    });
+    this.viewer3d = null;
 
     this.hintBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -368,11 +358,11 @@ export default class WatchMakerGame {
     this.skeletonBtn.classList.toggle('is-on', this.skeletonMode);
     this.skeletonBtn.textContent = this.skeletonMode ? 'もじばん を もどす' : 'なかを みる';
     this.sound.playButtonDown('yellow');
-    this.renderWatchSvg();
     if (this.completed) {
-      if (this.p3d) this.p3d.setExploded(this.skeletonMode);
+      if (this.viewer3d) this.viewer3d.setExploded(this.skeletonMode);
       this.renderTray();
-      this.startWatchAnimation();
+    } else {
+      this.renderWatchSvg();
     }
   }
 
@@ -382,9 +372,9 @@ export default class WatchMakerGame {
       clearTimeout(this.celebTimer);
       this.celebTimer = null;
     }
-    if (this.p3d) {
-      this.p3d.destroy();
-      this.p3d = null;
+    if (this.viewer3d) {
+      this.viewer3d.destroy();
+      this.viewer3d = null;
     }
     this.clearDrag();
     window.removeEventListener('pointermove', this.boundMove);
@@ -419,7 +409,9 @@ export default class WatchMakerGame {
       this.celebTimer = null;
     }
     this.clearDrag();
-    if (this.p3d) this.p3d.setEnabled(false);
+    if (this.viewer3d) this.viewer3d.stopLoop();
+    if (this.mount3dEl) this.mount3dEl.style.display = 'none';
+    if (this.svgEl) this.svgEl.style.display = '';
     if (this.p3dHint) this.p3dHint.classList.add('is-hidden');
 
     this.clockIndex = clockIdx;
@@ -599,22 +591,7 @@ export default class WatchMakerGame {
       `;
     }
 
-    // Completed mode: render multi-layer pseudo-3D clock with physical case thickness!
     if (this.completed) {
-      const layers = [
-        { z: -24, html: caseBg, cls: 'p3d-slice-deep' },
-        { z: -16, html: caseBg, cls: 'p3d-slice' },
-        { z: -8,  html: caseBg, cls: 'p3d-slice' },
-        { z: 0,   html: `${caseBg}${plateSvg}${bodyExtLayer}` }
-      ];
-      if (mechLayer) layers.push({ z: 12, html: mechLayer });
-      if (dialLayer) layers.push({ z: 22, html: dialLayer });
-      if (handLayer) layers.push({ z: 30, html: handLayer });
-      if (glassLayer || fxSvg) layers.push({ z: 38, html: `${glassLayer}${fxSvg}` });
-
-      this.p3dRig.innerHTML = buildLayeredRigHtml(layers, '0 0 560 400', 'wm-svg');
-      this.svgEl = this.p3dRig.querySelector('svg');
-      if (this.p3d) this.p3d.applyLayerDepths();
       return;
     }
 
@@ -637,8 +614,7 @@ export default class WatchMakerGame {
       }
     }
 
-    this.p3dRig.innerHTML = `<svg class="wm-svg" id="wm-svg" viewBox="0 0 560 400" aria-label="とけい くみたて">${caseBg}${plateSvg}${installedSvg}${fxSvg}${guideSvg}</svg>`;
-    this.svgEl = this.p3dRig.querySelector('#wm-svg');
+    this.svgEl.innerHTML = `${caseBg}${plateSvg}${installedSvg}${fxSvg}${guideSvg}`;
   }
 
   renderTray() {
@@ -647,11 +623,10 @@ export default class WatchMakerGame {
 
     if (this.completed) {
       const hasNextLevel = this.levelIndex < LEVELS.length - 1;
-      const canExplode = this.stageParts.some((p) => p.kind === 'custom-dial') || level.id === 'movement';
       this.trayEl.innerHTML = `
         <div class="wm-done-actions">
           <button class="wm-replay-btn is-green" id="wm-next-btn" type="button">${hasNextLevel ? 'つぎの レベルへ' : 'つぎの とけいへ'}</button>
-          ${canExplode ? `<button class="wm-replay-btn is-teal" id="wm-explode-btn" type="button">${this.skeletonMode ? 'カバーを もどす' : 'なかを みる'}</button>` : ''}
+          <button class="wm-replay-btn is-teal" id="wm-explode-btn" type="button">${this.skeletonMode ? 'カバーを もどす' : 'なかを みる'}</button>
           <button class="wm-replay-btn is-slate" id="wm-reset-3d-btn" type="button">しょうめん</button>
           <button class="wm-replay-btn is-blue" id="wm-replay-btn" type="button">もういっかい</button>
         </div>
@@ -665,17 +640,14 @@ export default class WatchMakerGame {
           this.loadSetup((this.clockIndex + 1) % CLOCK_MODELS.length, 0);
         }
       });
-      const expBtn = this.trayEl.querySelector('#wm-explode-btn');
-      if (expBtn) {
-        expBtn.addEventListener('pointerdown', (e) => {
-          e.preventDefault();
-          this.toggleSkeletonMode();
-        });
-      }
+      this.trayEl.querySelector('#wm-explode-btn').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.toggleSkeletonMode();
+      });
       this.trayEl.querySelector('#wm-reset-3d-btn').addEventListener('pointerdown', (e) => {
         e.preventDefault();
         this.sound.playButtonDown('yellow');
-        if (this.p3d) this.p3d.resetView();
+        if (this.viewer3d) this.viewer3d.resetView();
       });
       this.trayEl.querySelector('#wm-replay-btn').addEventListener('pointerdown', (e) => {
         e.preventDefault();
@@ -895,15 +867,26 @@ export default class WatchMakerGame {
     showSideCelebration(this.rootEl);
 
     this.renderAll();
-    this.startWatchAnimation();
 
-    if (this.p3d) {
-      this.p3d.setEnabled(true);
-      this.p3d.introPose(-18, 10);
+    // Switch stage from 2D assembly SVG to true Three.js 3D watch viewer!
+    if (this.svgEl) this.svgEl.style.display = 'none';
+    if (this.mount3dEl) this.mount3dEl.style.display = 'block';
+    if (!this.viewer3d && this.mount3dEl) {
+      this.viewer3d = new WatchMaker3DViewer(this.mount3dEl, {
+        onFirstDrag: () => {
+          if (this.p3dHint) this.p3dHint.classList.add('is-hidden');
+        }
+      });
+    }
+    if (this.viewer3d) {
+      this.viewer3d.show(clock.id, { exploded: this.skeletonMode });
     }
     if (this.p3dHint) {
       this.p3dHint.classList.remove('is-hidden');
     }
+
+    // Keep authentic watch tick / pendulum tick sound running gently in background
+    this.startWatchAnimation();
 
     if (clock.id === 'cuckoo-white') {
       this.celebTimer = setTimeout(() => {
@@ -1060,7 +1043,7 @@ export default class WatchMakerGame {
   onPause() {
     this.paused = true;
     this.stopAnimation();
-    if (this.p3d) this.p3d.stopLoop();
+    if (this.viewer3d) this.viewer3d.onPause();
   }
 
   onResume() {
@@ -1068,6 +1051,7 @@ export default class WatchMakerGame {
     this.paused = false;
     if (this.completed) {
       this.startWatchAnimation();
+      if (this.viewer3d) this.viewer3d.onResume();
     }
   }
 
