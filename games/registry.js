@@ -355,7 +355,7 @@ export const GAME_REGISTRY = [
     title: 'でんき ラボ 3D',
     sub: 'HOW ITS WIRED',
     desc: '3Dの スイッチや ぶんでんばんを パチパチ そうさ！',
-    badge: 'NEW!',
+    badge: '',
     cta: 'あそぶ',
     bg: '#D97706',
     shadow: '#92400E',
@@ -382,6 +382,32 @@ export const GAME_REGISTRY = [
       </svg>
     `,
     load: (v) => loadMod('./power-lab.js', v)
+  },
+  {
+    id: 'tape-craft',
+    title: 'ぺたぺた テープ',
+    sub: 'TAPE CRAFT',
+    desc: 'ベリベリ のばして ペタッと はって ビリッと きろう！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#EA580C',
+    shadow: '#9A3412',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Pulled craft tape strip with hand-torn jagged right edge -->
+        <path d="M36 52 H82 L78 57 L84 62 L78 67 L84 72 L79 76 H36 Z" fill="#FACC15" stroke="#92400E" stroke-width="3" stroke-linejoin="round"/>
+        <line x1="44" y1="59" x2="74" y2="59" stroke="rgba(255,255,255,0.65)" stroke-width="3" stroke-linecap="round"/>
+        <!-- Secondary colorful strip stuck diagonally -->
+        <path d="M52 22 L80 34 L74 48 L46 36 Z" fill="#38BDF8" stroke="#0369A1" stroke-width="2.5" stroke-linejoin="round" opacity="0.92"/>
+        <!-- Chunky craft tape roll on left -->
+        <circle cx="36" cy="48" r="26" fill="#C88D55" stroke="#78350F" stroke-width="3.5"/>
+        <circle cx="36" cy="48" r="20" fill="#DDA974" stroke="#92400E" stroke-width="2" stroke-dasharray="6 5"/>
+        <circle cx="36" cy="48" r="12" fill="#F5E6D3" stroke="#78350F" stroke-width="3"/>
+        <circle cx="36" cy="48" r="7" fill="#FFFFFF"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./tape-craft.js', v)
   },
   {
     id: 'coming-next',
