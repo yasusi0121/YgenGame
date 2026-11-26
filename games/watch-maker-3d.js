@@ -436,47 +436,45 @@ function buildWoodHygro3D(THREE, root, anim) {
   const woodTex = makeWoodTexture(THREE, '#9B5114', '#5A2906', true);
   const woodMat = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.58, metalness: 0.04 });
 
-  // Vertical slightly tapered wooden board
+  // Vertical wooden board (depth 0.56 + bevel 0.10 => front face at z = +0.33)
   const boardGeo = new THREE.ExtrudeGeometry(makeRoundedRectShape(THREE, 3.05, 3.72, 0.12), {
     depth: 0.56, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.04, bevelSegments: 2
   });
   boardGeo.center();
   root.add(new THREE.Mesh(boardGeo, woodMat));
 
-  // Upper recessed round bezel & dial
+  // Upper recessed round bezel & dial (cleanly in front of z = +0.33!)
   const bezel = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.06, 12, 36), new THREE.MeshStandardMaterial({ color: 0x6B340A, roughness: 0.6 }));
-  bezel.position.set(0, 0.48, 0.32);
+  bezel.position.set(0, 0.48, 0.37);
   root.add(bezel);
 
-  addInternalGears(THREE, root, anim, 0, 0.48, 0.08, 1.08);
+  addInternalGears(THREE, root, anim, 0, 0.48, 0.12, 1.08);
 
   const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'wood-hygro'), roughness: 0.65, transparent: true, opacity: 1 });
-  const dial = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.04, 36), dialMat);
-  dial.rotation.x = Math.PI / 2; dial.rotation.y = -Math.PI / 2;
-  dial.position.set(0, 0.48, 0.3);
+  const dial = new THREE.Mesh(new THREE.CircleGeometry(1.15, 40), dialMat);
+  dial.position.set(0, 0.48, 0.36);
   root.add(dial);
-  anim.explodeParts.push({ obj: dial, baseZ: 0.3, expZ: 1.35, fadeMat: dialMat });
+  anim.explodeParts.push({ obj: dial, baseZ: 0.36, expZ: 1.42, fadeMat: dialMat });
 
   const handsGrp = new THREE.Group();
-  handsGrp.position.set(0, 0.48, 0.34);
+  handsGrp.position.set(0, 0.48, 0.39);
   root.add(handsGrp);
   anim.hands = build3DHands(THREE, handsGrp, 1.05, 'wood-hygro');
-  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.34, expZ: 1.72 });
+  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.39, expZ: 1.78 });
 
-  const glass = new THREE.Mesh(new THREE.CylinderGeometry(1.17, 1.17, 0.04, 36),
-    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.18, roughness: 0.06 }));
-  glass.rotation.x = Math.PI / 2; glass.position.set(0, 0.48, 0.44);
+  const glass = new THREE.Mesh(new THREE.CircleGeometry(1.17, 40),
+    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.16, roughness: 0.06 }));
+  glass.position.set(0, 0.48, 0.52);
   root.add(glass);
-  anim.explodeParts.push({ obj: glass, baseZ: 0.44, expZ: 2.15 });
+  anim.explodeParts.push({ obj: glass, baseZ: 0.52, expZ: 2.22 });
 
   // Lower-left Humidity gauge & Lower-right Temperature gauge (IMG_3268!)
   [['hygro', -0.84], ['thermo', 0.84]].forEach(([type, gx]) => {
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.49, 0.035, 10, 28), new THREE.MeshStandardMaterial({ color: 0x6B340A, roughness: 0.6 }));
-    rim.position.set(gx, -1.16, 0.31);
-    const face = new THREE.Mesh(new THREE.CylinderGeometry(0.47, 0.47, 0.04, 28),
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.49, 0.04, 10, 28), new THREE.MeshStandardMaterial({ color: 0x6B340A, roughness: 0.6 }));
+    rim.position.set(gx, -1.16, 0.37);
+    const face = new THREE.Mesh(new THREE.CircleGeometry(0.47, 32),
       new THREE.MeshStandardMaterial({ map: makeSubGaugeTexture(THREE, type), roughness: 0.65 }));
-    face.rotation.x = Math.PI / 2; face.rotation.y = -Math.PI / 2;
-    face.position.set(gx, -1.16, 0.3);
+    face.position.set(gx, -1.16, 0.36);
     root.add(rim, face);
   });
 
@@ -498,21 +496,21 @@ function buildSquareBrown3D(THREE, root, anim) {
   addInternalGears(THREE, root, anim, 0, 0, -0.02, 1.2);
 
   const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'square-brown'), roughness: 0.68, transparent: true, opacity: 1 });
-  const dial = new THREE.Mesh(new THREE.BoxGeometry(2.64, 2.64, 0.04), dialMat);
-  dial.position.z = 0.16;
+  const dial = new THREE.Mesh(new THREE.PlaneGeometry(2.64, 2.64), dialMat);
+  dial.position.z = 0.18;
   root.add(dial);
-  anim.explodeParts.push({ obj: dial, baseZ: 0.16, expZ: 1.25, fadeMat: dialMat });
+  anim.explodeParts.push({ obj: dial, baseZ: 0.18, expZ: 1.25, fadeMat: dialMat });
 
-  const handsGrp = new THREE.Group(); handsGrp.position.z = 0.2;
+  const handsGrp = new THREE.Group(); handsGrp.position.z = 0.21;
   root.add(handsGrp);
   anim.hands = build3DHands(THREE, handsGrp, 1.18, 'square-brown');
-  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.2, expZ: 1.65 });
+  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.21, expZ: 1.65 });
 
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(2.68, 2.68, 0.04),
-    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.18, roughness: 0.06 }));
-  glass.position.z = 0.36;
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(2.68, 2.68),
+    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.16, roughness: 0.06 }));
+  glass.position.z = 0.38;
   root.add(glass);
-  anim.explodeParts.push({ obj: glass, baseZ: 0.36, expZ: 2.1 });
+  anim.explodeParts.push({ obj: glass, baseZ: 0.38, expZ: 2.1 });
 }
 
 /** 3. White Minimalist Cuckoo House (IMG_3270): Flat bottom, NO pendulum, arched shutters, direct wall numerals */
@@ -527,6 +525,7 @@ function buildCuckooWhite3D(THREE, root, anim) {
   houseShape.lineTo(0, 1.88);
   houseShape.lineTo(-1.26, 0.86);
   houseShape.closePath();
+  // depth 1.15 + bevel 0.08 => front face at z = +0.615
   const houseGeo = new THREE.ExtrudeGeometry(houseShape, { depth: 1.15, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 2 });
   houseGeo.center();
   root.add(new THREE.Mesh(houseGeo, whiteMat));
@@ -540,15 +539,15 @@ function buildCuckooWhite3D(THREE, root, anim) {
 
   // Arched louvered shutters + 3D pop-out Cuckoo bird (IMG_3270)
   const winHole = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.56, 0.1), new THREE.MeshBasicMaterial({ color: 0x1E293B }));
-  winHole.position.set(0, 0.62, 0.57);
+  winHole.position.set(0, 0.62, 0.59);
   const shL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.58, 0.05), roofMat);
-  shL.position.set(-0.38, 0.62, 0.72); shL.rotation.y = -0.75;
+  shL.position.set(-0.38, 0.62, 0.74); shL.rotation.y = -0.75;
   const shR = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.58, 0.05), roofMat);
-  shR.position.set(0.38, 0.62, 0.72); shR.rotation.y = 0.75;
+  shR.position.set(0.38, 0.62, 0.74); shR.rotation.y = 0.75;
   root.add(winHole, shL, shR);
 
   const bird = new THREE.Group();
-  bird.position.set(0, 0.6, 0.68);
+  bird.position.set(0, 0.6, 0.7);
   const bBody = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), new THREE.MeshStandardMaterial({ color: 0x38BDF8, roughness: 0.45 }));
   bBody.scale.set(0.9, 0.9, 1.35);
   const beak = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 8), new THREE.MeshStandardMaterial({ color: 0xF59E0B }));
@@ -557,19 +556,19 @@ function buildCuckooWhite3D(THREE, root, anim) {
   root.add(bird);
   anim.cuckooBird = bird;
 
-  addInternalGears(THREE, root, anim, 0, -0.62, 0.22, 0.95);
+  addInternalGears(THREE, root, anim, 0, -0.62, 0.24, 0.95);
 
-  // Direct numerals on white wall (no circular frame!)
+  // Direct numerals on white wall (cleanly in front of z = +0.615!)
   const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'cuckoo-white'), roughness: 0.65, transparent: true, opacity: 1 });
   const dial = new THREE.Mesh(new THREE.PlaneGeometry(1.96, 1.96), dialMat);
-  dial.position.set(0, -0.62, 0.625);
+  dial.position.set(0, -0.62, 0.64);
   root.add(dial);
-  anim.explodeParts.push({ obj: dial, baseZ: 0.625, expZ: 1.55, fadeMat: dialMat });
+  anim.explodeParts.push({ obj: dial, baseZ: 0.64, expZ: 1.55, fadeMat: dialMat });
 
-  const handsGrp = new THREE.Group(); handsGrp.position.set(0, -0.62, 0.65);
+  const handsGrp = new THREE.Group(); handsGrp.position.set(0, -0.62, 0.67);
   root.add(handsGrp);
   anim.hands = build3DHands(THREE, handsGrp, 0.88, 'cuckoo-white');
-  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.65, expZ: 1.92 });
+  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.67, expZ: 1.92 });
 }
 
 /** 4. Steampunk Pipe & Pressure Gauge Clock (IMG_3271): Exact asymmetric composition! */
@@ -589,7 +588,6 @@ function buildSteampunk3D(THREE, root, anim) {
   standBase.position.set(-0.36, -1.42, -0.1);
   root.add(boiler, boilerRim, standBase);
 
-  // 12 metallic rivets around the iron boiler rim
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2;
     const rv = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), silverMat);
@@ -648,68 +646,67 @@ function buildSteampunk3D(THREE, root, anim) {
   root.add(valve);
   anim.valveWheel = valve;
 
-  // UPPER-RIGHT independent silver Pressure-Gauge Clock (IMG_3271!)
+  // UPPER-RIGHT independent silver Pressure-Gauge Clock (drum front at gz + 0.28 = +0.34)
   const gx = 1.22, gy = 1.14, gz = 0.06;
   const gDrum = new THREE.Mesh(new THREE.CylinderGeometry(0.86, 0.86, 0.56, 32), silverMat);
   gDrum.rotation.x = Math.PI / 2; gDrum.position.set(gx, gy, gz);
   const gRim = new THREE.Mesh(new THREE.TorusGeometry(0.84, 0.07, 10, 32), silverMat);
-  gRim.position.set(gx, gy, gz + 0.28);
+  gRim.position.set(gx, gy, gz + 0.32);
   root.add(gDrum, gRim);
 
-  addInternalGears(THREE, root, anim, gx, gy, gz + 0.05, 0.72);
+  addInternalGears(THREE, root, anim, gx, gy, gz + 0.08, 0.72);
 
   const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'steampunk-pipe'), roughness: 0.6, transparent: true, opacity: 1 });
-  const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.79, 0.79, 0.04, 32), dialMat);
-  dial.rotation.x = Math.PI / 2; dial.rotation.y = -Math.PI / 2;
-  dial.position.set(gx, gy, gz + 0.26);
+  const dial = new THREE.Mesh(new THREE.CircleGeometry(0.79, 36), dialMat);
+  dial.position.set(gx, gy, gz + 0.31);
   root.add(dial);
-  anim.explodeParts.push({ obj: dial, baseZ: gz + 0.26, expZ: gz + 1.15, fadeMat: dialMat });
+  anim.explodeParts.push({ obj: dial, baseZ: gz + 0.31, expZ: gz + 1.18, fadeMat: dialMat });
 
-  const handsGrp = new THREE.Group(); handsGrp.position.set(gx, gy, gz + 0.3);
+  const handsGrp = new THREE.Group(); handsGrp.position.set(gx, gy, gz + 0.34);
   root.add(handsGrp);
   anim.hands = build3DHands(THREE, handsGrp, 0.72, 'steampunk-pipe');
-  anim.explodeParts.push({ obj: handsGrp, baseZ: gz + 0.3, expZ: gz + 1.48 });
+  anim.explodeParts.push({ obj: handsGrp, baseZ: gz + 0.34, expZ: gz + 1.52 });
 
-  const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.81, 0.81, 0.04, 32),
-    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.2, roughness: 0.06 }));
-  glass.rotation.x = Math.PI / 2; glass.position.set(gx, gy, gz + 0.38);
+  const glass = new THREE.Mesh(new THREE.CircleGeometry(0.81, 36),
+    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.16, roughness: 0.06 }));
+  glass.position.set(gx, gy, gz + 0.44);
   root.add(glass);
-  anim.explodeParts.push({ obj: glass, baseZ: gz + 0.38, expZ: gz + 1.85 });
+  anim.explodeParts.push({ obj: glass, baseZ: gz + 0.44, expZ: gz + 1.9 });
 }
 
 /** 5. Matte Black Square Body + Recessed Round Dial (IMG_3272) */
 function buildModernBlack3D(THREE, root, anim) {
   const blkMat = new THREE.MeshStandardMaterial({ color: 0x18181B, roughness: 0.55, metalness: 0.12 });
+  // depth 0.72 + bevel 0.10 => front face at z = +0.41
   const bodyGeo = new THREE.ExtrudeGeometry(makeRoundedRectShape(THREE, 3.16, 3.16, 0.14), {
     depth: 0.72, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.04, bevelSegments: 2
   });
   bodyGeo.center();
   root.add(new THREE.Mesh(bodyGeo, blkMat));
 
-  // Glossy round bezel ring around circular dial
+  // Glossy round bezel ring around circular dial (cleanly in front of z = +0.41!)
   const bezel = new THREE.Mesh(new THREE.TorusGeometry(1.26, 0.08, 12, 36), new THREE.MeshStandardMaterial({ color: 0x09090B, roughness: 0.25, metalness: 0.3 }));
-  bezel.position.z = 0.4;
+  bezel.position.z = 0.46;
   root.add(bezel);
 
-  addInternalGears(THREE, root, anim, 0, 0, 0.14, 1.15);
+  addInternalGears(THREE, root, anim, 0, 0, 0.18, 1.15);
 
   const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'modern-black'), roughness: 0.65, transparent: true, opacity: 1 });
-  const dial = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.04, 36), dialMat);
-  dial.rotation.x = Math.PI / 2; dial.rotation.y = -Math.PI / 2;
-  dial.position.z = 0.38;
+  const dial = new THREE.Mesh(new THREE.CircleGeometry(1.22, 40), dialMat);
+  dial.position.z = 0.44;
   root.add(dial);
-  anim.explodeParts.push({ obj: dial, baseZ: 0.38, expZ: 1.4, fadeMat: dialMat });
+  anim.explodeParts.push({ obj: dial, baseZ: 0.44, expZ: 1.46, fadeMat: dialMat });
 
-  const handsGrp = new THREE.Group(); handsGrp.position.z = 0.42;
+  const handsGrp = new THREE.Group(); handsGrp.position.z = 0.47;
   root.add(handsGrp);
   anim.hands = build3DHands(THREE, handsGrp, 1.12, 'modern-black');
-  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.42, expZ: 1.78 });
+  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.47, expZ: 1.84 });
 
-  const glass = new THREE.Mesh(new THREE.CylinderGeometry(1.24, 1.24, 0.04, 36),
-    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.18, roughness: 0.06 }));
-  glass.rotation.x = Math.PI / 2; glass.position.z = 0.5;
+  const glass = new THREE.Mesh(new THREE.CircleGeometry(1.24, 40),
+    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.16, roughness: 0.06 }));
+  glass.position.z = 0.58;
   root.add(glass);
-  anim.explodeParts.push({ obj: glass, baseZ: 0.5, expZ: 2.18 });
+  anim.explodeParts.push({ obj: glass, baseZ: 0.58, expZ: 2.24 });
 }
 
 /** 6. Ornate Brown Brick-Style Pendulum Clock (IMG_3273): 3 finials, gold trim, open gear bay + gold ball pendulum */
@@ -718,7 +715,7 @@ function buildPendulumClock3D(THREE, root, anim) {
   const darkBrn  = new THREE.MeshStandardMaterial({ color: 0x3B140C, roughness: 0.62 });
   const goldMat  = new THREE.MeshStandardMaterial({ color: 0xD4AF37, metalness: 0.78, roughness: 0.24 });
 
-  // Tall stepped brick cabinet with open lower pendulum bay
+  // Tall stepped brick cabinet (topBox front face at -0.05 + 0.42 = +0.37)
   const back = new THREE.Mesh(new THREE.BoxGeometry(1.98, 3.65, 0.28), darkBrn);
   back.position.set(0, -0.1, -0.34);
   const topBox = new THREE.Mesh(new THREE.BoxGeometry(2.05, 1.65, 0.84), brownMat);
@@ -731,7 +728,7 @@ function buildPendulumClock3D(THREE, root, anim) {
   plinth.position.set(0, -1.92, -0.02);
   root.add(back, topBox, colL, colR, plinth);
 
-  // 3 Top Finials (large center + 2 side urns with gold tips) + gold crest (IMG_3273!)
+  // 3 Top Finials + gold crest
   [[0, 1.98, 0.22], [-0.88, 1.86, 0.14], [0.88, 1.86, 0.14]].forEach(([fx, fy, fr]) => {
     const urn = new THREE.Mesh(new THREE.SphereGeometry(fr, 14, 12), brownMat);
     urn.position.set(fx, fy, -0.05);
@@ -740,20 +737,20 @@ function buildPendulumClock3D(THREE, root, anim) {
     root.add(urn, tip);
   });
   const crest = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.12), goldMat);
-  crest.position.set(0, 1.62, 0.36);
+  crest.position.set(0, 1.62, 0.38);
   root.add(crest);
 
   // Gold filigree side trim bars & circular ornate bezel
   [-0.86, 0.86].forEach((tx) => {
     const trim = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.25, 0.12), goldMat);
-    trim.position.set(tx, 0.82, 0.38);
+    trim.position.set(tx, 0.82, 0.4);
     root.add(trim);
   });
   const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.76, 0.08, 12, 32), goldMat);
-  bezel.position.set(0, 0.82, 0.4);
+  bezel.position.set(0, 0.82, 0.42);
   root.add(bezel);
 
-  // Visible exposed gears inside the open lower bay (IMG_3273!)
+  // Visible exposed gears inside the open lower bay
   [
     { gx: -0.32, gy: -0.68, r: 0.24, c: 0x334155, sp: 0.9 },
     { gx: 0.28,  gy: -0.78, r: 0.26, c: 0x94A3B8, sp: -1.1 },
@@ -766,7 +763,7 @@ function buildPendulumClock3D(THREE, root, anim) {
     anim.gears.push({ mesh: gm, speed: gs.sp });
   });
 
-  // Big glossy golden spherical pendulum bob swinging in the open bay!
+  // Big glossy golden spherical pendulum bob swinging in the open bay
   const pend = new THREE.Group();
   pend.position.set(0, 0.1, 0.12);
   const rod = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.25, 0.06), goldMat);
@@ -777,18 +774,17 @@ function buildPendulumClock3D(THREE, root, anim) {
   root.add(pend);
   anim.pendulum = pend;
 
-  // Upper dial + hands
+  // Upper dial + hands (cleanly in front of topBox z = +0.37!)
   const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'pendulum-clock'), roughness: 0.65, transparent: true, opacity: 1 });
-  const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, 0.04, 32), dialMat);
-  dial.rotation.x = Math.PI / 2; dial.rotation.y = -Math.PI / 2;
-  dial.position.set(0, 0.82, 0.38);
+  const dial = new THREE.Mesh(new THREE.CircleGeometry(0.72, 36), dialMat);
+  dial.position.set(0, 0.82, 0.4);
   root.add(dial);
-  anim.explodeParts.push({ obj: dial, baseZ: 0.38, expZ: 1.32, fadeMat: dialMat });
+  anim.explodeParts.push({ obj: dial, baseZ: 0.4, expZ: 1.35, fadeMat: dialMat });
 
-  const handsGrp = new THREE.Group(); handsGrp.position.set(0, 0.82, 0.42);
+  const handsGrp = new THREE.Group(); handsGrp.position.set(0, 0.82, 0.43);
   root.add(handsGrp);
   anim.hands = build3DHands(THREE, handsGrp, 0.64, 'pendulum-clock');
-  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.42, expZ: 1.68 });
+  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.43, expZ: 1.72 });
 }
 
 /** 7. Vintage Dark-Wood Frame + Silver Trim + Champagne Linen Dial + 12 3D Silver Batons (IMG_3274) */
@@ -800,75 +796,72 @@ function buildVintageGold3D(THREE, root, anim) {
   const back = new THREE.Mesh(new THREE.BoxGeometry(3.45, 3.25, 0.24), woodMat);
   back.position.z = -0.26;
   root.add(back);
-  // Wide dark wood picture frame
   addBeveledFrame(THREE, root, 3.55, 3.35, 0.42, 0.68, woodMat, 0.04);
-  // Inner crisp silver metallic frame & champagne recessed liner
   addBeveledFrame(THREE, root, 2.72, 2.52, 0.07, 0.46, silverMat, 0.14);
   addBeveledFrame(THREE, root, 2.58, 2.38, 0.12, 0.36, innerMat, 0.08);
 
   addInternalGears(THREE, root, anim, 0, 0, -0.04, 1.1);
 
-  // Champagne brushed linen dial + 12 real 3D metallic silver baton indices!
   const dialGrp = new THREE.Group();
-  dialGrp.position.z = 0.12;
+  dialGrp.position.z = 0.14;
   const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'vintage-gold'), roughness: 0.62, transparent: true, opacity: 1 });
-  const dial = new THREE.Mesh(new THREE.BoxGeometry(2.38, 2.18, 0.04), dialMat);
+  const dial = new THREE.Mesh(new THREE.PlaneGeometry(2.38, 2.18), dialMat);
   dialGrp.add(dial);
 
   for (let i = 0; i < 12; i++) {
     const a = (i * 30 - 90) * Math.PI / 180;
     const isCard = i % 3 === 0;
     const baton = new THREE.Mesh(new THREE.BoxGeometry(isCard ? 0.1 : 0.075, isCard ? 0.28 : 0.24, 0.05), silverMat);
-    baton.position.set(Math.cos(a) * 0.88, -Math.sin(a) * 0.82, 0.04);
+    baton.position.set(Math.cos(a) * 0.88, -Math.sin(a) * 0.82, 0.03);
     baton.rotation.z = -a + Math.PI / 2;
     dialGrp.add(baton);
   }
   root.add(dialGrp);
-  anim.explodeParts.push({ obj: dialGrp, baseZ: 0.12, expZ: 1.25, fadeMat: dialMat });
+  anim.explodeParts.push({ obj: dialGrp, baseZ: 0.14, expZ: 1.25, fadeMat: dialMat });
 
-  const handsGrp = new THREE.Group(); handsGrp.position.z = 0.18;
+  const handsGrp = new THREE.Group(); handsGrp.position.z = 0.2;
   root.add(handsGrp);
   anim.hands = build3DHands(THREE, handsGrp, 0.96, 'vintage-gold');
-  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.18, expZ: 1.65 });
+  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.2, expZ: 1.65 });
 
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(2.58, 2.38, 0.04),
-    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.18, roughness: 0.06 }));
-  glass.position.z = 0.36;
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(2.58, 2.38),
+    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.16, roughness: 0.06 }));
+  glass.position.z = 0.38;
   root.add(glass);
-  anim.explodeParts.push({ obj: glass, baseZ: 0.36, expZ: 2.1 });
+  anim.explodeParts.push({ obj: glass, baseZ: 0.38, expZ: 2.1 });
 }
 
 /** 8. Natural Light-Oak Round Radio Clock */
 function buildRoundRadio3D(THREE, root, anim) {
   const oakMat = new THREE.MeshStandardMaterial({ map: makeWoodTexture(THREE, '#C7A672', '#9A7B4F', true), roughness: 0.62 });
+  // drum front face at z = +0.34
   const drum = new THREE.Mesh(new THREE.CylinderGeometry(1.74, 1.7, 0.68, 40), oakMat);
   drum.rotation.x = Math.PI / 2;
   const bezel = new THREE.Mesh(new THREE.TorusGeometry(1.64, 0.14, 14, 40), oakMat);
-  bezel.position.z = 0.32;
+  bezel.position.z = 0.36;
   root.add(drum, bezel);
 
   // Ferrite rod radio antenna inside
   const ferrite = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.3, 12), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 }));
   ferrite.rotation.z = Math.PI / 2; ferrite.position.set(0, 0.86, 0);
-  addInternalGears(THREE, root, anim, 0, 0, 0.06, 1.35, [ferrite]);
+  addInternalGears(THREE, root, anim, 0, 0, 0.08, 1.35, [ferrite]);
 
   const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'round-radio'), roughness: 0.65, transparent: true, opacity: 1 });
-  const dial = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.52, 0.04, 40), dialMat);
-  dial.rotation.x = Math.PI / 2; dial.rotation.y = -Math.PI / 2;
-  dial.position.z = 0.36;
+  const dial = new THREE.Mesh(new THREE.CircleGeometry(1.52, 40), dialMat);
+  dial.position.z = 0.37;
   root.add(dial);
-  anim.explodeParts.push({ obj: dial, baseZ: 0.36, expZ: 1.35, fadeMat: dialMat });
+  anim.explodeParts.push({ obj: dial, baseZ: 0.37, expZ: 1.38, fadeMat: dialMat });
 
   const handsGrp = new THREE.Group(); handsGrp.position.z = 0.4;
   root.add(handsGrp);
   anim.hands = build3DHands(THREE, handsGrp, 1.38, 'round-radio');
-  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.4, expZ: 1.75 });
+  anim.explodeParts.push({ obj: handsGrp, baseZ: 0.4, expZ: 1.78 });
 
-  const glass = new THREE.Mesh(new THREE.CylinderGeometry(1.54, 1.54, 0.04, 40),
-    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.18, roughness: 0.06 }));
-  glass.rotation.x = Math.PI / 2; glass.position.z = 0.48;
+  const glass = new THREE.Mesh(new THREE.CircleGeometry(1.54, 40),
+    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.16, roughness: 0.06 }));
+  glass.position.z = 0.5;
   root.add(glass);
-  anim.explodeParts.push({ obj: glass, baseZ: 0.48, expZ: 2.18 });
+  anim.explodeParts.push({ obj: glass, baseZ: 0.5, expZ: 2.2 });
 
   const waveMat = new THREE.MeshBasicMaterial({ color: 0x38BDF8, transparent: true, opacity: 0.85 });
   const w1 = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.04, 8, 20, Math.PI * 0.65), waveMat);
@@ -885,6 +878,7 @@ function buildAppleWatch3D(THREE, root, anim) {
   const bandMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.78, metalness: 0.05 });
   const pinMat  = new THREE.MeshStandardMaterial({ color: 0xCBD5E1, metalness: 0.85, roughness: 0.2 });
 
+  // depth 0.54 + bevel 0.24 => front face at z = +0.39
   const caseGeo = new THREE.ExtrudeGeometry(makeRoundedRectShape(THREE, 2.05, 2.52, 0.56), {
     depth: 0.54, bevelEnabled: true, bevelThickness: 0.12, bevelSize: 0.09, bevelSegments: 5
   });
@@ -905,7 +899,7 @@ function buildAppleWatch3D(THREE, root, anim) {
   claspPin.rotation.x = Math.PI / 2; claspPin.position.set(0, -0.1, -3.08);
   root.add(claspPin);
 
-  // Knurled Digital Crown + Side button + Dual speaker slits
+  // Knurled Digital Crown + Side button
   const crownPivot = new THREE.Group();
   crownPivot.position.set(1.16, 0.52, 0.02);
   const crownDrum = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.2, 20), bodyMat);
@@ -960,7 +954,7 @@ function buildAppleWatch3D(THREE, root, anim) {
   battery.position.set(0.06, -0.02, 0.16); internal.add(battery);
   anim.explodeParts.push({ obj: battery, baseZ: 0.16, expZ: 1.38 });
 
-  // Front Numerals Duo OLED + Ion-X Cover Glass
+  // Front Numerals Duo OLED + Ion-X Cover Glass (cleanly in front of z = +0.39!)
   const awScreen = createAppleWatchScreen(THREE);
   anim.awScreen = awScreen;
   const screenGeo = new THREE.ShapeGeometry(makeRoundedRectShape(THREE, 1.78, 2.24, 0.44), 16);
@@ -973,18 +967,18 @@ function buildAppleWatch3D(THREE, root, anim) {
   screenGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
   const screenMat = new THREE.MeshBasicMaterial({ map: awScreen.tex, transparent: true, opacity: 1.0 });
   const screenMesh = new THREE.Mesh(screenGeo, screenMat);
-  screenMesh.position.z = 0.41;
+  screenMesh.position.z = 0.42;
   root.add(screenMesh);
-  anim.explodeParts.push({ obj: screenMesh, baseZ: 0.41, expZ: 2.02, fadeMat: screenMat });
+  anim.explodeParts.push({ obj: screenMesh, baseZ: 0.42, expZ: 2.02, fadeMat: screenMat });
 
   const glassGeo = new THREE.ExtrudeGeometry(makeRoundedRectShape(THREE, 1.88, 2.34, 0.48), {
     depth: 0.04, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 3
   });
   glassGeo.center();
-  const glassMesh = new THREE.Mesh(glassGeo, new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.22, roughness: 0.06, metalness: 0.15 }));
-  glassMesh.position.z = 0.45;
+  const glassMesh = new THREE.Mesh(glassGeo, new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.2, roughness: 0.06, metalness: 0.15 }));
+  glassMesh.position.z = 0.48;
   root.add(glassMesh);
-  anim.explodeParts.push({ obj: glassMesh, baseZ: 0.45, expZ: 2.42 });
+  anim.explodeParts.push({ obj: glassMesh, baseZ: 0.48, expZ: 2.42 });
 }
 
 /**
