@@ -832,6 +832,99 @@ export const CLOCK_MODELS = [
         { id: 'bandBot', label: 'した バンド',     ruby: 'スポーツ',     kind: 'aw-band-bot',  x: 280, y: 342, r: 46, thumbBox: '-60 -36 120 86',   req: 'bandTop', phase: 'face' }
       ];
     }
+  },
+
+  /* =========================================================================
+     10. Beaded Bracelet Watch — Child's Personal Glossy 11-Bead Watch
+         Faithful 1-to-1 reproduction of IMG_3294.jpeg:
+         Exact 11 glossy pastel/vivid beads on elastic loop, mirror chrome
+         round case with top/bottom lug rings & 3 o'clock crown, white dial
+         with bold black numerals 1-12 + QUARTZ, and silver dauphine hands.
+     ========================================================================= */
+  {
+    id: 'bead-watch',
+    name: 'ビーズ うでどけい',
+    mechLabel: 'クォーツ ＋ 11ビーズ',
+    handStyle: 'bead-watch',
+    handScale: 0.92,
+    hasSecond: true,
+    animType: 'quartz-step',
+    dialCenter: { x: 382, y: 200, r: 78 },
+    thumbSvg: `
+      <svg viewBox="0 0 64 64" fill="none">
+        <!-- 11 beads in exact color order -->
+        <circle cx="44" cy="15" r="5.5" fill="#DF4B9B"/>
+        <circle cx="34" cy="10" r="5.5" fill="#6E9ED2"/>
+        <circle cx="22" cy="11" r="5.5" fill="#DF4B9B"/>
+        <circle cx="13" cy="17" r="5.5" fill="#F8A39A"/>
+        <circle cx="9"  cy="27" r="5.5" fill="#F7F1D5"/>
+        <circle cx="10" cy="38" r="5.5" fill="#DF4B9B"/>
+        <circle cx="16" cy="48" r="5.5" fill="#ECE459"/>
+        <circle cx="26" cy="54" r="5.5" fill="#DF4B9B"/>
+        <circle cx="37" cy="53" r="5.5" fill="#ECE459"/>
+        <circle cx="46" cy="47" r="5.5" fill="#B2E39E"/>
+        <circle cx="51" cy="39" r="5.5" fill="#F6C8D2"/>
+        <!-- Chrome round watch head on right -->
+        <circle cx="47" cy="28" r="12" fill="#E2E8F0" stroke="#475569" stroke-width="2.5"/>
+        <circle cx="47" cy="28" r="8.5" fill="#FFFFFF"/>
+        <line x1="47" y1="28" x2="47" y2="22" stroke="#475569" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="47" y1="28" x2="52" y2="28" stroke="#64748B" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    `,
+    renderCaseBg() {
+      return `
+        <!-- Top & bottom silver lug rings for the elastic bead loop -->
+        <circle cx="382" cy="100" r="13" fill="#CBD5E1" stroke="#475569" stroke-width="3.5"/>
+        <circle cx="382" cy="100" r="5"  fill="#1E293B"/>
+        <circle cx="382" cy="300" r="13" fill="#CBD5E1" stroke="#475569" stroke-width="3.5"/>
+        <circle cx="382" cy="300" r="5"  fill="#1E293B"/>
+        <!-- Mirror-polished chrome round bezel case -->
+        <circle cx="382" cy="200" r="98" fill="#CBD5E1" stroke="#475569" stroke-width="4.5"/>
+        <circle cx="382" cy="200" r="90" fill="none" stroke="#F8FAFC" stroke-width="5" opacity="0.85"/>
+        <circle cx="382" cy="200" r="82" fill="#334155" stroke="#64748B" stroke-width="2.5"/>
+      `;
+    },
+    renderMovementPlate() {
+      return `
+        <circle cx="382" cy="200" r="78" fill="#E2E8F0" stroke="#64748B" stroke-width="2.5"/>
+        <circle cx="382" cy="200" r="64" fill="none" stroke="#94A3B8" stroke-width="1.6" stroke-dasharray="5 4"/>
+      `;
+    },
+    renderDialSvg() {
+      const nums = buildRadialNumbers(0, 0, 56, ['1','2','3','4','5','6','7','8','9','10','11','12'], 18, '#18181B', '900', 'Georgia, serif');
+      return `
+        <circle cx="0" cy="0" r="76" fill="#FAFAFA" stroke="#CBD5E1" stroke-width="2.5"/>
+        ${nums}
+        <text x="0" y="32" text-anchor="middle" font-size="9.5" font-weight="800" fill="#27272A" letter-spacing="1.2" font-family="sans-serif">QUARTZ</text>
+        <circle cx="0" cy="0" r="5" fill="#94A3B8"/>
+      `;
+    },
+    renderGlassSvg() {
+      return `
+        <circle cx="0" cy="0" r="78" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.55)" stroke-width="2.5"/>
+        <path d="M -46 -44 A 62 62 0 0 1 36 -52" stroke="rgba(255,255,255,0.5)" stroke-width="6" stroke-linecap="round" fill="none"/>
+      `;
+    },
+    getMechParts() {
+      return [
+        { id: 'battery', label: 'ぼたんでんち', ruby: 'SR626',    kind: 'battery',      x: 356, y: 224, r: 22, thumbBox: '-30 -30 60 60', req: null,      phase: 'mech' },
+        { id: 'quartz',  label: 'クォーツIC',   ruby: 'すいしょう', kind: 'quartz-ic',  x: 354, y: 170, r: 22, thumbBox: '-36 -26 72 52', req: 'battery', phase: 'mech' },
+        { id: 'coil',    label: 'こいる',       ruby: 'モーター',   kind: 'motor-coil', x: 412, y: 228, r: 22, thumbBox: '-36 -24 72 48', req: 'quartz',  phase: 'mech' },
+        { id: 'center',  label: 'にばんしゃ',   ruby: '二番車',     kind: 'wheel-gold', x: 382, y: 200, r: 26, thumbBox: '-36 -36 72 72', req: 'coil',    speed: -0.9, phase: 'mech' },
+        { id: 'third',   label: 'さんばんしゃ', ruby: '三番車',     kind: 'wheel-silver', x: 418, y: 176, r: 19, thumbBox: '-28 -28 56 56', req: 'center', speed: 1.6, phase: 'mech' },
+        { id: 'crown',   label: 'りゅうず',     ruby: 'じこくあわせ', kind: 'bead-crown', x: 482, y: 200, r: 18, thumbBox: '-12 -18 32 36', req: 'third',  phase: 'mech' }
+      ];
+    },
+    getFaceParts(prevReq = null) {
+      return [
+        { id: 'dial',   label: 'もじばん',      kind: 'custom-dial',  x: 382, y: 200, r: 76, thumbBox: '-82 -82 164 164', req: prevReq, phase: 'face' },
+        { id: 'hour',   label: 'たんしん',      kind: 'hand-hour',    x: 382, y: 200, r: 34, thumbBox: '-24 -64 48 80',   req: 'dial',  initAngle: 75,  phase: 'face' },
+        { id: 'minute', label: 'ちょうしん',    kind: 'hand-minute',  x: 382, y: 200, r: 42, thumbBox: '-24 -84 48 100',  req: 'hour',  initAngle: 82,  phase: 'face' },
+        { id: 'second', label: 'びょうしん',    kind: 'hand-second',  x: 382, y: 200, r: 44, thumbBox: '-24 -86 48 108',  req: 'minute', initAngle: 126, phase: 'face' },
+        { id: 'glass',  label: 'ドームがらす',  kind: 'custom-glass', x: 382, y: 200, r: 78, thumbBox: '-84 -84 168 168', req: 'second', phase: 'face' },
+        { id: 'beads',  label: '11ビーズバンド', ruby: 'カラフル',    kind: 'bead-band', x: 244, y: 200, r: 138, thumbBox: '-174 -174 328 352', req: 'glass', phase: 'face' }
+      ];
+    }
   }
 ];
 

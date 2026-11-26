@@ -480,6 +480,38 @@ export function renderMechPartSvg(kind, r = 34) {
         <circle cx="0" cy="18" r="4.5" fill="#0F172A"/>
         <circle cx="0" cy="32" r="4.5" fill="#0F172A"/>
       `;
+    case 'bead-crown': // Shiny chrome watch crown at 3 o'clock
+      return `
+        <rect x="-8" y="-5" width="8" height="10" rx="2" fill="#94A3B8" stroke="#475569" stroke-width="1.6"/>
+        <rect x="0" y="-12" width="13" height="24" rx="4" fill="#E2E8F0" stroke="#475569" stroke-width="2"/>
+        <line x1="2" y1="-7" x2="11" y2="-7" stroke="#64748B" stroke-width="1.8"/>
+        <line x1="2" y1="-2" x2="11" y2="-2" stroke="#64748B" stroke-width="1.8"/>
+        <line x1="2" y1="3"  x2="11" y2="3"  stroke="#64748B" stroke-width="1.8"/>
+        <line x1="2" y1="8"  x2="11" y2="8"  stroke="#64748B" stroke-width="1.8"/>
+      `;
+    case 'bead-band': {
+      // Exact 11 glossy beads in the exact color order from top lug counter-clockwise to bottom lug!
+      const beads = [
+        { x: 112, y: -96,  c: '#DF4B9B', s: '#B02870' }, // 1. Magenta pink (top lug)
+        { x: 52,  y: -128, c: '#6E9ED2', s: '#4874A8' }, // 2. Pastel blue
+        { x: -16, y: -136, c: '#DF4B9B', s: '#B02870' }, // 3. Magenta pink (top)
+        { x: -80, y: -112, c: '#F8A39A', s: '#D4766C' }, // 4. Coral peach
+        { x: -124,y: -60,  c: '#F7F1D5', s: '#C8BE94' }, // 5. Cream white
+        { x: -138,y: 6,    c: '#DF4B9B', s: '#B02870' }, // 6. Magenta pink (left)
+        { x: -122,y: 72,   c: '#ECE459', s: '#BFB628' }, // 7. Lemon yellow
+        { x: -80, y: 120,  c: '#DF4B9B', s: '#B02870' }, // 8. Magenta pink
+        { x: -16, y: 142,  c: '#ECE459', s: '#BFB628' }, // 9. Lemon yellow
+        { x: 52,  y: 136,  c: '#B2E39E', s: '#7BB366' }, // 10. Pastel mint green
+        { x: 112, y: 98,   c: '#F6C8D2', s: '#CA93A0' }  // 11. Baby pink (bottom lug)
+      ];
+      return `
+        <circle cx="-4" cy="4" r="136" fill="none" stroke="#E2E8F0" stroke-width="6" stroke-dasharray="10 6"/>
+        ${beads.map((b) => `
+          <circle cx="${b.x}" cy="${b.y}" r="31" fill="${b.c}" stroke="${b.s}" stroke-width="2.5"/>
+          <ellipse cx="${b.x - 10}" cy="${b.y - 11}" rx="9" ry="5.5" transform="rotate(-32 ${b.x - 10} ${b.y - 11})" fill="#FFFFFF" opacity="0.58"/>
+        `).join('')}
+      `;
+    }
     default:
       return '';
   }
@@ -610,6 +642,24 @@ export function renderClockHandSvg(handStyle, role, scale = 1) {
       return `
         <line x1="0" y1="24" x2="0" y2="${(-108 * s).toFixed(1)}" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
         <circle cx="0" cy="0" r="4.8" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+      `;
+
+    case 'bead-watch': // Pointed polished-silver dauphine hands + ultra-slim silver second hand
+      if (role === 'hour') {
+        return `
+          <polygon points="-4,10 -5,${(-38 * s).toFixed(1)} 0,${(-52 * s).toFixed(1)} 5,${(-38 * s).toFixed(1)} 4,10" fill="#94A3B8" stroke="#475569" stroke-width="1.6"/>
+          <circle cx="0" cy="0" r="6" fill="#CBD5E1" stroke="#475569" stroke-width="1.5"/>
+        `;
+      }
+      if (role === 'minute') {
+        return `
+          <polygon points="-3,12 -3.8,${(-56 * s).toFixed(1)} 0,${(-72 * s).toFixed(1)} 3.8,${(-56 * s).toFixed(1)} 3,12" fill="#CBD5E1" stroke="#475569" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="5" fill="#E2E8F0" stroke="#475569" stroke-width="1.4"/>
+        `;
+      }
+      return `
+        <line x1="0" y1="16" x2="0" y2="${(-76 * s).toFixed(1)}" stroke="#64748B" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="0" cy="0" r="4" fill="#94A3B8" stroke="#334155" stroke-width="1.4"/>
       `;
 
     case 'round-radio': // Sleek tapered charcoal hands w/ rear counterweights

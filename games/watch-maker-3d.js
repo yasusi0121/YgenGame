@@ -248,6 +248,16 @@ function makeDialTexture(THREE, clockId) {
     }
     ctx.fillStyle = '#52525B'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = '700 18px Georgia, serif'; ctx.fillText('QUARTZ', cx, 344);
+  } else if (clockId === 'bead-watch') {
+    // Child's personal beaded watch dial (IMG_3294): pure white, bold classic black numerals 1-12, QUARTZ, no tick ring
+    ctx.fillStyle = '#FAFAFA'; ctx.fillRect(0, 0, 512, 512);
+    ctx.fillStyle = '#18181B'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '900 54px Georgia, serif';
+    ['1','2','3','4','5','6','7','8','9','10','11','12'].forEach((n, i) => {
+      const a = ((i + 1) * 30 - 90) * Math.PI / 180;
+      ctx.fillText(n, cx + Math.cos(a) * 184, cy + Math.sin(a) * 184);
+    });
+    ctx.font = '800 24px sans-serif'; ctx.fillStyle = '#27272A';
+    ctx.fillText('QUARTZ', cx, 356);
   } else {
     // round-radio: clean white dial
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, 512, 512);
@@ -387,6 +397,14 @@ function build3DHands(THREE, parent, radius, clockId) {
     minute.add(mLoop, mSpire);
     const sBar = new THREE.Mesh(new THREE.BoxGeometry(0.02, radius * 1.05, 0.02), silMat);
     sBar.position.y = radius * 0.3; second.add(sBar);
+  } else if (clockId === 'bead-watch') {
+    // Polished silver pointed dauphine hands + slim silver second (IMG_3294!)
+    const hCone = new THREE.Mesh(new THREE.ConeGeometry(0.065, radius * 0.64, 4), silMat);
+    hCone.scale.set(1, 1, 0.35); hCone.position.y = radius * 0.26; hour.add(hCone);
+    const mCone = new THREE.Mesh(new THREE.ConeGeometry(0.048, radius * 0.88, 4), silMat);
+    mCone.scale.set(1, 1, 0.35); mCone.position.y = radius * 0.38; minute.add(mCone);
+    const sBar = new THREE.Mesh(new THREE.BoxGeometry(0.018, radius * 0.98, 0.018), grayMat);
+    sBar.position.y = radius * 0.32; second.add(sBar);
   } else {
     const hMat = darkMat;
     const mMat = darkMat;
@@ -401,7 +419,7 @@ function build3DHands(THREE, parent, radius, clockId) {
 
   const cap = new THREE.Mesh(
     new THREE.CylinderGeometry(0.085, 0.085, 0.16, 16),
-    clockId === 'cuckoo-white' ? grayMat : goldMat
+    (clockId === 'cuckoo-white' || clockId === 'bead-watch') ? silMat : goldMat
   );
   cap.rotation.x = Math.PI / 2; cap.position.z = 0.09;
   parent.add(cap);
@@ -981,6 +999,115 @@ function buildAppleWatch3D(THREE, root, anim) {
   anim.explodeParts.push({ obj: glassMesh, baseZ: 0.48, expZ: 2.42 });
 }
 
+/** 10. Beaded Bracelet Watch (IMG_3294): Chrome round case on right + exact 11 glossy pastel/pink beads on white elastic loop */
+function buildBeadWatch3D(THREE, root, anim) {
+  const chromeMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, metalness: 0.9, roughness: 0.12 });
+  const steelBackMat = new THREE.MeshStandardMaterial({ color: 0xCBD5E1, metalness: 0.82, roughness: 0.24 });
+  const cordMat = new THREE.MeshStandardMaterial({ color: 0xF8FAFC, roughness: 0.65, metalness: 0.02 });
+
+  const bx = -0.22;
+  const br = 1.34;
+  const hx = 0.84;
+
+  // White elastic bracelet loop (open arc from top lug counter-clockwise to bottom lug)
+  const topLugAngle = Math.atan2(0.83, hx - bx); // ~0.664 rad
+  const cordArc = Math.PI * 2 - topLugAngle * 2;
+  const cordMesh = new THREE.Mesh(new THREE.TorusGeometry(br, 0.044, 10, 48, cordArc), cordMat);
+  cordMesh.position.set(bx, 0, 0);
+  cordMesh.rotation.z = topLugAngle;
+  root.add(cordMesh);
+
+  // Exact 11 glossy round beads (counter-clockwise from top lug to bottom lug)
+  const beadColors = [
+    0xDF4B9B, // 1. Magenta pink (top lug)
+    0x6E9ED2, // 2. Pastel blue
+    0xDF4B9B, // 3. Magenta pink
+    0xF8A39A, // 4. Coral peach
+    0xF7F1D5, // 5. Cream white
+    0xDF4B9B, // 6. Magenta pink (left)
+    0xECE459, // 7. Lemon yellow
+    0xDF4B9B, // 8. Magenta pink
+    0xECE459, // 9. Lemon yellow
+    0xB2E39E, // 10. Pastel mint green
+    0xF6C8D2  // 11. Baby pink (bottom lug)
+  ];
+  const beadGeo = new THREE.SphereGeometry(0.295, 22, 18);
+  const startAngle = topLugAngle + 0.24;
+  const endAngle = Math.PI * 2 - startAngle;
+  const step = (endAngle - startAngle) / (beadColors.length - 1);
+  beadColors.forEach((hex, idx) => {
+    const a = startAngle + step * idx;
+    const mat = new THREE.MeshStandardMaterial({ color: hex, roughness: 0.16, metalness: 0.06 });
+    const bead = new THREE.Mesh(beadGeo, mat);
+    bead.position.set(bx + Math.cos(a) * br, Math.sin(a) * br, 0);
+    root.add(bead);
+  });
+
+  // Mirror-polished chrome round watch head on right (front face at z = +0.20)
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.80, 0.78, 0.40, 40), chromeMat);
+  drum.rotation.x = Math.PI / 2;
+  drum.position.set(hx, 0, 0);
+  root.add(drum);
+
+  // Rounded chrome front bezel
+  const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.085, 14, 44), chromeMat);
+  bezel.position.set(hx, 0, 0.21);
+  root.add(bezel);
+
+  // Top & bottom silver lug rings connecting elastic cord to case
+  [0.83, -0.83].forEach((ly) => {
+    const lug = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.036, 10, 20), chromeMat);
+    lug.position.set(hx, ly, 0);
+    lug.rotation.y = Math.PI / 6;
+    root.add(lug);
+  });
+
+  // 3 o'clock knurled silver crown
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.14, 12), chromeMat);
+  stem.rotation.z = Math.PI / 2;
+  stem.position.set(hx + 0.82, 0, 0);
+  root.add(stem);
+  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.11, 14), chromeMat);
+  crown.rotation.z = Math.PI / 2;
+  crown.position.set(hx + 0.90, 0, 0);
+  root.add(crown);
+
+  // Brushed stainless steel snap caseback
+  const back = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.66, 0.06, 36), steelBackMat);
+  back.rotation.x = Math.PI / 2;
+  back.position.set(hx, 0, -0.22);
+  root.add(back);
+
+  // Internal miniature quartz gear train + SR626 silver button battery
+  const buttonCell = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.09, 20), steelBackMat);
+  buttonCell.rotation.x = Math.PI / 2;
+  buttonCell.position.set(-0.24, -0.22, 0.04);
+  addInternalGears(THREE, root, anim, hx, 0, 0.06, 0.68, [buttonCell]);
+
+  // White dial with bold classic serif 1-12 & QUARTZ (cleanly in front of z = +0.20)
+  const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'bead-watch'), roughness: 0.42, transparent: true, opacity: 1 });
+  const dial = new THREE.Mesh(new THREE.CircleGeometry(0.72, 40), dialMat);
+  dial.position.set(hx, 0, 0.23);
+  root.add(dial);
+  anim.explodeParts.push({ obj: dial, baseZ: 0.23, expZ: 1.28, fadeMat: dialMat });
+
+  // Pointed silver dauphine hands + slim second hand
+  const handsGroup = new THREE.Group();
+  handsGroup.position.set(hx, 0, 0.26);
+  root.add(handsGroup);
+  anim.hands = build3DHands(THREE, handsGroup, 0.64, 'bead-watch');
+  anim.explodeParts.push({ obj: handsGroup, baseZ: 0.26, expZ: 1.72 });
+
+  // Clear cover glass
+  const glass = new THREE.Mesh(
+    new THREE.CircleGeometry(0.73, 40),
+    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0.14 })
+  );
+  glass.position.set(hx, 0, 0.33);
+  root.add(glass);
+  anim.explodeParts.push({ obj: glass, baseZ: 0.33, expZ: 2.12 });
+}
+
 /**
  * Interactive True-3D Watch Viewer mounted inside WatchMakerGame on completion.
  */
@@ -1103,7 +1230,8 @@ export class WatchMaker3DViewer {
       'pendulum-clock': buildPendulumClock3D,
       'vintage-gold':   buildVintageGold3D,
       'round-radio':    buildRoundRadio3D,
-      'apple-watch':    buildAppleWatch3D
+      'apple-watch':    buildAppleWatch3D,
+      'bead-watch':     buildBeadWatch3D
     };
     const fn = builders[clockId] || buildRoundRadio3D;
     fn(this.THREE, holder, anim);
