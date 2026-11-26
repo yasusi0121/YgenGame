@@ -387,6 +387,99 @@ export function renderMechPartSvg(kind, r = 34) {
           <line x1="-6" y1="0" x2="6" y2="0" stroke="#DBEAFE" stroke-width="2.4"/>
         </g>
       `;
+    case 'aw-sensor': // Optical Heart Rate + Blood Oxygen back sapphire sensor cluster
+      return `
+        <circle cx="0" cy="0" r="36" fill="#0F172A" stroke="#475569" stroke-width="3"/>
+        <circle cx="0" cy="0" r="29" fill="#1E293B" stroke="#64748B" stroke-width="1.8"/>
+        <circle id="wm-aw-hr-led1" cx="-12" cy="-12" r="5" fill="#22C55E"/>
+        <circle id="wm-aw-hr-led2" cx="12"  cy="-12" r="5" fill="#22C55E"/>
+        <circle id="wm-aw-hr-led3" cx="-12" cy="12"  r="5" fill="#EF4444"/>
+        <circle id="wm-aw-hr-led4" cx="12"  cy="12"  r="5" fill="#EF4444"/>
+        <rect x="-6" y="-6" width="12" height="12" rx="3" fill="#334155" stroke="#94A3B8" stroke-width="1.5"/>
+        <circle cx="0" cy="0" r="18" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4 4"/>
+      `;
+    case 'aw-coil': // Wireless magnetic fast-charging copper coil
+      return `
+        <circle cx="0" cy="0" r="46" fill="none" stroke="#B45309" stroke-width="10"/>
+        <circle cx="0" cy="0" r="46" fill="none" stroke="#F59E0B" stroke-width="5.5"/>
+        <circle cx="0" cy="0" r="46" fill="none" stroke="#FEF08A" stroke-width="1.5" stroke-dasharray="7 5"/>
+        <circle cx="0" cy="0" r="36" fill="none" stroke="#D97706" stroke-width="2.5"/>
+        <rect x="-8" y="38" width="16" height="14" rx="3" fill="#1E293B" stroke="#FBBF24" stroke-width="1.6"/>
+      `;
+    case 'aw-sip': // Apple S10 SiP (System in Package) encapsulated logic board
+      return `
+        <rect x="-46" y="-36" width="92" height="72" rx="10" fill="#18181B" stroke="#64748B" stroke-width="2.6"/>
+        <rect x="-36" y="-26" width="72" height="52" rx="6" fill="#27272A" stroke="#94A3B8" stroke-width="1.8"/>
+        <text x="0" y="5" text-anchor="middle" font-size="18" font-weight="900" fill="#E2E8F0" font-family="sans-serif">S10</text>
+        <text x="0" y="18" text-anchor="middle" font-size="7.5" font-weight="800" fill="#38BDF8" font-family="monospace">SiP 64-BIT</text>
+        <rect x="-42" y="-12" width="6" height="24" rx="2" fill="#FBBF24"/>
+        <rect x="36"  y="-12" width="6" height="24" rx="2" fill="#FBBF24"/>
+        <rect x="-14" y="30"  width="28" height="6" rx="2" fill="#FBBF24"/>
+      `;
+    case 'aw-taptic': // Linear resonant actuator (Taptic Engine)
+      return `
+        <rect x="-56" y="-18" width="112" height="36" rx="8" fill="#CBD5E1" stroke="#475569" stroke-width="2.6"/>
+        <rect x="-46" y="-11" width="38" height="22" rx="4" fill="#334155" stroke="#64748B" stroke-width="1.5"/>
+        <rect x="8"   y="-11" width="38" height="22" rx="4" fill="#334155" stroke="#64748B" stroke-width="1.5"/>
+        <rect x="-6"  y="-13" width="12" height="26" rx="2" fill="#F59E0B" stroke="#92400E" stroke-width="1.5"/>
+        <text x="-27" y="4" text-anchor="middle" font-size="7.5" font-weight="900" fill="#E2E8F0" font-family="monospace">TAPTIC</text>
+        <circle cx="-50" cy="0" r="3" fill="#475569"/>
+        <circle cx="50"  cy="0" r="3" fill="#475569"/>
+      `;
+    case 'aw-battery': // 327mAh 1.266Wh thin Li-ion soft-pouch battery
+      return `
+        <rect x="-48" y="-34" width="96" height="68" rx="8" fill="#18181B" stroke="#52525B" stroke-width="2.6"/>
+        <rect x="-42" y="-28" width="84" height="56" rx="5" fill="#27272A"/>
+        <text x="0" y="-6" text-anchor="middle" font-size="11" font-weight="900" fill="#E2E8F0" font-family="monospace">Li-ion</text>
+        <text x="0" y="9" text-anchor="middle" font-size="9.5" font-weight="800" fill="#4ADE80" font-family="monospace">327mAh</text>
+        <text x="0" y="21" text-anchor="middle" font-size="7.5" font-weight="700" fill="#94A3B8" font-family="monospace">1.266 Wh</text>
+        <path d="M 48 -6 H 58 V 10 H 48" fill="none" stroke="#FBBF24" stroke-width="3.5" stroke-linejoin="round"/>
+      `;
+    case 'aw-speaker': // Dual-slit waterproof speaker module
+      return `
+        <rect x="-14" y="-36" width="28" height="72" rx="7" fill="#334155" stroke="#0F172A" stroke-width="2.4"/>
+        <rect x="-8" y="-24" width="16" height="20" rx="4" fill="#1E293B" stroke="#94A3B8" stroke-width="1.6"/>
+        <circle cx="0" cy="-14" r="5" fill="#38BDF8"/>
+        <line x1="-6" y1="8"  x2="6" y2="8"  stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="-6" y1="15" x2="6" y2="15" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="-6" y1="22" x2="6" y2="22" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+      `;
+    case 'aw-crown': // Digital Crown with knurled grooves & optical encoder shaft
+      return `
+        <rect x="-18" y="-7" width="18" height="14" rx="3" fill="#94A3B8" stroke="#475569" stroke-width="2"/>
+        <rect x="0" y="-17" width="18" height="34" rx="6" fill="#27272A" stroke="#0F172A" stroke-width="2.4"/>
+        <line x1="3" y1="-11" x2="15" y2="-11" stroke="#64748B" stroke-width="2"/>
+        <line x1="3" y1="-5"  x2="15" y2="-5"  stroke="#64748B" stroke-width="2"/>
+        <line x1="3" y1="1"   x2="15" y2="1"   stroke="#64748B" stroke-width="2"/>
+        <line x1="3" y1="7"   x2="15" y2="7"   stroke="#64748B" stroke-width="2"/>
+        <line x1="3" y1="13"  x2="15" y2="13"  stroke="#64748B" stroke-width="2"/>
+      `;
+    case 'aw-sidebtn': // Side pill button + microphone flex
+      return `
+        <rect x="-12" y="-26" width="12" height="52" rx="4" fill="#475569" stroke="#1E293B" stroke-width="2"/>
+        <rect x="0" y="-20" width="9" height="40" rx="4.5" fill="#1E293B" stroke="#64748B" stroke-width="2"/>
+        <circle cx="-6" cy="-32" r="3.5" fill="#0F172A" stroke="#94A3B8" stroke-width="1.4"/>
+      `;
+    case 'aw-gasket': // Rounded-rectangle WR50 waterproof adhesive seal
+      return `
+        <rect x="-78" y="-102" width="156" height="204" rx="38" fill="none" stroke="#18181B" stroke-width="7"/>
+        <rect x="-78" y="-102" width="156" height="204" rx="38" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="10 7"/>
+      `;
+    case 'aw-band-top': // Midnight Fluoroelastomer Sport Band (Upper strap + stainless pin)
+      return `
+        <path d="M -52 28 C -52 6 -44 -20 -40 -44 L 40 -44 C 44 -20 52 6 52 28 Z" fill="#334155" stroke="#1E293B" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="-54" y="20" width="108" height="10" rx="4" fill="#1E293B"/>
+        <circle cx="0" cy="-16" r="10" fill="#94A3B8" stroke="#475569" stroke-width="2.5"/>
+        <circle cx="0" cy="-16" r="4" fill="#CBD5E1"/>
+      `;
+    case 'aw-band-bot': // Midnight Fluoroelastomer Sport Band (Lower strap + sizing holes)
+      return `
+        <path d="M -52 -28 C -52 -6 -44 20 -40 44 L 40 44 C 44 20 52 -6 52 -28 Z" fill="#334155" stroke="#1E293B" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="-54" y="-30" width="108" height="10" rx="4" fill="#1E293B"/>
+        <circle cx="0" cy="4"  r="4.5" fill="#0F172A"/>
+        <circle cx="0" cy="18" r="4.5" fill="#0F172A"/>
+        <circle cx="0" cy="32" r="4.5" fill="#0F172A"/>
+      `;
     default:
       return '';
   }

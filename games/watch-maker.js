@@ -514,22 +514,25 @@ export default class WatchMakerGame {
     let plateSvg = '';
     if (showPlate) {
       plateSvg = clock.renderMovementPlate();
-      const seenPos = new Set();
-      for (const p of this.stageParts) {
-        if (p.phase !== 'mech') continue;
-        if (p.kind === 'bridge' || p.kind === 'bridge-gold' || p.kind === 'pendulum' || p.kind === 'ruby-jewels' || p.kind === 'oil-drop' || p.kind === 'screw-set') continue;
-        const key = `${p.x},${p.y}`;
-        if (seenPos.has(key)) continue;
-        seenPos.add(key);
-        plateSvg += `
-          <circle cx="${p.x}" cy="${p.y}" r="${Math.min(p.r + 2, 42)}" fill="#0F172A" fill-opacity="0.12"/>
-          <circle cx="${p.x}" cy="${p.y}" r="7" fill="#F8FAFC" stroke="#64748B" stroke-width="1.6"/>
-          <circle cx="${p.x}" cy="${p.y}" r="3.6" fill="#E11D48"/>
-        `;
+      if (clock.id !== 'apple-watch') {
+        const seenPos = new Set();
+        for (const p of this.stageParts) {
+          if (p.phase !== 'mech') continue;
+          if (p.kind === 'bridge' || p.kind === 'bridge-gold' || p.kind === 'pendulum' || p.kind === 'ruby-jewels' || p.kind === 'oil-drop' || p.kind === 'screw-set') continue;
+          const key = `${p.x},${p.y}`;
+          if (seenPos.has(key)) continue;
+          seenPos.add(key);
+          plateSvg += `
+            <circle cx="${p.x}" cy="${p.y}" r="${Math.min(p.r + 2, 42)}" fill="#0F172A" fill-opacity="0.12"/>
+            <circle cx="${p.x}" cy="${p.y}" r="7" fill="#F8FAFC" stroke="#64748B" stroke-width="1.6"/>
+            <circle cx="${p.x}" cy="${p.y}" r="3.6" fill="#E11D48"/>
+          `;
+        }
       }
     }
 
     // Group installed parts by depth layer for pseudo-3D view when completed
+    let bodyExtLayer = '';
     let mechLayer = '';
     let dialLayer = '';
     let handLayer = '';
@@ -573,12 +576,14 @@ export default class WatchMakerGame {
       }
 
       installedSvg += chunk;
-      if (p.kind === 'custom-glass' || p.kind === 'gasket') {
+      if (p.kind === 'custom-glass' || p.kind === 'gasket' || p.kind === 'aw-gasket') {
         glassLayer += chunk;
       } else if (p.kind && (p.kind.startsWith('hand-') || p.id === 'door')) {
         handLayer += chunk;
       } else if (isFaceOverlay) {
         dialLayer += chunk;
+      } else if (p.kind === 'aw-band-top' || p.kind === 'aw-band-bot' || p.kind === 'aw-crown' || p.kind === 'aw-sidebtn') {
+        bodyExtLayer += chunk;
       } else {
         mechLayer += chunk;
       }
@@ -600,7 +605,7 @@ export default class WatchMakerGame {
         { z: -24, html: caseBg, cls: 'p3d-slice-deep' },
         { z: -16, html: caseBg, cls: 'p3d-slice' },
         { z: -8,  html: caseBg, cls: 'p3d-slice' },
-        { z: 0,   html: `${caseBg}${plateSvg}` }
+        { z: 0,   html: `${caseBg}${plateSvg}${bodyExtLayer}` }
       ];
       if (mechLayer) layers.push({ z: 12, html: mechLayer });
       if (dialLayer) layers.push({ z: 22, html: dialLayer });
@@ -923,6 +928,13 @@ export default class WatchMakerGame {
     }
     this.cuckooPopEl = scope && scope.querySelector('#wm-cuckoo-pop');
     this.radioWaveEl = scope && scope.querySelector('#wm-radio-waves');
+    this.awHourEl = scope && scope.querySelector('#wm-aw-hour');
+    this.awMinEl = scope && scope.querySelector('#wm-aw-min');
+    this.awSecDotEl = scope && scope.querySelector('#wm-aw-sec-dot');
+    this.awHrLeds = scope ? [
+      scope.querySelector('#wm-aw-hr-led1'),
+      scope.querySelector('#wm-aw-hr-led2')
+    ].filter(Boolean) : [];
 
     const clock = this.getClock();
     const dc = clock.dialCenter;
@@ -970,7 +982,24 @@ export default class WatchMakerGame {
       const realSec = new Date().getSeconds();
       const secChanged = realSec !== this.lastRealSec;
 
-      if (clock.animType === 'sweep') {
+      if (clock.animType === 'smartwatch') {
+        if (secChanged) {
+          this.lastRealSec = realSec;
+          const d = new Date();
+          if (this.awHourEl) this.awHourEl.textContent = String(d.getHours()).padStart(2, '0');
+          if (this.awMinEl) this.awMinEl.textContent = String(d.getMinutes()).padStart(2, '0');
+        }
+        const pulse = 0.35 + 0.65 * Math.abs(Math.sin(this.runTime * 3.4));
+        if (this.awSecDotEl) this.awSecDotEl.setAttribute('opacity', pulse.toFixed(2));
+        for (const led of this.awHrLeds) led.setAttribute('opacity', pulse.toFixed(2));
+        // Subtle periodic Taptic Engine linear buzz pulse
+        const tapticEl = this.partEls.get('taptic');
+        if (tapticEl) {
+          const cycle = this.runTime % 2.2;
+          const buzz = cycle < 0.24 ? Math.sin(cycle * 95) * 2.4 : 0;
+          tapticEl.setAttribute('transform', `translate(${(280 + buzz).toFixed(1)} 256)`);
+        }
+      } else if (clock.animType === 'sweep') {
         this.syncHandsToNow(dc, true);
         this.lastRealSec = realSec;
       } else if (clock.animType === 'tuning-fork') {

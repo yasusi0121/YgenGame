@@ -1,6 +1,6 @@
 import { SoundEngine } from './sound-engine.js';
 
-const APP_VERSION = 'v25.7';
+const APP_VERSION = 'v25.8';
 
 function getCacheVer() {
   return (typeof window !== 'undefined' && window.__YGEN_VER) ? String(window.__YGEN_VER) : APP_VERSION;

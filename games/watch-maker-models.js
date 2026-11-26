@@ -731,12 +731,148 @@ export const CLOCK_MODELS = [
         { id: 'glass', label: 'がらす', kind: 'custom-glass', x: 280, y: 200, r: 137, thumbBox: '-142 -142 284 284', req: 'second', phase: 'face' }
       ];
     }
+  },
+
+  /* =========================================================================
+     9. Apple Watch — Midnight Aluminum + Numerals Duo LTPO OLED + S10 SiP
+        Internal layout modeled after real iFixit / TechInsights teardowns:
+        Optical Heart/SpO2 Sensor, Wireless Charging Coil, S10 SiP, Taptic Engine,
+        Waterproof Speaker, 327mAh Li-ion Battery, Digital Crown, Side Button.
+     ========================================================================= */
+  {
+    id: 'apple-watch',
+    name: 'アップルウォッチ',
+    mechLabel: 'S10 SiP ＋ タプティック',
+    handStyle: 'smartwatch',
+    handScale: 1.0,
+    animType: 'smartwatch',
+    dialCenter: { x: 280, y: 200, r: 96 },
+    thumbSvg: `
+      <svg viewBox="0 0 64 64" fill="none">
+        <path d="M 22 4 H 42 L 45 14 H 19 Z" fill="#334155"/>
+        <path d="M 19 50 H 45 L 42 60 H 22 Z" fill="#334155"/>
+        <rect x="14" y="11" width="36" height="42" rx="10" fill="#1E293B" stroke="#0F172A" stroke-width="2.5"/>
+        <rect x="18" y="15" width="28" height="17" rx="5" fill="#0EA5E9"/>
+        <rect x="18" y="32" width="28" height="17" rx="5" fill="#93C5FD"/>
+        <text x="32" y="29" text-anchor="middle" font-size="14" font-weight="900" fill="#FFFFFF" font-family="sans-serif">10</text>
+        <text x="32" y="46" text-anchor="middle" font-size="14" font-weight="900" fill="#0F172A" font-family="sans-serif">09</text>
+        <rect x="50" y="20" width="4" height="9" rx="2" fill="#334155"/>
+        <rect x="50" y="34" width="3" height="11" rx="1.5" fill="#475569"/>
+      </svg>
+    `,
+    renderCaseBg() {
+      return `
+        <!-- Midnight Aluminum Unibody Case (Series 10 rounded squircle silhouette) -->
+        <rect x="190" y="84" width="180" height="232" rx="48" fill="#1E293B" stroke="#0F172A" stroke-width="5"/>
+        <rect x="198" y="92" width="164" height="216" rx="42" fill="#27272A" stroke="#475569" stroke-width="2.5"/>
+        <!-- Upper & lower band slide-lock channels -->
+        <rect x="226" y="79"  width="108" height="10" rx="4" fill="#0F172A"/>
+        <rect x="226" y="311" width="108" height="10" rx="4" fill="#0F172A"/>
+        <!-- Left-side dual speaker acoustic slits -->
+        <rect x="185" y="156" width="6" height="26" rx="3" fill="#0F172A"/>
+        <rect x="185" y="192" width="6" height="26" rx="3" fill="#0F172A"/>
+        <!-- Inner CNC aluminum cavity -->
+        <rect x="206" y="100" width="148" height="200" rx="36" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+      `;
+    },
+    renderMovementPlate() {
+      return `
+        <!-- Internal black PCB shielding + gold flex connector seats -->
+        <rect x="210" y="106" width="140" height="188" rx="32" fill="#18181B" stroke="#334155" stroke-width="2"/>
+        <circle cx="280" cy="200" r="48" fill="#0F172A" stroke="#334155" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <rect x="220" y="120" width="120" height="10" rx="3" fill="#27272A"/>
+        <rect x="220" y="270" width="120" height="10" rx="3" fill="#27272A"/>
+      `;
+    },
+    renderDialSvg() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      return `
+        <!-- LTPO OLED Retina Display: Iconic Numerals Duo (Cyan + Light Blue) -->
+        <defs>
+          <clipPath id="aw-screen-clip">
+            <rect x="-74" y="-98" width="148" height="196" rx="34"/>
+          </clipPath>
+        </defs>
+        <rect x="-78" y="-102" width="156" height="204" rx="38" fill="#09090B" stroke="#334155" stroke-width="3"/>
+        <g clip-path="url(#aw-screen-clip)">
+          <rect x="-74" y="-98" width="148" height="98" fill="#0EA5E9"/>
+          <rect x="-74" y="0"   width="148" height="98" fill="#93C5FD"/>
+          <text id="wm-aw-hour" x="0" y="-14" text-anchor="middle" font-size="88" font-weight="900" fill="#F8FAFC" font-family="sans-serif" letter-spacing="-4">${hh}</text>
+          <text id="wm-aw-min"  x="0" y="76"  text-anchor="middle" font-size="88" font-weight="900" fill="#09090B" font-family="sans-serif" letter-spacing="-4">${mm}</text>
+          <circle id="wm-aw-sec-dot" cx="54" cy="-76" r="5" fill="#4ADE80"/>
+        </g>
+      `;
+    },
+    renderGlassSvg() {
+      return `
+        <rect x="-78" y="-102" width="156" height="204" rx="38" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.45)" stroke-width="2.5"/>
+        <path d="M -52 -82 C -24 -94 18 -94 46 -78" stroke="rgba(255,255,255,0.42)" stroke-width="7" stroke-linecap="round" fill="none"/>
+      `;
+    },
+    getMechParts() {
+      return [
+        { id: 'sensor',  label: 'しんぱくセンサー',   ruby: '光学LED',     kind: 'aw-sensor',  x: 280, y: 200, r: 36, thumbBox: '-42 -42 84 84',   req: null,      phase: 'mech' },
+        { id: 'coil',    label: 'じゅうでんコイル',   ruby: 'ワイヤレス',   kind: 'aw-coil',    x: 280, y: 200, r: 46, thumbBox: '-56 -56 112 114', req: 'sensor',  phase: 'mech' },
+        { id: 'sip',     label: 'S10 チップ',         ruby: 'SiP基板',     kind: 'aw-sip',     x: 280, y: 154, r: 42, thumbBox: '-52 -42 104 84',  req: 'coil',    phase: 'mech' },
+        { id: 'taptic',  label: 'タプティック',       ruby: '振動モーター', kind: 'aw-taptic',  x: 280, y: 256, r: 44, thumbBox: '-62 -26 124 52',  req: 'sip',     phase: 'mech' },
+        { id: 'speaker', label: 'スピーカー',         ruby: '防水音響',     kind: 'aw-speaker', x: 226, y: 196, r: 28, thumbBox: '-24 -42 48 84',   req: 'taptic',  phase: 'mech' },
+        { id: 'battery', label: 'バッテリー',         ruby: '327mAh',      kind: 'aw-battery', x: 288, y: 194, r: 44, thumbBox: '-56 -40 120 80',  req: 'speaker', phase: 'mech' },
+        { id: 'crown',   label: 'デジタルクラウン',   ruby: '回転りゅうず', kind: 'aw-crown',   x: 372, y: 152, r: 24, thumbBox: '-22 -24 46 48',   req: 'battery', phase: 'mech' },
+        { id: 'sidebtn', label: 'サイドボタン',       ruby: 'マイク付き',   kind: 'aw-sidebtn', x: 372, y: 232, r: 24, thumbBox: '-20 -38 36 72',   req: 'crown',   phase: 'mech' }
+      ];
+    },
+    getFaceParts(prevReq = null) {
+      return [
+        { id: 'dial',    label: 'OLED がめん',     ruby: '数字デュオ',   kind: 'custom-dial',  x: 280, y: 200, r: 96, thumbBox: '-86 -108 172 216', req: prevReq,   phase: 'face' },
+        { id: 'gasket',  label: 'ぼうすいシール',  ruby: 'WR50防水',     kind: 'aw-gasket',    x: 280, y: 200, r: 98, thumbBox: '-86 -108 172 216', req: 'dial',    phase: 'face' },
+        { id: 'glass',   label: 'イオンX がらす',  ruby: '全面ガラス',   kind: 'custom-glass', x: 280, y: 200, r: 98, thumbBox: '-86 -108 172 216', req: 'gasket',  phase: 'face' },
+        { id: 'bandTop', label: 'うえ バンド',     ruby: 'スポーツ',     kind: 'aw-band-top',  x: 280, y: 58,  r: 46, thumbBox: '-60 -50 120 84',   req: 'glass',   phase: 'face' },
+        { id: 'bandBot', label: 'した バンド',     ruby: 'スポーツ',     kind: 'aw-band-bot',  x: 280, y: 342, r: 46, thumbBox: '-60 -36 120 86',   req: 'bandTop', phase: 'face' }
+      ];
+    }
   }
 ];
 
 /** Build the ordered part list for any (clock, level) combination */
 export function getClockStageParts(clock, levelId) {
   const dc = clock.dialCenter;
+
+  // Apple Watch uses authentic electronic precision assembly (no mechanical ruby jewels / oiling!)
+  if (clock.id === 'apple-watch') {
+    const buildAwMech = () => {
+      const base = clock.getMechParts();
+      const lastId = base[base.length - 1].id;
+      const screws = {
+        id: 'screws',
+        label: 'せいみつネジ',
+        ruby: 'Yじネジ固定',
+        kind: 'screw-set',
+        x: dc.x,
+        y: dc.y,
+        r: 52,
+        thumbBox: '-60 -42 120 96',
+        req: lastId,
+        phase: 'mech'
+      };
+      return [...base, screws];
+    };
+
+    if (levelId === 'exterior') {
+      const crown = { id: 'crown', label: 'デジタルクラウン', ruby: '回転りゅうず', kind: 'aw-crown', x: 372, y: 152, r: 24, thumbBox: '-22 -24 46 48', req: null, phase: 'face' };
+      const sidebtn = { id: 'sidebtn', label: 'サイドボタン', ruby: 'マイク付き', kind: 'aw-sidebtn', x: 372, y: 232, r: 24, thumbBox: '-20 -38 36 72', req: 'crown', phase: 'face' };
+      return [crown, sidebtn, ...clock.getFaceParts('sidebtn')];
+    }
+    if (levelId === 'geartrain') {
+      return buildAwMech();
+    }
+    if (levelId === 'repair') {
+      return clock.getMechParts();
+    }
+    const mech = buildAwMech();
+    return [...mech, ...clock.getFaceParts(mech[mech.length - 1].id)];
+  }
 
   const buildExtendedFace = (prevReq) => {
     const face = clock.getFaceParts(prevReq);
