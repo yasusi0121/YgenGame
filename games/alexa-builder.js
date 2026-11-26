@@ -152,6 +152,33 @@ function ensureAlexaStyles() {
       font-size: 17.5px; padding: 10px 24px;
     }
     .ab-pulse { animation: abPulse 1.15s ease-in-out infinite; }
+    @media (max-width: 640px) {
+      .ab-root { gap: 5px; padding: calc(6px + var(--safe-top)) calc(8px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(8px + var(--safe-left)); }
+      .ab-topbar { padding: 0 46px; gap: 5px; }
+      .ab-dev-btn { font-size: 11.5px; padding: 3px 8px; gap: 4px; border-radius: 14px; }
+      .ab-hint-btn { font-size: 11px; padding: 4px 8px; border-radius: 14px; }
+      .ab-prog-pill { font-size: 11px; padding: 3px 9px; }
+      .ab-banner { font-size: 12px; padding: 4px 12px; }
+      .ab-tray {
+        padding: 6px 8px; min-height: 76px; border-radius: 18px; gap: 6px;
+        flex-wrap: nowrap; justify-content: flex-start;
+        overflow-x: auto; touch-action: pan-x; -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .ab-tray::-webkit-scrollbar { display: none; }
+      .ab-tray.is-done-tray { flex-wrap: wrap; justify-content: center; overflow-x: visible; }
+      .ab-part-card { flex: 0 0 76px; width: 76px; min-height: 66px; padding: 4px 3px; border-radius: 13px; }
+      .ab-part-card svg { width: 38px; height: 38px; }
+      .ab-part-label { font-size: 9.5px; }
+      .ab-test-btn { font-size: 12.5px; padding: 6px 10px; border-radius: 14px; }
+      .ab-t-next { font-size: 14px; padding: 7px 15px; }
+    }
+    @media (max-height: 500px) {
+      .ab-root { gap: 4px; }
+      .ab-topbar { padding: 0 46px; }
+      .ab-banner { font-size: 12px; padding: 3px 12px; }
+      .ab-tray { min-height: 66px; padding: 4px 8px; }
+    }
     @keyframes abPulse {
       0%, 100% { opacity: 0.95; }
       50% { opacity: 0.35; }
@@ -576,6 +603,7 @@ export default class AlexaBuilderGame {
 
   renderTray() {
     const dev = this.getDevice();
+    this.trayEl.classList.toggle('is-done-tray', this.completed);
 
     if (this.completed) {
       this.trayEl.innerHTML = `
@@ -685,12 +713,13 @@ export default class AlexaBuilderGame {
     const ghost = document.createElement('div');
     ghost.className = 'ab-ghost';
     ghost.innerHTML = `<svg width="82" height="82" viewBox="${part.thumbBox}">${renderAlexaPartSvg(part.kind, { dotColor: this.getDotColor() })}</svg>`;
+    const liftY = window.innerWidth <= 640 ? -28 : 0;
     ghost.style.left = `${e.clientX}px`;
-    ghost.style.top = `${e.clientY}px`;
+    ghost.style.top = `${e.clientY + liftY}px`;
     document.body.appendChild(ghost);
 
     cardEl.classList.add('is-dragging');
-    this.dragPart = { id: part.id, ghost, cardEl };
+    this.dragPart = { id: part.id, ghost, cardEl, liftY };
     this.renderSvg();
   }
 
@@ -698,7 +727,7 @@ export default class AlexaBuilderGame {
     if (this.dragPart) {
       e.preventDefault();
       this.dragPart.ghost.style.left = `${e.clientX}px`;
-      this.dragPart.ghost.style.top = `${e.clientY}px`;
+      this.dragPart.ghost.style.top = `${e.clientY + (this.dragPart.liftY || 0)}px`;
     } else if (this.wireDrag) {
       e.preventDefault();
       const pt = this.clientToSvg(e.clientX, e.clientY);

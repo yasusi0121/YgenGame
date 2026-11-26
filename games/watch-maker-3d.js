@@ -1054,7 +1054,7 @@ export class WatchMaker3DViewer {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(34, w / h, 0.2, 50);
-    this.camera.position.set(0, 0, 7.8);
+    this.updateCameraFit(w, h);
 
     this.scene.add(new THREE.HemisphereLight(0xFFFFFF, 0x334155, 1.1));
     const key = new THREE.DirectionalLight(0xFFFDF5, 1.35);
@@ -1072,6 +1072,15 @@ export class WatchMaker3DViewer {
     window.addEventListener('pointerup', this._onUp);
     window.addEventListener('pointercancel', this._onUp);
     window.addEventListener('resize', this._onResize);
+  }
+
+  updateCameraFit(w, h) {
+    if (!this.camera) return;
+    const aspect = w / Math.max(1, h);
+    this.camera.aspect = aspect;
+    // Pull camera back on narrow portrait iPhone screens so wide clocks fit cleanly
+    this.camera.position.set(0, 0, aspect < 0.95 ? (7.8 / Math.max(0.56, aspect * 0.96)) : 7.8);
+    this.camera.updateProjectionMatrix();
   }
 
   buildModel(clockId) {
@@ -1136,8 +1145,7 @@ export class WatchMaker3DViewer {
     const rect = this.mountEl.getBoundingClientRect();
     const w = Math.max(260, rect.width || 460);
     const h = Math.max(220, rect.height || 360);
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    this.updateCameraFit(w, h);
     this.renderer.setSize(w, h);
   }
 

@@ -242,12 +242,46 @@ export default class WatchMakerGame {
       }
       .wm-replay-btn:active { transform: translateY(2px); }
       @media (max-width: 740px) {
-        .wm-workspace { flex-direction: column; }
+        .wm-workspace { flex-direction: column; gap: 6px; }
         .wm-picker {
           width: 100%; display: flex; flex-direction: row;
-          overflow-x: auto; padding: 6px;
+          overflow-x: auto; padding: 5px; gap: 6px;
+          touch-action: pan-x; -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
         }
-        .wm-clock-btn { flex: 0 0 74px; }
+        .wm-picker::-webkit-scrollbar { display: none; }
+        .wm-clock-btn { flex: 0 0 66px; padding: 4px 2px; }
+        .wm-clock-btn svg { width: 34px; height: 34px; }
+        .wm-clock-name { font-size: 9.5px; }
+      }
+      @media (max-width: 640px) {
+        .wm-root { gap: 5px; padding: calc(6px + var(--safe-top)) calc(8px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(8px + var(--safe-left)); }
+        .wm-topbar { padding-left: 46px; padding-right: 46px; gap: 5px; justify-content: center; }
+        .wm-skeleton-btn { font-size: 11.5px; padding: 5px 10px; border-radius: 14px; }
+        .wm-progress-pill { font-size: 12px; padding: 4px 10px; border-radius: 14px; }
+        .wm-banner { font-size: 12.5px; padding: 4px 12px; gap: 6px; }
+        .wm-mech-chip { font-size: 10px; padding: 1px 7px; }
+        .wm-tray {
+          padding: 6px 8px; min-height: 78px; border-radius: 18px;
+          flex-wrap: nowrap; justify-content: flex-start;
+          overflow-x: auto; touch-action: pan-x; -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .wm-tray::-webkit-scrollbar { display: none; }
+        .wm-part-card { flex: 0 0 76px; width: 76px; min-height: 68px; padding: 4px 3px; border-radius: 13px; }
+        .wm-part-card svg { width: 38px; height: 38px; }
+        .wm-part-label { font-size: 10px; }
+        .wm-part-sub { font-size: 8.5px; }
+        .wm-done-actions { width: 100%; justify-content: center; gap: 6px; flex-wrap: wrap; }
+        .wm-replay-btn { font-size: 13px; padding: 7px 12px; border-radius: 14px; }
+        .wm-replay-btn.is-green { font-size: 14.5px; padding: 8px 16px; }
+      }
+      @media (max-height: 500px) {
+        .wm-root { gap: 4px; }
+        .wm-topbar { padding-left: 46px; padding-right: 46px; }
+        .wm-banner { font-size: 12px; padding: 3px 12px; }
+        .wm-tray { min-height: 68px; padding: 4px 8px; }
+        .wm-part-card { width: 76px; min-height: 60px; }
       }
       @keyframes wmPulseCard {
         0%, 100% { transform: translateY(0); }
@@ -735,19 +769,20 @@ export default class WatchMakerGame {
         ${this.renderPartContent(part)}
       </svg>
     `;
+    const liftY = window.innerWidth <= 640 ? -28 : 0;
     ghost.style.left = `${e.clientX}px`;
-    ghost.style.top = `${e.clientY}px`;
+    ghost.style.top = `${e.clientY + liftY}px`;
     document.body.appendChild(ghost);
 
     cardEl.classList.add('is-dragging');
-    this.dragState = { partId: part.id, ghost, cardEl };
+    this.dragState = { partId: part.id, ghost, cardEl, liftY };
     this.renderWatchSvg();
   }
 
   onPointerMove(e) {
     if (!this.dragState) return;
     this.dragState.ghost.style.left = `${e.clientX}px`;
-    this.dragState.ghost.style.top = `${e.clientY}px`;
+    this.dragState.ghost.style.top = `${e.clientY + (this.dragState.liftY || 0)}px`;
   }
 
   onPointerUp(e) {

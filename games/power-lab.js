@@ -153,6 +153,24 @@ function ensurePowerLabStyles() {
     .pl-ctrl-btn.is-on .pl-ctrl-dot {
       background: #FEF08A;
     }
+    @media (max-width: 640px) {
+      .pl-root { gap: 5px; padding: calc(6px + var(--safe-top)) calc(8px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(8px + var(--safe-left)); }
+      .pl-topbar { padding: 0 46px; gap: 5px; }
+      .pl-util-btn { font-size: 11.5px; padding: 4px 9px; border-radius: 13px; border-width: 2.5px; border-bottom-width: 4px; }
+      .pl-banner { font-size: 12px; padding: 4px 12px; border-width: 2.5px; }
+      .pl-viewport { border-radius: 18px; }
+      .pl-meter-pill { font-size: 11.5px; padding: 3px 9px; }
+      .pl-controls { padding: 6px 6px; gap: 5px; min-height: 50px; border-radius: 16px; border-width: 2.5px; }
+      .pl-ctrl-btn { font-size: 11.5px; padding: 5px 9px; border-radius: 12px; border-width: 2.5px; border-bottom-width: 4px; gap: 4px; }
+      .pl-ctrl-dot { width: 8px; height: 8px; }
+    }
+    @media (max-height: 500px) {
+      .pl-root { gap: 4px; }
+      .pl-topbar { padding: 0 46px; }
+      .pl-banner { font-size: 12px; padding: 3px 12px; }
+      .pl-controls { padding: 4px 6px; min-height: 44px; }
+      .pl-ctrl-btn { font-size: 11.5px; padding: 4px 9px; }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -365,15 +383,19 @@ export default class PowerLabGame {
 
   resetCameraForStage() {
     const st = STAGES[this.stageIdx];
+    const rect = this.viewportEl ? this.viewportEl.getBoundingClientRect() : { width: 800, height: 500 };
+    const aspect = rect.width / Math.max(1, rect.height);
+    const portraitScale = aspect < 0.95 ? (1 / Math.max(0.56, aspect * 0.95)) : 1;
+
     if (st.id === 'panel') {
       this.targetTheta = 0.22;
       this.targetPhi = 1.24;
-      this.camDist = 8.4;
+      this.camDist = 8.4 * portraitScale;
       this.camTarget = { x: -0.15, y: 1.85, z: -0.2 };
     } else {
       this.targetTheta = 0.56;
       this.targetPhi = 0.92;
-      this.camDist = 9.0;
+      this.camDist = 9.0 * portraitScale;
       this.camTarget = { x: 0.0, y: 0.75, z: 0.1 };
     }
   }
@@ -887,7 +909,10 @@ export default class PowerLabGame {
     const rect = this.viewportEl.getBoundingClientRect();
     const w = Math.max(300, rect.width);
     const h = Math.max(240, rect.height);
-    this.camera.aspect = w / h;
+    const aspect = w / h;
+    const baseDist = STAGES[this.stageIdx].id === 'panel' ? 8.4 : 9.0;
+    this.camDist = baseDist * (aspect < 0.95 ? (1 / Math.max(0.56, aspect * 0.95)) : 1);
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
   }

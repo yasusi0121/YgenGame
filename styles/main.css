@@ -2281,3 +2281,102 @@ rt {
   transform: translateY(4px);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16);
 }
+
+/* ============================================================
+   IPHONE & COMPACT MOBILE RESPONSIVE RULES (iPad untouched)
+   ============================================================ */
+@media (max-width: 640px) {
+  #home-screen {
+    padding: calc(10px + var(--safe-top)) calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+  }
+  .home-header {
+    gap: 8px;
+  }
+  .brand-badge {
+    padding: 6px 14px 6px 8px;
+    gap: 8px;
+    border-width: 3px;
+  }
+  .brand-logo {
+    width: 36px;
+    height: 36px;
+  }
+  .brand-title {
+    font-size: 18px;
+  }
+  .brand-sub {
+    font-size: 10px;
+  }
+  .toy-icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.14);
+  }
+  .toy-icon-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+  .home-prompt {
+    font-size: 16px;
+    padding: 6px 18px;
+  }
+  .game-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 4px 2px 18px !important;
+  }
+  .game-card {
+    padding: 12px 10px 12px !important;
+    border-radius: 22px !important;
+  }
+  .game-card-title {
+    font-size: 16px !important;
+  }
+  .game-card-desc {
+    font-size: 11px !important;
+  }
+  /* Compact floating top corner buttons inside games */
+  .game-top-btn,
+  #close-game-btn,
+  .game-sound-btn {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 14px !important;
+  }
+  /* Compact mode tabs so topbar stays slim on narrow iPhones */
+  .pm-mode-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 4px !important;
+    padding: 3px !important;
+  }
+  .pm-mode-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .pm-tab-btn {
+    padding: 5px 9px !important;
+    font-size: 11.5px !important;
+    gap: 3px !important;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-height: 500px) {
+  .toy-icon-btn,
+  #close-game-btn,
+  .game-sound-btn {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 13px !important;
+  }
+  .pm-tab-btn {
+    padding: 4px 9px !important;
+    font-size: 12px !important;
+  }
+}
+

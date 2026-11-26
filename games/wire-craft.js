@@ -104,6 +104,23 @@ function ensureWireCraftStyles() {
       touch-action: none;
     }
     .wc-port-pulse { animation: wcPulse 1.1s ease-in-out infinite; }
+    @media (max-width: 640px) {
+      .wc-root { gap: 5px; padding: calc(6px + var(--safe-top)) calc(8px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(8px + var(--safe-left)); }
+      .wc-topbar { padding: 0 46px; gap: 5px; }
+      .wc-stage-pill { font-size: 12px; padding: 4px 10px; }
+      .wc-shuffle-btn { font-size: 12px; padding: 5px 9px; }
+      .wc-hud { gap: 6px; }
+      .wc-machine-card { padding: 3px 10px 3px 6px; gap: 6px; border-width: 3px; border-radius: 16px; }
+      .wc-machine-name { font-size: 13px; }
+      .wc-machine-sub { font-size: 10.5px; }
+      .wc-power-switch { padding: 8px 16px; min-height: 44px; font-size: 15px; border-width: 3px; border-radius: 16px; }
+    }
+    @media (max-height: 500px) {
+      .wc-root { gap: 4px; }
+      .wc-topbar { padding: 0 46px; }
+      .wc-machine-card { padding: 2px 10px; }
+      .wc-power-switch { padding: 6px 16px; min-height: 40px; font-size: 15px; }
+    }
 
     /* Live Machine Action Stage Overlay */
     .wc-live-overlay {
