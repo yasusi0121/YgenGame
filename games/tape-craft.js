@@ -23,9 +23,10 @@ function pointToSegDist(px, py, x1, y1, x2, y2) {
 }
 
 export default class TapeCraftGame {
-  constructor(mountEl, sound) {
+  constructor(mountEl, app) {
     this.mountEl = mountEl;
-    this.sound = sound;
+    this.app = app;
+    this.sound = (app && app.sound) ? app.sound : app;
 
     this.mode = 'packing'; // 'packing' | 'repair' | 'free'
     this.stageIdx = 0;
@@ -67,7 +68,10 @@ export default class TapeCraftGame {
     this._onPointerUp = (e) => this.handlePointerUp(e);
   }
 
-  start() {
+  mount() {
+    if (this.app && typeof this.app.setGameBackground === 'function') {
+      this.app.setGameBackground('#FFF8EE');
+    }
     this.injectStyles();
     this.renderShell();
     this.loadStage();
@@ -83,7 +87,7 @@ export default class TapeCraftGame {
     if (this.needsLoop()) this.ensureLoop();
   }
 
-  destroy() {
+  unmount() {
     this.destroyed = true;
     this.stopLoop();
     if (this.refillToastTimer) clearTimeout(this.refillToastTimer);
@@ -357,11 +361,11 @@ export default class TapeCraftGame {
         } else if (act === 'car') {
           if (this.strips.length === 0) {
             this.hintEl.textContent = 'まず テープで みちを はろう！';
-            this.sound.playSoftBoing();
+            this.sound.playBoing();
             return;
           }
           this.carAnim = { active: true, stripIdx: 0, segT: 0 };
-          this.sound.playSparkle();
+          this.sound.playSproutPop();
           this.ensureLoop();
         } else if (act === 'bg') {
           this.freeBgIdx = (this.freeBgIdx + 1) % FREE_BACKGROUNDS.length;
@@ -867,7 +871,7 @@ export default class TapeCraftGame {
           if (this.carAnim.stripIdx >= this.strips.length) {
             this.carAnim = null;
             this.rewardLayer.innerHTML = '';
-            this.sound.playSparkle();
+            this.sound.playSuccessFanfare();
           }
         }
         if (this.carAnim) {
