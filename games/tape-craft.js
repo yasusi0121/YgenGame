@@ -10,7 +10,7 @@ import {
   buildTornStripPath
 } from './tape-craft-stages.js';
 
-const ROLL_MAX_PX = 1400; // Total tape length per roll before juicy auto-refill!
+const ROLL_MAX_PX = 5200; // Realistic generous roll length (~12-15 full cardboard box strips per roll)
 
 function pointToSegDist(px, py, x1, y1, x2, y2) {
   const dx = x2 - x1;
@@ -691,6 +691,12 @@ export default class TapeCraftGame {
       this.activeLayer.innerHTML = '';
       return;
     }
+    const dx = this.dragCur.x - this.dragStart.x;
+    const dy = this.dragCur.y - this.dragStart.y;
+    const len = Math.hypot(dx, dy);
+    const ux = len > 1 ? dx / len : 1;
+    const uy = len > 1 ? dy / len : 0;
+
     const tempStrip = {
       x1: this.dragStart.x,
       y1: this.dragStart.y,
@@ -700,19 +706,54 @@ export default class TapeCraftGame {
       width: this.selectedWidth.px,
       seed: this.dragSeed
     };
-    const ratio = this.rollRemain[this.selectedTape.id];
-    const outerR = 13 + ratio * 15;
-    const fill = this.selectedTape.pattern === 'rainbow' ? '#F472B6' : this.selectedTape.color;
+
+    const ratio = Math.max(0, Math.min(1, this.rollRemain[this.selectedTape.id]));
+    const coreR = 13;
+    const outerR = coreR + 2 + ratio * 23; // Shrinks visibly from 38px (full) down to 15px (empty)
+    const fill = getTapeFill(this.selectedTape);
+    const rollFill = this.selectedTape.pattern === 'rainbow' ? '#F472B6' : this.selectedTape.color;
+
+    // Position the roll clearly visible ABOVE (or below near top edge) the finger so touch never hides it!
+    const flipDown = this.dragCur.y < (outerR + 68);
+    const offsetY = flipDown ? (outerR + 30) : -(outerR + 30);
+    const rx = Math.max(outerR + 8, Math.min(800 - outerR - 8, this.dragCur.x + ux * (outerR * 0.45)));
+    const ry = Math.max(outerR + 8, Math.min(500 - outerR - 8, this.dragCur.y + uy * (outerR * 0.25) + offsetY));
+
+    // Concentric wound-layer rings that vanish as the roll gets thinner
+    const woundRings = [0.35, 0.65, 0.88]
+      .map((f) => coreR + (outerR - coreR) * f)
+      .filter((r) => r > coreR + 3 && r < outerR - 2.5)
+      .map((r) => `<circle cx="0" cy="0" r="${r.toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5" stroke-dasharray="10 7"/>`)
+      .join('');
+
+    // Short peeled tape ribbon connecting the roll rim smoothly to the finger point
+    const ribbonW = Math.min(this.selectedWidth.px * 0.85, 34);
+    const rimY = flipDown ? (ry - outerR * 0.72) : (ry + outerR * 0.72);
 
     this.activeLayer.innerHTML = `
       ${this.buildStripSvg(tempStrip, 0.94)}
-      <!-- Rolling craft tape roll following the child's finger! -->
-      <g transform="translate(${this.dragCur.x.toFixed(1)} ${this.dragCur.y.toFixed(1)}) rotate(${this.rollAngle.toFixed(0)})">
-        <circle cx="0" cy="0" r="${outerR.toFixed(1)}" fill="${fill}" stroke="${this.selectedTape.edge}" stroke-width="3"/>
-        <circle cx="0" cy="0" r="10" fill="#E2C7A4" stroke="#9A7146" stroke-width="2.5"/>
-        <circle cx="0" cy="0" r="6" fill="#FFFFFF"/>
-        <line x1="-8" y1="0" x2="8" y2="0" stroke="#9A7146" stroke-width="2" opacity="0.6"/>
-        <line x1="0" y1="-8" x2="0" y2="8" stroke="#9A7146" stroke-width="2" opacity="0.6"/>
+      <!-- Peeled tape bridge from roll rim down to finger -->
+      <line x1="${this.dragCur.x.toFixed(1)}" y1="${this.dragCur.y.toFixed(1)}"
+        x2="${rx.toFixed(1)}" y2="${rimY.toFixed(1)}"
+        stroke="${fill}" stroke-width="${ribbonW.toFixed(1)}" stroke-linecap="round" opacity="0.88"/>
+      <line x1="${this.dragCur.x.toFixed(1)}" y1="${this.dragCur.y.toFixed(1)}"
+        x2="${rx.toFixed(1)}" y2="${rimY.toFixed(1)}"
+        stroke="rgba(255,255,255,0.3)" stroke-width="${(ribbonW * 0.22).toFixed(1)}" stroke-linecap="round"/>
+
+      <!-- Visible craft tape roll above finger that spins & shrinks with remaining amount -->
+      <g transform="translate(${rx.toFixed(1)} ${ry.toFixed(1)})">
+        <!-- Lightweight soft shadow -->
+        <circle cx="4" cy="6" r="${outerR.toFixed(1)}" fill="rgba(15,23,42,0.18)"/>
+        <g transform="rotate(${this.rollAngle.toFixed(0)})">
+          <circle cx="0" cy="0" r="${outerR.toFixed(1)}" fill="${rollFill}" stroke="${this.selectedTape.edge}" stroke-width="3.2"/>
+          ${woundRings}
+          <!-- Cardboard inner core -->
+          <circle cx="0" cy="0" r="${coreR}" fill="#E2C7A4" stroke="#9A7146" stroke-width="3"/>
+          <circle cx="0" cy="0" r="8.5" fill="#FFFFFF"/>
+          <!-- Rotation spokes so spinning motion is super clear -->
+          <line x1="-10" y1="0" x2="10" y2="0" stroke="#9A7146" stroke-width="2" opacity="0.55"/>
+          <line x1="0" y1="-10" x2="0" y2="10" stroke="#9A7146" stroke-width="2" opacity="0.55"/>
+        </g>
       </g>
     `;
   }
