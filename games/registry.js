@@ -234,7 +234,7 @@ export const GAME_REGISTRY = [
     id: 'watch-maker',
     title: 'とけい つくり',
     sub: 'WATCH MAKER',
-    desc: '10この ほんもの とけいを くみたてよう！',
+    desc: '11この ほんもの とけいを くみたてよう！',
     badge: '',
     cta: 'あそぶ',
     bg: '#2B4C7E',

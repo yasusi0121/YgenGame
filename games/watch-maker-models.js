@@ -925,6 +925,103 @@ export const CLOCK_MODELS = [
         { id: 'beads',  label: '11ビーズバンド', ruby: 'カラフル',    kind: 'bead-band', x: 244, y: 200, r: 138, thumbBox: '-174 -174 328 352', req: 'glass', phase: 'face' }
       ];
     }
+  },
+
+  /* =========================================================================
+     11. Aqua Drop & Gold Leaf Charm Strap Watch — Child's Favorite Watch
+         Faithful 1-to-1 reproduction of IMG_3300.jpeg:
+         Sky-blue strap loop + gold clasp + olive-green glass leaf at top,
+         mirror-chrome round mini watch head with white 1-12 QUARTZ dial &
+         silver dauphine hands, hanging cluster of translucent aqua-blue
+         teardrop glass beads on gold wire + curved gold laurel leaf charm!
+     ========================================================================= */
+  {
+    id: 'charm-watch',
+    name: 'しずく チャーム とけい',
+    mechLabel: 'クォーツ ＋ チャーム',
+    handStyle: 'bead-watch',
+    handScale: 0.78,
+    hasSecond: true,
+    animType: 'quartz-step',
+    dialCenter: { x: 280, y: 192, r: 64 },
+    thumbSvg: `
+      <svg viewBox="0 0 64 64" fill="none">
+        <!-- Sky-blue strap loop & gold clasp -->
+        <path d="M32 16 C26 8 27 2 32 2 C37 2 38 8 32 16" stroke="#5B9BD5" stroke-width="2" fill="none"/>
+        <rect x="30" y="13" width="4" height="5" rx="1.2" fill="#D8A93A"/>
+        <!-- Olive green glass leaf on top-left -->
+        <ellipse cx="26" cy="21" rx="4.5" ry="2.2" transform="rotate(-15 26 21)" fill="#7AA324"/>
+        <!-- Chrome round mini watch head -->
+        <circle cx="32" cy="30" r="11" fill="#E2E8F0" stroke="#64748B" stroke-width="2.2"/>
+        <circle cx="32" cy="30" r="8" fill="#FFFFFF"/>
+        <line x1="32" y1="30" x2="32" y2="25" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="32" y1="30" x2="36.5" y2="30" stroke="#64748B" stroke-width="1.3" stroke-linecap="round"/>
+        <!-- Translucent aqua-blue teardrop bead cluster (bottom-left) -->
+        <circle cx="28" cy="45" r="3.4" fill="#38A8D8"/>
+        <circle cx="23" cy="49" r="3.4" fill="#55C4EB"/>
+        <circle cx="30" cy="51" r="3.4" fill="#2FA4D6"/>
+        <circle cx="21" cy="55" r="3.4" fill="#38A8D8"/>
+        <circle cx="27" cy="57" r="3.4" fill="#55C4EB"/>
+        <!-- Curved gold leaf charm (bottom-right) -->
+        <path d="M35 42 Q44 48 41 59" stroke="#D8A93A" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+      </svg>
+    `,
+    renderCaseBg() {
+      return `
+        <!-- Top & bottom silver jump-ring lugs -->
+        <circle cx="280" cy="108" r="10" fill="#CBD5E1" stroke="#64748B" stroke-width="3"/>
+        <circle cx="280" cy="108" r="4"  fill="#1E293B"/>
+        <circle cx="280" cy="276" r="10" fill="#CBD5E1" stroke="#64748B" stroke-width="3"/>
+        <circle cx="280" cy="276" r="4"  fill="#1E293B"/>
+        <!-- Mirror-polished chrome round bezel case -->
+        <circle cx="280" cy="192" r="82" fill="#CBD5E1" stroke="#64748B" stroke-width="4"/>
+        <circle cx="280" cy="192" r="75" fill="none" stroke="#F8FAFC" stroke-width="4.5" opacity="0.9"/>
+        <circle cx="280" cy="192" r="68" fill="#334155" stroke="#64748B" stroke-width="2.2"/>
+      `;
+    },
+    renderMovementPlate() {
+      return `
+        <circle cx="280" cy="192" r="64" fill="#E2E8F0" stroke="#64748B" stroke-width="2.2"/>
+        <circle cx="280" cy="192" r="52" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="5 4"/>
+      `;
+    },
+    renderDialSvg() {
+      const nums = buildRadialNumbers(0, 0, 47, ['1','2','3','4','5','6','7','8','9','10','11','12'], 15, '#18181B', '900', 'Georgia, serif');
+      return `
+        <circle cx="0" cy="0" r="63" fill="#FAFAFA" stroke="#CBD5E1" stroke-width="2"/>
+        ${nums}
+        <text x="0" y="27" text-anchor="middle" font-size="8.5" font-weight="800" fill="#27272A" letter-spacing="1.1" font-family="sans-serif">QUARTZ</text>
+        <circle cx="0" cy="0" r="4.5" fill="#94A3B8"/>
+      `;
+    },
+    renderGlassSvg() {
+      return `
+        <circle cx="0" cy="0" r="65" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.58)" stroke-width="2.2"/>
+        <path d="M -38 -36 A 52 52 0 0 1 30 -44" stroke="rgba(255,255,255,0.52)" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+      `;
+    },
+    getMechParts() {
+      return [
+        { id: 'battery', label: 'ぼたんでんち', ruby: 'SR626',      kind: 'battery',      x: 258, y: 212, r: 20, thumbBox: '-30 -30 60 60', req: null,      phase: 'mech' },
+        { id: 'quartz',  label: 'クォーツIC',   ruby: 'すいしょう', kind: 'quartz-ic',    x: 256, y: 168, r: 20, thumbBox: '-36 -26 72 52', req: 'battery', phase: 'mech' },
+        { id: 'coil',    label: 'こいる',       ruby: 'モーター',   kind: 'motor-coil',   x: 304, y: 214, r: 20, thumbBox: '-36 -24 72 48', req: 'quartz',  phase: 'mech' },
+        { id: 'center',  label: 'にばんしゃ',   ruby: '二番車',     kind: 'wheel-gold',   x: 280, y: 192, r: 23, thumbBox: '-36 -36 72 72', req: 'coil',    speed: -0.9, phase: 'mech' },
+        { id: 'third',   label: 'さんばんしゃ', ruby: '三番車',     kind: 'wheel-silver', x: 310, y: 172, r: 17, thumbBox: '-28 -28 56 56', req: 'center',  speed: 1.6, phase: 'mech' },
+        { id: 'crown',   label: 'りゅうず',     ruby: 'じこくあわせ', kind: 'bead-crown', x: 363, y: 200, r: 16, thumbBox: '-12 -18 32 36', req: 'third',   phase: 'mech' }
+      ];
+    },
+    getFaceParts(prevReq = null) {
+      return [
+        { id: 'dial',      label: 'もじばん',       kind: 'custom-dial',      x: 280, y: 192, r: 64, thumbBox: '-70 -70 140 140',  req: prevReq,    phase: 'face' },
+        { id: 'hour',      label: 'たんしん',       kind: 'hand-hour',        x: 280, y: 192, r: 30, thumbBox: '-22 -56 44 70',    req: 'dial',     initAngle: 285, phase: 'face' },
+        { id: 'minute',    label: 'ちょうしん',     kind: 'hand-minute',      x: 280, y: 192, r: 38, thumbBox: '-22 -74 44 88',    req: 'hour',     initAngle: 122, phase: 'face' },
+        { id: 'second',    label: 'びょうしん',     kind: 'hand-second',      x: 280, y: 192, r: 40, thumbBox: '-22 -76 44 96',    req: 'minute',   initAngle: 78,  phase: 'face' },
+        { id: 'glass',     label: 'ドームがらす',   kind: 'custom-glass',     x: 280, y: 192, r: 66, thumbBox: '-72 -72 144 144',  req: 'second',   phase: 'face' },
+        { id: 'strapTop',  label: 'みずいろストラップ', ruby: 'はっぱ付き',   kind: 'charm-strap-top',  x: 280, y: 74,  r: 48, thumbBox: '-48 -92 92 142',  req: 'glass',    phase: 'face' },
+        { id: 'blueBeads', label: 'しずくビーズ',   ruby: 'アクアブルー',     kind: 'charm-blue-beads', x: 248, y: 332, r: 54, thumbBox: '-46 -62 94 114',  req: 'strapTop', phase: 'face' },
+        { id: 'goldLeaf',  label: 'ゴールドリーフ', ruby: 'はっぱチャーム',   kind: 'charm-gold-leaf',  x: 310, y: 326, r: 46, thumbBox: '-34 -54 74 116',  req: 'blueBeads', phase: 'face' }
+      ];
+    }
   }
 ];
 

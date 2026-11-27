@@ -1108,6 +1108,155 @@ function buildBeadWatch3D(THREE, root, anim) {
   anim.explodeParts.push({ obj: glass, baseZ: 0.33, expZ: 2.12 });
 }
 
+/** 11. Aqua Drop & Gold Leaf Charm Strap Watch (IMG_3300) */
+function buildCharmWatch3D(THREE, root, anim) {
+  const chromeMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, metalness: 0.92, roughness: 0.12 });
+  const steelBackMat = new THREE.MeshStandardMaterial({ color: 0xCBD5E1, metalness: 0.82, roughness: 0.24 });
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xE5B946, metalness: 0.86, roughness: 0.18 });
+  const strapMat = new THREE.MeshStandardMaterial({ color: 0x5B9BD5, roughness: 0.58, metalness: 0.04 });
+  const oliveGlassMat = new THREE.MeshStandardMaterial({ color: 0x7AA324, transparent: true, opacity: 0.86, roughness: 0.12, metalness: 0.08 });
+  const aquaGlassMat = new THREE.MeshStandardMaterial({ color: 0x38A8D8, transparent: true, opacity: 0.84, roughness: 0.08, metalness: 0.12 });
+
+  const wy = 0.12; // Watch head slightly above center so hanging charms balance vertically
+
+  // --- TOP: Sky-blue strap loop + gold crimp barrel + gold lobster clasp + olive-green glass leaf ---
+  const loop = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.024, 8, 36), strapMat);
+  loop.scale.set(0.46, 1.38, 1);
+  loop.position.set(0, wy + 1.62, 0);
+  root.add(loop);
+
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.22, 16), goldMat);
+  barrel.position.set(0, wy + 1.06, 0);
+  root.add(barrel);
+
+  const topJump = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.02, 8, 18), goldMat);
+  topJump.position.set(0, wy + 0.91, 0);
+  root.add(topJump);
+
+  const clasp = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.028, 8, 18), goldMat);
+  clasp.scale.set(0.76, 1.35, 1);
+  clasp.position.set(0, wy + 0.78, 0);
+  root.add(clasp);
+
+  // Translucent olive-green glass leaf charm jutting left at top lug!
+  const oliveLeaf = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), oliveGlassMat);
+  oliveLeaf.scale.set(1.55, 0.56, 0.42);
+  oliveLeaf.rotation.z = -0.22;
+  oliveLeaf.position.set(-0.28, wy + 0.70, 0.03);
+  root.add(oliveLeaf);
+
+  // --- CENTER: Mirror-polished chrome round mini watch head ---
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.68, 0.36, 40), chromeMat);
+  drum.rotation.x = Math.PI / 2;
+  drum.position.set(0, wy, 0);
+  root.add(drum);
+
+  const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.08, 14, 42), chromeMat);
+  bezel.position.set(0, wy, 0.19);
+  root.add(bezel);
+
+  // Top & bottom silver jump-ring lugs
+  [wy + 0.74, wy - 0.74].forEach((ly) => {
+    const lug = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.03, 10, 18), chromeMat);
+    lug.position.set(0, ly, 0);
+    root.add(lug);
+  });
+
+  // Small silver crown at ~3:30 position
+  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.12, 14), chromeMat);
+  crown.rotation.z = Math.PI / 2 - 0.14;
+  crown.position.set(0.74, wy - 0.09, 0);
+  root.add(crown);
+
+  const back = new THREE.Mesh(new THREE.CylinderGeometry(0.60, 0.56, 0.05, 34), steelBackMat);
+  back.rotation.x = Math.PI / 2;
+  back.position.set(0, wy, -0.20);
+  root.add(back);
+
+  // Internal quartz gear train + SR626 silver button battery
+  const buttonCell = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.08, 20), steelBackMat);
+  buttonCell.rotation.x = Math.PI / 2;
+  buttonCell.position.set(-0.20, -0.18, 0.04);
+  addInternalGears(THREE, root, anim, 0, wy, 0.05, 0.58, [buttonCell]);
+
+  // White dial (1-12 + QUARTZ) strictly in front of drum
+  const dialMat = new THREE.MeshStandardMaterial({ map: makeDialTexture(THREE, 'bead-watch'), roughness: 0.42, transparent: true, opacity: 1 });
+  const dial = new THREE.Mesh(new THREE.CircleGeometry(0.62, 40), dialMat);
+  dial.position.set(0, wy, 0.21);
+  root.add(dial);
+  anim.explodeParts.push({ obj: dial, baseZ: 0.21, expZ: 1.24, fadeMat: dialMat });
+
+  // Silver dauphine hands + slim second hand
+  const handsGroup = new THREE.Group();
+  handsGroup.position.set(0, wy, 0.24);
+  root.add(handsGroup);
+  anim.hands = build3DHands(THREE, handsGroup, 0.54, 'bead-watch');
+  anim.explodeParts.push({ obj: handsGroup, baseZ: 0.24, expZ: 1.66 });
+
+  const glass = new THREE.Mesh(
+    new THREE.CircleGeometry(0.63, 40),
+    new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0.14 })
+  );
+  glass.position.set(0, wy, 0.30);
+  root.add(glass);
+  anim.explodeParts.push({ obj: glass, baseZ: 0.30, expZ: 2.04 });
+
+  // --- BOTTOM-LEFT: Translucent Aqua-Blue Teardrop Glass Bead Cluster on Gold Wire ---
+  const dropGeo = new THREE.SphereGeometry(0.115, 14, 12);
+  const dropPositions = [
+    [-0.08, -0.82, 0.05], [-0.22, -0.94, 0.10], [0.02, -0.98, -0.04],
+    [-0.36, -1.06, 0.06], [-0.14, -1.10, 0.14], [0.08, -1.14, 0.04],
+    [-0.48, -1.18, 0.02], [-0.28, -1.24, 0.12], [-0.06, -1.26, -0.06],
+    [-0.60, -1.32, 0.06], [-0.38, -1.38, 0.14], [-0.18, -1.40, 0.06],
+    [0.04, -1.38, 0.10],  [-0.70, -1.46, 0.00], [-0.50, -1.50, 0.10],
+    [-0.28, -1.54, 0.04], [-0.10, -1.56, -0.04],[-0.38, -1.68, 0.08]
+  ];
+  // Fine gold stem inside cluster
+  const wireStem = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.014, 0.92, 8), goldMat);
+  wireStem.position.set(-0.24, wy - 1.18, 0.02);
+  wireStem.rotation.z = -0.42;
+  root.add(wireStem);
+
+  dropPositions.forEach(([dx, dy, dz], idx) => {
+    const drop = new THREE.Mesh(dropGeo, aquaGlassMat);
+    drop.scale.set(0.86, 1.32, 0.86);
+    drop.rotation.z = -0.35 + (idx % 3 - 1) * 0.25;
+    drop.position.set(dx, wy + dy, dz);
+    root.add(drop);
+  });
+
+  // --- BOTTOM-RIGHT: Graceful Curved Mirror-Gold Laurel Leaf Charm ---
+  const leafPairs = [
+    [0.14, -0.84, -0.45],
+    [0.28, -0.98, -0.68],
+    [0.39, -1.14, -0.90],
+    [0.45, -1.32, -1.12],
+    [0.47, -1.50, -1.34],
+    [0.43, -1.68, -1.56]
+  ];
+  const leafletGeo = new THREE.SphereGeometry(0.085, 10, 8);
+  leafPairs.forEach(([lx, ly, ang]) => {
+    const stemNode = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.22, 8), goldMat);
+    stemNode.position.set(lx, wy + ly, 0);
+    stemNode.rotation.z = ang + Math.PI / 2;
+    root.add(stemNode);
+
+    [-1, 1].forEach((side) => {
+      const lf = new THREE.Mesh(leafletGeo, goldMat);
+      lf.scale.set(1.65, 0.52, 0.26);
+      lf.rotation.z = ang + side * 0.55;
+      lf.position.set(lx + Math.cos(ang + side * 0.6) * 0.11, wy + ly + Math.sin(ang + side * 0.6) * 0.11, 0.02);
+      root.add(lf);
+    });
+  });
+  // Pointed gold tip leaf
+  const tipLeaf = new THREE.Mesh(leafletGeo, goldMat);
+  tipLeaf.scale.set(1.5, 0.48, 0.25);
+  tipLeaf.rotation.z = -1.72;
+  tipLeaf.position.set(0.39, wy - 1.82, 0.02);
+  root.add(tipLeaf);
+}
+
 /**
  * Interactive True-3D Watch Viewer mounted inside WatchMakerGame on completion.
  */
@@ -1231,7 +1380,8 @@ export class WatchMaker3DViewer {
       'vintage-gold':   buildVintageGold3D,
       'round-radio':    buildRoundRadio3D,
       'apple-watch':    buildAppleWatch3D,
-      'bead-watch':     buildBeadWatch3D
+      'bead-watch':     buildBeadWatch3D,
+      'charm-watch':    buildCharmWatch3D
     };
     const fn = builders[clockId] || buildRoundRadio3D;
     fn(this.THREE, holder, anim);

@@ -512,6 +512,83 @@ export function renderMechPartSvg(kind, r = 34) {
         `).join('')}
       `;
     }
+    case 'charm-strap-top':
+      // Sky-blue thin cord loop + gold crimp barrel + gold lobster clasp + translucent olive-green glass leaf on left!
+      return `
+        <!-- Thin sky-blue strap cord loop -->
+        <path d="M 0 -5 C -22 -42 -20 -82 0 -86 C 20 -82 22 -42 0 -5"
+          fill="none" stroke="#5B9BD5" stroke-width="3.6" stroke-linecap="round"/>
+        <path d="M -2 -8 C -18 -40 -16 -76 -1 -82"
+          fill="none" stroke="#93C5FD" stroke-width="1.3" stroke-linecap="round" opacity="0.7"/>
+        <!-- Gold crimp barrel & jump ring -->
+        <rect x="-6.5" y="-12" width="13" height="19" rx="3" fill="#D8A93A" stroke="#926A16" stroke-width="1.8"/>
+        <line x1="-2.5" y1="-9" x2="-2.5" y2="4" stroke="#FEF08A" stroke-width="2" opacity="0.8"/>
+        <circle cx="0" cy="11" r="6" fill="none" stroke="#D8A93A" stroke-width="2.8"/>
+        <!-- Gold lobster clasp -->
+        <path d="M 0 16 C 10 16 12 31 0 36 C -9 34 -10 23 -3 21"
+          fill="none" stroke="#D8A93A" stroke-width="4" stroke-linecap="round"/>
+        <line x1="-6" y1="26" x2="2" y2="29" stroke="#926A16" stroke-width="2" stroke-linecap="round"/>
+        <!-- Translucent olive-green glass leaf charm jutting left at top lug -->
+        <g transform="translate(-14 38) rotate(-14)">
+          <path d="M 10 0 C 0 -10 -18 -9 -28 0 C -18 9 0 10 10 0 Z"
+            fill="#7AA324" stroke="#4D6B12" stroke-width="1.8" opacity="0.92"/>
+          <path d="M 6 0 L -22 0" stroke="#B7E048" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/>
+          <ellipse cx="-8" cy="-3" rx="8" ry="2.2" fill="#FFFFFF" opacity="0.45"/>
+        </g>
+      `;
+    case 'charm-blue-beads': {
+      // Wisteria/grape-like cluster of 18 translucent aqua-blue teardrop glass beads on fine gold wire!
+      const drops = [
+        { x: 26, y: -44, r: 16 }, { x: 14, y: -36, r: 24 }, { x: 34, y: -30, r: -10 },
+        { x: 4,  y: -24, r: 30 }, { x: 22, y: -22, r: 12 }, { x: 38, y: -14, r: -18 },
+        { x: -10,y: -12, r: 38 }, { x: 10, y: -8,  r: 22 }, { x: 28, y: -4,  r: -6 },
+        { x: -24,y: 0,   r: 44 }, { x: -4, y: 4,   r: 26 }, { x: 16, y: 8,   r: 8 },
+        { x: 34, y: 12,  r: -22 },{ x: -34,y: 16,  r: 46 }, { x: -16,y: 18,  r: 28 },
+        { x: 4,  y: 22,  r: 14 }, { x: 22, y: 26,  r: -12 },{ x: -10,y: 36,  r: 20 }
+      ];
+      return `
+        <!-- Fine gold wire branches linking the cluster to the 6 o'clock lug -->
+        <path d="M 32 -56 C 24 -30 8 -8 -12 28 M 24 -34 L 36 10 M 14 -16 L -28 12"
+          fill="none" stroke="#D8A93A" stroke-width="2.2" stroke-linecap="round"/>
+        ${drops.map((d) => `
+          <g transform="translate(${d.x} ${d.y}) rotate(${d.r})">
+            <!-- Teardrop clear aqua glass bead -->
+            <path d="M 0 -10 C 6 -3 9 2 8 7 C 7 12 -7 12 -8 7 C -9 2 -6 -3 0 -10 Z"
+              fill="#38A8D8" stroke="#1B6E99" stroke-width="1.4" opacity="0.88"/>
+            <path d="M -2 -4 C -5 0 -5 5 -2 7" fill="none" stroke="#BAE6FD" stroke-width="2.4" stroke-linecap="round" opacity="0.82"/>
+            <circle cx="-2.5" cy="2" r="1.8" fill="#FFFFFF" opacity="0.72"/>
+          </g>
+        `).join('')}
+      `;
+    }
+    case 'charm-gold-leaf': {
+      // Graceful curved mirror-gold laurel/wheat leaf metal charm hanging down-right!
+      const pairs = [
+        { x: -18, y: -38, a: 28 },
+        { x: -8,  y: -26, a: 42 },
+        { x: 0,   y: -12, a: 54 },
+        { x: 6,   y: 4,   a: 66 },
+        { x: 8,   y: 20,  a: 76 },
+        { x: 6,   y: 36,  a: 86 }
+      ];
+      return `
+        <!-- Curved central gold stem -->
+        <path d="M -26 -46 Q 12 -18 4 50" fill="none" stroke="#C6921E" stroke-width="4" stroke-linecap="round"/>
+        <path d="M -26 -46 Q 12 -18 4 50" fill="none" stroke="#F7D56B" stroke-width="2" stroke-linecap="round"/>
+        <!-- Paired glossy gold leaflets -->
+        ${pairs.map((p) => `
+          <g transform="translate(${p.x} ${p.y}) rotate(${p.a})">
+            <path d="M 0 0 C 5 -7 14 -9 20 -4 C 14 2 6 3 0 0 Z" fill="#E5B946" stroke="#926A16" stroke-width="1.3"/>
+            <path d="M 0 0 C 5 7 14 9 20 4 C 14 -2 6 -3 0 0 Z" fill="#D4A12A" stroke="#926A16" stroke-width="1.3"/>
+            <line x1="4" y1="-3" x2="13" y2="-4" stroke="#FEF9C3" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/>
+          </g>
+        `).join('')}
+        <!-- Pointed gold tip leaf -->
+        <g transform="translate(4 48) rotate(98)">
+          <path d="M 0 0 C 5 -5 13 -5 18 0 C 13 5 5 5 0 0 Z" fill="#E5B946" stroke="#926A16" stroke-width="1.3"/>
+        </g>
+      `;
+    }
     default:
       return '';
   }
