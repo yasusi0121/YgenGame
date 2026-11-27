@@ -1,4 +1,5 @@
 import {
+  FONT_ROUND,
   buildRailDefsSvg,
   renderTrainSvg,
   renderFumikiriPostSvg,
@@ -6,9 +7,9 @@ import {
 } from './rail-control-assets.js';
 
 const FUMIKIRI_TRAINS = [
-  { type: 'commuter',   name: 'つうきん でんしゃ', speed: 260 },
-  { type: 'shinkansen', name: 'しんかんせん',       speed: 370 },
-  { type: 'freight',    name: 'かもつ れっしゃ',   speed: 215 }
+  { type: 'commuter',   name: 'でんしゃ',     speed: 260 },
+  { type: 'shinkansen', name: 'しんかんせん', speed: 370 },
+  { type: 'freight',    name: 'かもつれっしゃ', speed: 215 }
 ];
 
 const SWITCH_ORDERS = [
@@ -23,20 +24,18 @@ export default class RailControlGame {
     this.app = app;
     this.sound = (app && app.sound) ? app.sound : app;
 
-    this.mode = 'crossing'; // 'crossing' | 'switch'
+    this.mode = 'crossing';
     this.score = 0;
 
-    // Crossing mode
     this.gateCommandClosed = false;
     this.gateClosedRatio = 0;
     this.lampTimer = 0;
     this.lampPhase = 0;
     this.train = null;
     this.nextTrainTimer = 1.4;
-    this.car = { x: 110, y: 382, color: '#3B82F6', roof: '#93C5FD' };
+    this.car = { x: 110, y: 382, color: '#4FA8D8', roof: '#A8DDF5' };
     this.trainCycleIdx = 0;
 
-    // Switchyard mode
     this.pointA = 'top';
     this.pointB = 'mid';
     this.signalGreen = false;
@@ -50,9 +49,6 @@ export default class RailControlGame {
   }
 
   mount() {
-    if (this.app && typeof this.app.setGameBackground === 'function') {
-      this.app.setGameBackground('#E0F2FE');
-    }
     this.injectStyles();
     this.renderShell();
     this.resetModeState();
@@ -83,44 +79,46 @@ export default class RailControlGame {
     style.textContent = `
       .rc-root {
         display: flex; flex-direction: column; width: 100%; height: 100%;
-        background: #E0F2FE; color: #1E293B; user-select: none; -webkit-user-select: none;
-        padding: 8px 10px 10px; box-sizing: border-box; gap: 6px; overflow: hidden;
+        background: #8CCAE3; color: #FFFFFF; user-select: none; -webkit-user-select: none;
+        padding: calc(12px + var(--safe-top, 0px)) 0 0;
+        box-sizing: border-box; gap: 4px; overflow: hidden;
+        transition: background 0.35s ease;
       }
+      .rc-root.is-switch { background: #2A8567; }
+
       .rc-topbar {
-        display: flex; align-items: center; justify-content: space-between; gap: 8px;
-        flex-wrap: wrap; padding-left: 52px; padding-right: 52px; min-height: 42px;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        flex-wrap: wrap; padding-left: 60px; padding-right: 60px; min-height: 44px;
+        position: relative; z-index: 4;
       }
       .rc-modes {
-        display: flex; gap: 5px; background: #FFFFFF; padding: 4px;
-        border-radius: 16px; border: 3px solid #1E293B; box-shadow: 0 3px 0 #1E293B;
+        display: flex; gap: 4px; background: rgba(255,255,255,0.22); padding: 4px;
+        border-radius: 999px; border: 2px solid rgba(255,255,255,0.38);
       }
       .rc-mode-btn {
-        border: none; border-radius: 11px; padding: 6px 14px; font-size: 14px; font-weight: 900;
-        background: transparent; color: #475569; cursor: pointer; font-family: inherit;
+        border: none; border-radius: 999px; padding: 6px 15px; font-size: 14px; font-weight: 800;
+        background: transparent; color: rgba(255,255,255,0.92); cursor: pointer; font-family: inherit;
       }
-      .rc-mode-btn.active { background: #FACC15; color: #1E293B; box-shadow: inset 0 -3px 0 #CA8A04; }
+      .rc-mode-btn.active { background: #FFFFFF; color: #2D3436; box-shadow: 0 3px 0 rgba(0,0,0,0.12); }
 
-      .rc-status {
-        display: flex; align-items: center; gap: 10px; background: #FFFFFF;
-        border: 3px solid #1E293B; border-radius: 16px; padding: 4px 12px;
-        box-shadow: 0 3px 0 #1E293B;
+      .rc-pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(255,255,255,0.22); border: 2px solid rgba(255,255,255,0.38);
+        border-radius: 999px; padding: 5px 14px;
       }
-      .rc-hint { font-size: 14px; font-weight: 900; color: #1E293B; }
+      .rc-hint { font-size: 14px; font-weight: 800; color: #FFFFFF; }
       .rc-score {
-        background: #22C55E; color: #FFFFFF; font-size: 13px; font-weight: 900;
-        padding: 2px 10px; border-radius: 99px; border: 2px solid #1E293B;
+        background: #FFFFFF; color: #2A8567; font-size: 13px; font-weight: 900;
+        padding: 2px 10px; border-radius: 999px;
       }
 
       .rc-stage-wrap {
         position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
-        border-radius: 22px; border: 4px solid #1E293B; box-shadow: 0 6px 0 rgba(30,41,59,0.2);
-        overflow: hidden; background: #BAE6FD;
       }
-      .rc-svg { width: 100%; height: 100%; display: block; touch-action: none; }
+      .rc-svg { width: 100%; height: 100%; max-width: 1020px; display: block; touch-action: none; }
 
       @media (max-width: 640px) {
-        .rc-root { padding: 6px; gap: 5px; }
-        .rc-topbar { padding-left: 44px; padding-right: 44px; }
+        .rc-topbar { padding-left: 44px; padding-right: 44px; gap: 6px; }
         .rc-mode-btn { padding: 5px 10px; font-size: 12px; }
         .rc-hint { font-size: 12px; }
       }
@@ -130,14 +128,14 @@ export default class RailControlGame {
 
   renderShell() {
     this.mountEl.innerHTML = `
-      <div class="rc-root">
+      <div class="rc-root" id="rc-root">
         <div class="rc-topbar">
           <div class="rc-modes">
-            <button class="rc-mode-btn active" data-mode="crossing" type="button">ふみきり そうさ</button>
-            <button class="rc-mode-btn" data-mode="switch" type="button">ポイント きりかえ</button>
+            <button class="rc-mode-btn active" data-mode="crossing" type="button">ふみきり</button>
+            <button class="rc-mode-btn" data-mode="switch" type="button">ポイント</button>
           </div>
-          <div class="rc-status">
-            <span class="rc-hint" id="rc-hint">あかいレバー か しゃだんきを タップ！</span>
+          <div class="rc-pill">
+            <span class="rc-hint" id="rc-hint">レバーで しゃだんきを おろそう</span>
             <span class="rc-score" id="rc-score">0かい</span>
           </div>
         </div>
@@ -151,6 +149,7 @@ export default class RailControlGame {
       </div>
     `;
 
+    this.rootEl = this.mountEl.querySelector('#rc-root');
     this.svgEl = this.mountEl.querySelector('#rc-svg');
     this.sceneEl = this.mountEl.querySelector('#rc-scene');
     this.hintEl = this.mountEl.querySelector('#rc-hint');
@@ -169,7 +168,6 @@ export default class RailControlGame {
       });
     });
 
-    // 100% Direct Diegetic SVG Clicks (Levers, Crossing Posts, Track Forks, Signal Tower!)
     this.svgEl.addEventListener('pointerdown', (e) => {
       const target = e.target.closest('[data-act]');
       if (!target) return;
@@ -182,9 +180,9 @@ export default class RailControlGame {
         this.sound.playBreakerClack();
         if (this.gateCommandClosed) {
           this.playFumikiriBell();
-          this.hintEl.textContent = 'カンカンカン！ しゃだんきが おりているよ！';
+          this.hintEl.textContent = 'カンカンカン！ しゃだんきが おりるよ';
         } else {
-          this.hintEl.textContent = 'しゃだんき オープン！ くるまが とおれるよ！';
+          this.hintEl.textContent = 'しゃだんき オープン！';
         }
         this.renderScene();
       } else if (act === 'call-train') {
@@ -206,27 +204,33 @@ export default class RailControlGame {
         this.signalGreen = true;
         this.swTrain = { t: 0, state: 'running', chosenPath: chosen };
         this.playTrainHorn();
-        this.hintEl.textContent = 'しんごう あお！ しゅっぱつ しんこう！';
+        this.hintEl.textContent = 'しゅっぱつ しんこう！';
         this.renderScene();
       }
     });
   }
 
   resetModeState() {
-    if (this.mode === 'crossing') {
+    const isSw = this.mode === 'switch';
+    this.rootEl.classList.toggle('is-switch', isSw);
+    if (this.app && typeof this.app.setGameBackground === 'function') {
+      this.app.setGameBackground(isSw ? '#2A8567' : '#8CCAE3');
+    }
+
+    if (!isSw) {
       this.gateCommandClosed = false;
       this.gateClosedRatio = 0;
       this.train = null;
       this.nextTrainTimer = 1.4;
-      this.car = { x: 110, y: 382, color: '#3B82F6', roof: '#93C5FD' };
-      this.hintEl.textContent = 'あかいレバー か しゃだんきを タップして おろそう！';
+      this.car = { x: 110, y: 382, color: '#4FA8D8', roof: '#A8DDF5' };
+      this.hintEl.textContent = 'レバーで しゃだんきを おろそう';
     } else {
       this.pointA = 'top';
       this.pointB = 'mid';
       this.signalGreen = false;
       this.swTrain = { t: 0, state: 'waiting', chosenPath: 'top' };
       const ord = SWITCH_ORDERS[this.swOrderIdx % SWITCH_ORDERS.length];
-      this.hintEl.textContent = `せんろの レバーを きりかえて ${ord.label} へ！ しんごうを タップで しゅっぱつ！`;
+      this.hintEl.textContent = `${ord.label} へ ポイントを きりかえよう`;
     }
     this.renderScene();
   }
@@ -237,7 +241,7 @@ export default class RailControlGame {
     const dir = this.trainCycleIdx % 2 === 0 ? -1 : 1;
     this.train = { ...spec, dir, x: dir > 0 ? -240 : 1040, state: 'approach', clackAccum: 0 };
     this.playTrainHorn();
-    this.hintEl.textContent = `${dir > 0 ? 'ひだり' : 'みぎ'}から ${spec.name}！ レバーを ひいて しゃだんきを おろそう！`;
+    this.hintEl.textContent = `${dir > 0 ? 'ひだり' : 'みぎ'}から ${spec.name} が くるよ！`;
   }
 
   ensureLoop() {
@@ -291,10 +295,10 @@ export default class RailControlGame {
       this.car.x += dt * 115;
       if (this.car.x > 870) {
         const palette = [
-          { color: '#3B82F6', roof: '#93C5FD' },
-          { color: '#EF4444', roof: '#FCA5A5' },
-          { color: '#F59E0B', roof: '#FDE68A' },
-          { color: '#10B981', roof: '#A7F3D0' }
+          { color: '#4FA8D8', roof: '#A8DDF5' },
+          { color: '#F05A5B', roof: '#FFA8A8' },
+          { color: '#F7C948', roof: '#FFF0A8' },
+          { color: '#45B87B', roof: '#A6E8C4' }
         ];
         const next = palette[Math.floor(Math.random() * palette.length)];
         this.car = { x: -70, y: 382, color: next.color, roof: next.roof };
@@ -312,17 +316,17 @@ export default class RailControlGame {
 
       if (tr.state === 'approach' && reachedStop && this.gateClosedRatio < 0.85) {
         tr.state = 'waiting-gate';
-        this.hintEl.textContent = 'あぶない！ あかいレバーを タップして しゃだんきを おろそう！';
+        this.hintEl.textContent = 'しゃだんきを おろしてね！';
         this.playTrainHorn();
       } else if (tr.state === 'waiting-gate') {
         if (this.gateClosedRatio >= 0.85) {
           tr.state = 'passing';
-          this.hintEl.textContent = `${tr.name} つうかちゅう！ ガタン・ゴトン！`;
+          this.hintEl.textContent = `${tr.name} つうかちゅう！`;
         }
       } else {
         if (tr.state === 'approach' && reachedStop && this.gateClosedRatio >= 0.85) {
           tr.state = 'passing';
-          this.hintEl.textContent = `${tr.name} つうかちゅう！ ガタン・ゴトン！`;
+          this.hintEl.textContent = `${tr.name} つうかちゅう！`;
         }
         tr.x += tr.dir * tr.speed * dt;
         tr.clackAccum += tr.speed * dt;
@@ -336,7 +340,7 @@ export default class RailControlGame {
           this.scoreEl.textContent = `${this.score}かい`;
           this.nextTrainTimer = 3.2;
           this.sound.playSuccessFanfare();
-          this.hintEl.textContent = 'あんぜん つうか！ レバーを もどして くるまを とおそう！';
+          this.hintEl.textContent = 'あんぜん つうか！ しゃだんきを あげよう';
         }
       }
     }
@@ -345,9 +349,7 @@ export default class RailControlGame {
   stepSwitchyard(dt) {
     if (this.swTrain.state !== 'running') return;
     this.swTrain.t += dt * 0.42;
-    if (Math.floor(this.swTrain.t * 8) !== Math.floor((this.swTrain.t - dt * 0.42) * 8)) {
-      this.playRailClack();
-    }
+    if (Math.floor(this.swTrain.t * 8) !== Math.floor((this.swTrain.t - dt * 0.42) * 8)) this.playRailClack();
     if (this.swTrain.t >= 1) {
       this.swTrain.t = 1;
       const ord = SWITCH_ORDERS[this.swOrderIdx % SWITCH_ORDERS.length];
@@ -355,11 +357,11 @@ export default class RailControlGame {
         this.score++;
         this.scoreEl.textContent = `${this.score}かい`;
         this.sound.playCrackerPop();
-        this.hintEl.textContent = `だいせいこう！ ${ord.label} に とうちゃく！`;
+        this.hintEl.textContent = `${ord.label} に とうちゃく！`;
         this.swOrderIdx++;
       } else {
         this.sound.playBoing();
-        this.hintEl.textContent = `ちがう ホームだったよ！ もういちど ${ord.label} へ ゆうどうしよう！`;
+        this.hintEl.textContent = `もういちど ${ord.label} へ ゆうどうしよう`;
       }
       this.swTrain.state = 'arrived';
       this.signalGreen = false;
@@ -367,7 +369,7 @@ export default class RailControlGame {
         if (this.destroyed || this.mode !== 'switch') return;
         this.swTrain = { t: 0, state: 'waiting', chosenPath: 'top' };
         const nextOrd = SWITCH_ORDERS[this.swOrderIdx % SWITCH_ORDERS.length];
-        this.hintEl.textContent = `レバーを きりかえて ${nextOrd.label} へ！ しんごうを タップで しゅっぱつ！`;
+        this.hintEl.textContent = `${nextOrd.label} へ ポイントを きりかえよう`;
         this.renderScene();
       }, 1350);
     }
@@ -379,102 +381,77 @@ export default class RailControlGame {
   }
 
   renderCrossingScene() {
-    const ink = '#1E293B';
     const warningOn = this.gateCommandClosed || this.gateClosedRatio > 0.05;
     const arrowDir = this.train ? this.train.dir : 0;
-    const leverDeg = this.gateCommandClosed ? 32 : -32;
+    const leverDeg = this.gateCommandClosed ? 28 : -28;
 
     const sleepers = Array.from({ length: 28 }, (_, i) => `
-      <rect x="${12 + i * 28}" y="264" width="12" height="36" rx="2" fill="#92400E" stroke="${ink}" stroke-width="1.5"/>
+      <rect x="${12 + i * 28}" y="264" width="11" height="36" rx="4" fill="#B5835A" opacity="0.72"/>
     `).join('');
 
     this.sceneEl.innerHTML = `
-      <!-- Sunlit Sky + Fluffy Clouds + Mt. Fuji & Lush Green Hills -->
-      <rect x="0" y="0" width="800" height="500" fill="url(#rc-sky)"/>
-      <g fill="#FFFFFF" opacity="0.9">
-        <circle cx="150" cy="68" r="24"/><circle cx="178" cy="60" r="30"/><circle cx="210" cy="70" r="22"/>
-        <circle cx="620" cy="76" r="22"/><circle cx="648" cy="68" r="28"/><circle cx="678" cy="78" r="20"/>
-      </g>
-      <!-- Distant Mt. Fuji silhouette -->
-      <polygon points="310,210 410,92 510,210" fill="#60A5FA" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
-      <polygon points="382,126 410,92 438,126 422,120 410,130 398,120" fill="#FFFFFF"/>
-      <!-- Rolling Green Hills & Cute 2.5D Houses -->
-      <path d="M 0 218 Q 180 154 380 206 T 800 198 V 270 H 0 Z" fill="url(#rc-grass)" stroke="${ink}" stroke-width="3"/>
-      <g transform="translate(88 188)">
-        <rect x="-28" y="-26" width="56" height="36" rx="4" fill="#FEF3C7" stroke="${ink}" stroke-width="2.5"/>
-        <polygon points="-34,-24 0,-48 34,-24" fill="#EF4444" stroke="${ink}" stroke-width="2.5" stroke-linejoin="round"/>
-        <rect x="-10" y="-14" width="20" height="14" rx="2" fill="#38BDF8" stroke="${ink}" stroke-width="2"/>
-      </g>
-      <g transform="translate(706 184)">
-        <rect x="-26" y="-24" width="52" height="34" rx="4" fill="#FFFFFF" stroke="${ink}" stroke-width="2.5"/>
-        <polygon points="-32,-22 0,-44 32,-22" fill="#2563EB" stroke="${ink}" stroke-width="2.5" stroke-linejoin="round"/>
-        <rect x="-8" y="-12" width="16" height="14" rx="2" fill="#FDE047" stroke="${ink}" stroke-width="2"/>
-      </g>
+      <!-- Clean Editorial Minimalist Sky & Rolling Hills (no messy details, zero black lines) -->
+      <rect x="0" y="0" width="800" height="260" fill="url(#rc-sky)"/>
+      <circle cx="156" cy="76" r="24" fill="rgba(255,255,255,0.75)"/>
+      <circle cx="182" cy="70" r="30" fill="rgba(255,255,255,0.75)"/>
+      <circle cx="212" cy="78" r="20" fill="rgba(255,255,255,0.75)"/>
+      <circle cx="634" cy="84" r="20" fill="rgba(255,255,255,0.65)"/>
+      <circle cx="658" cy="78" r="26" fill="rgba(255,255,255,0.65)"/>
 
-      <!-- Overhead Catenary Wire & Poles -->
-      <line x1="0" y1="168" x2="800" y2="168" stroke="#475569" stroke-width="2.2"/>
-      <line x1="0" y1="180" x2="800" y2="180" stroke="${ink}" stroke-width="2.6"/>
-      <rect x="122" y="122" width="10" height="148" fill="#64748B" stroke="${ink}" stroke-width="2"/>
-      <rect x="668" y="122" width="10" height="148" fill="#64748B" stroke="${ink}" stroke-width="2"/>
+      <!-- Calm Layered Sage Hills -->
+      <path d="M 0 232 Q 210 170 430 222 T 800 212 V 265 H 0 Z" fill="#77C492"/>
+      <path d="M 0 248 Q 260 218 520 245 T 800 238 V 268 H 0 Z" fill="#5EB37C"/>
 
-      <!-- Gravel Rail Bed & Lush Lawn Foreground -->
-      <rect x="0" y="252" width="800" height="248" fill="#86EFAC"/>
-      <rect x="0" y="258" width="800" height="48" fill="#CBD5E1" stroke="${ink}" stroke-width="2.5"/>
+      <!-- Meadow & Clean Gravel Track Bed -->
+      <rect x="0" y="256" width="800" height="244" fill="#68B884"/>
+      <rect x="0" y="260" width="800" height="46" fill="#DCE4EC"/>
       ${sleepers}
 
-      <!-- Crossing Road & Foreground Horizontal Street -->
-      <rect x="284" y="252" width="232" height="106" fill="#64748B"/>
-      <rect x="0" y="342" width="800" height="90" fill="#475569" stroke="${ink}" stroke-width="3"/>
-      <line x1="0" y1="387" x2="800" y2="387" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="28 18" opacity="0.8"/>
-      <rect x="276" y="346" width="9" height="82" fill="#FFFFFF"/>
+      <!-- Smooth Crossing Asphalt Road -->
+      <rect x="284" y="256" width="232" height="96" fill="#6B7788"/>
+      <rect x="0" y="344" width="800" height="86" fill="#535E6E"/>
+      <line x1="0" y1="387" x2="800" y2="387" stroke="rgba(255,255,255,0.65)" stroke-width="4" stroke-dasharray="26 20" stroke-linecap="round"/>
+      <rect x="276" y="348" width="8" height="78" rx="4" fill="#FFFFFF"/>
 
-      <!-- Steel Rails -->
-      <rect x="0" y="266" width="800" height="6" fill="url(#rc-steel-rail)" stroke="${ink}" stroke-width="1.5"/>
-      <rect x="0" y="288" width="800" height="7" fill="url(#rc-steel-rail)" stroke="${ink}" stroke-width="1.5"/>
+      <!-- Clean Satin Steel Rails -->
+      <rect x="0" y="268" width="800" height="5.5" fill="#9AA7B8"/>
+      <rect x="0" y="290" width="800" height="6.5" fill="#7D8B9E"/>
 
       <!-- Rear Fumikiri Post -->
       ${renderFumikiriPostSvg(526, 272, { gateClosedRatio: this.gateClosedRatio, lampPhase: this.lampPhase, warningOn, arrowDir, side: 'right' })}
 
-      <!-- Live Moving 2.5D Train -->
-      ${this.train ? renderTrainSvg(this.train.type, this.train.x, 290, this.train.dir, 1.0) : ''}
+      <!-- Sculpted Matte Japanese Train -->
+      ${this.train ? renderTrainSvg(this.train.type, this.train.x, 292, this.train.dir, 1.0) : ''}
 
       <!-- Foreground Fumikiri Post -->
       ${renderFumikiriPostSvg(274, 348, { gateClosedRatio: this.gateClosedRatio, lampPhase: this.lampPhase, warningOn, arrowDir, side: 'left' })}
 
-      <!-- Road Car -->
+      <!-- Matte Toy Car -->
       ${renderRoadCarSvg(this.car.x, this.car.y, this.car.color, this.car.roof)}
 
-      <!-- DIRECT DIEGETIC 2.5D TRACKSIDE CROSSING LEVER BOX (Foreground Right-Center!) -->
-      <g data-act="toggle-gate" style="cursor:pointer;" transform="translate(566 444)">
-        <!-- Cast shadow -->
-        <ellipse cx="0" cy="40" rx="92" ry="12" fill="rgba(15,23,42,0.22)"/>
-        <!-- 2.5D Steel Control Box -->
-        <polygon points="-76,-12 -64,-24 76,-24 64,-12" fill="#FDE047" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/>
-        <polygon points="64,-12 76,-24 76,28 64,40" fill="#CA8A04" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/>
-        <rect x="-76" y="-12" width="140" height="52" rx="12" fill="#FACC15" stroke="${ink}" stroke-width="3.5"/>
-        <!-- Physical Chunky Red-Ball Lever pivoting left/right! -->
-        <g transform="translate(-26 -14) rotate(${leverDeg})">
-          <rect x="-5" y="-44" width="10" height="44" rx="4" fill="#CBD5E1" stroke="${ink}" stroke-width="3"/>
-          <circle cx="0" cy="-46" r="15" fill="${this.gateCommandClosed ? '#EF4444' : '#22C55E'}" stroke="${ink}" stroke-width="3.5"/>
-          <circle cx="-5" cy="-51" r="4.5" fill="rgba(255,255,255,0.65)"/>
+      <!-- Sleek Lingokids-style Matte Crossing Lever Box -->
+      <g data-act="toggle-gate" style="cursor:pointer;" transform="translate(566 448)">
+        <rect x="-78" y="-12" width="156" height="54" rx="22" fill="rgba(0,0,0,0.14)"/>
+        <rect x="-78" y="-18" width="156" height="54" rx="22" fill="#FFFFFF"/>
+        <g transform="translate(-32 -18) rotate(${leverDeg})">
+          <rect x="-5" y="-42" width="10" height="42" rx="5" fill="#CBD5E1"/>
+          <circle cx="0" cy="-44" r="15" fill="${this.gateCommandClosed ? '#F05A5B' : '#34D399'}"/>
+          <circle cx="-4.5" cy="-49" r="4" fill="rgba(255,255,255,0.55)"/>
         </g>
-        <!-- Status lamp & clear short label right on the box -->
-        <circle cx="38" cy="14" r="13" fill="${this.gateCommandClosed ? '#EF4444' : '#22C55E'}" stroke="${ink}" stroke-width="3"/>
-        <text x="-18" y="21" text-anchor="middle" font-size="16" font-weight="900" fill="${ink}" font-family="sans-serif">${this.gateCommandClosed ? 'あげる' : 'おろす！'}</text>
+        <circle cx="46" cy="9" r="11" fill="${this.gateCommandClosed ? '#F05A5B' : '#34D399'}"/>
+        <text x="-4" y="15" text-anchor="middle" font-size="16" font-weight="900" fill="#3D405B" font-family="${FONT_ROUND}">${this.gateCommandClosed ? 'あげる' : 'おろす'}</text>
       </g>
 
-      <!-- DIRECT DIEGETIC 2.5D TRAIN WHISTLE BUTTON right beside lever box -->
-      <g data-act="call-train" style="cursor:pointer;" transform="translate(716 456)">
-        <ellipse cx="0" cy="24" rx="48" ry="9" fill="rgba(15,23,42,0.22)"/>
-        <rect x="-46" y="-14" width="92" height="40" rx="14" fill="#1D4ED8" stroke="${ink}" stroke-width="3.5"/>
-        <rect x="-46" y="-20" width="92" height="40" rx="14" fill="#3B82F6" stroke="${ink}" stroke-width="3.5"/>
-        <text x="0" y="6" text-anchor="middle" font-size="14" font-weight="900" fill="#FFFFFF" font-family="sans-serif">でんしゃ よぶ</text>
+      <!-- Minimal Round Whistle Button -->
+      <g data-act="call-train" style="cursor:pointer;" transform="translate(706 456)">
+        <circle cx="0" cy="5" r="28" fill="#2F80B0"/>
+        <circle cx="0" cy="0" r="28" fill="#4FA8D8"/>
+        <polygon points="-8,-10 12,0 -8,10" fill="#FFFFFF"/>
       </g>
     `;
   }
 
   renderSwitchyardScene() {
-    const ink = '#1E293B';
     const ord = SWITCH_ORDERS[this.swOrderIdx % SWITCH_ORDERS.length];
     const pA = this.pointA;
     const pB = this.pointB;
@@ -494,90 +471,81 @@ export default class RailControlGame {
       else ty = 390;
     }
 
-    const renderTracksidePointLever = (act, x, y, label, isStraight, color) => {
-      const tilt = isStraight ? -28 : 28;
+    const renderPointLever = (act, x, y, label, isStraight, color) => {
+      const tilt = isStraight ? -26 : 26;
       return `
         <g data-act="${act}" style="cursor:pointer;" transform="translate(${x} ${y})">
-          <circle cx="0" cy="0" r="34" fill="rgba(250,204,21,0.22)" stroke="#FACC15" stroke-width="3" stroke-dasharray="8 6"/>
-          <!-- 2.5D Mechanical Point Box -->
-          <rect x="-24" y="-8" width="48" height="24" rx="7" fill="#334155" stroke="${ink}" stroke-width="3"/>
-          <g transform="translate(0 -6) rotate(${tilt})">
-            <rect x="-4" y="-32" width="8" height="32" rx="3" fill="#E2E8F0" stroke="${ink}" stroke-width="2.5"/>
-            <circle cx="0" cy="-34" r="11" fill="${color}" stroke="${ink}" stroke-width="3"/>
+          <circle cx="0" cy="6" r="30" fill="rgba(0,0,0,0.16)"/>
+          <circle cx="0" cy="0" r="30" fill="#FFFFFF"/>
+          <g transform="translate(0 -4) rotate(${tilt})">
+            <rect x="-4.5" y="-30" width="9" height="30" rx="4.5" fill="#CBD5E1"/>
+            <circle cx="0" cy="-32" r="11" fill="${color}"/>
           </g>
-          <text x="0" y="9" text-anchor="middle" font-size="13" font-weight="900" fill="#FFFFFF" font-family="sans-serif">${label}</text>
+          <text x="0" y="13" text-anchor="middle" font-size="14" font-weight="900" fill="#3D405B" font-family="${FONT_ROUND}">${label}</text>
         </g>
       `;
     };
 
     this.sceneEl.innerHTML = `
-      <!-- Sunlit 2.5D Lush Green Rail Yard (warm & bright!) -->
-      <rect x="0" y="0" width="800" height="500" fill="#86EFAC"/>
-      <!-- Gravel Ballast Strips under all 3 tracks -->
-      <path d="M 16 158 H 780" stroke="#CBD5E1" stroke-width="34" stroke-linecap="round"/>
-      <path d="M 248 158 C 320 158 342 274 416 274 H 780" stroke="#CBD5E1" stroke-width="34" fill="none" stroke-linecap="round"/>
-      <path d="M 416 274 C 482 274 494 390 564 390 H 780" stroke="#CBD5E1" stroke-width="34" fill="none" stroke-linecap="round"/>
+      <!-- LogicLike-style soft background geometric accents -->
+      <circle cx="100" cy="420" r="140" fill="rgba(255,255,255,0.05)"/>
+      <circle cx="710" cy="70" r="120" fill="rgba(255,255,255,0.05)"/>
 
-      <!-- 2.5D Elevated Color-Coded Station Platforms (with top roof bevels!) -->
+      <!-- Clean Rounded Color-Coded Station Platforms (zero black borders!) -->
       ${[
-        { y: 84,  bg: '#EF4444', top: '#FCA5A5', text: '#FFFFFF', label: '1ばん（あか）' },
-        { y: 200, bg: '#2563EB', top: '#93C5FD', text: '#FFFFFF', label: '2ばん（あお）' },
-        { y: 316, bg: '#FACC15', top: '#FEF08A', text: ink,       label: '3ばん（きいろ）' }
+        { y: 84,  bg: '#F05A5B', lip: '#C43B3C', text: '#FFFFFF', label: '1ばん あか' },
+        { y: 200, bg: '#4FA8D8', lip: '#2F80B0', text: '#FFFFFF', label: '2ばん あお' },
+        { y: 316, bg: '#F7C948', lip: '#D19D1E', text: '#3D405B', label: '3ばん きいろ' }
       ].map((p) => `
-        <polygon points="586,${p.y} 602,${p.y - 12} 782,${p.y - 12} 766,${p.y}" fill="${p.top}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
-        <rect x="586" y="${p.y}" width="180" height="40" rx="8" fill="${p.bg}" stroke="${ink}" stroke-width="3.5"/>
-        <text x="676" y="${p.y + 26}" text-anchor="middle" font-size="16" font-weight="900" fill="${p.text}" font-family="sans-serif">${p.label}</text>
+        <rect x="588" y="${p.y + 6}" width="174" height="40" rx="16" fill="${p.lip}"/>
+        <rect x="588" y="${p.y}" width="174" height="40" rx="16" fill="${p.bg}"/>
+        <text x="675" y="${p.y + 26}" text-anchor="middle" font-size="16" font-weight="900" fill="${p.text}" font-family="${FONT_ROUND}">${p.label}</text>
       `).join('')}
 
-      <!-- Base Steel Tracks -->
-      <path d="M 20 158 H 768" stroke="#475569" stroke-width="15" stroke-linecap="round"/>
-      <path d="M 248 158 C 320 158 342 274 416 274 H 768" stroke="#475569" stroke-width="15" fill="none" stroke-linecap="round"/>
-      <path d="M 416 274 C 482 274 494 390 564 390 H 768" stroke="#475569" stroke-width="15" fill="none" stroke-linecap="round"/>
+      <!-- LogicBook-style Translucent Base Tracks -->
+      <path d="M 20 158 H 768" stroke="rgba(255,255,255,0.28)" stroke-width="14" stroke-linecap="round" fill="none"/>
+      <path d="M 248 158 C 320 158 342 274 416 274 H 768" stroke="rgba(255,255,255,0.28)" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <path d="M 416 274 C 482 274 494 390 564 390 H 768" stroke="rgba(255,255,255,0.28)" stroke-width="14" fill="none" stroke-linecap="round"/>
 
-      <!-- Active Illuminated Route Rails (clearly shows where train will go!) -->
+      <!-- Luminous Active Route Rail -->
       ${pA === 'top' ? `
-        <path d="M 20 158 H 768" stroke="#FACC15" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M 20 158 H 768" stroke="#FFF3A1" stroke-width="9" fill="none" stroke-linecap="round"/>
       ` : (pB === 'mid' ? `
-        <path d="M 20 158 H 248 C 320 158 342 274 416 274 H 768" stroke="#FACC15" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M 20 158 H 248 C 320 158 342 274 416 274 H 768" stroke="#FFF3A1" stroke-width="9" fill="none" stroke-linecap="round"/>
       ` : `
-        <path d="M 20 158 H 248 C 320 158 342 274 416 274 C 482 274 494 390 564 390 H 768" stroke="#FACC15" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M 20 158 H 248 C 320 158 342 274 416 274 C 482 274 494 390 564 390 H 768" stroke="#FFF3A1" stroke-width="9" fill="none" stroke-linecap="round"/>
       `)}
 
-      <!-- DIRECT DIEGETIC 2.5D POINT LEVERS RIGHT ON THE RAIL FORKS! -->
-      ${renderTracksidePointLever('toggle-point-a', 248, 100, 'A', pA === 'top', '#EF4444')}
-      ${renderTracksidePointLever('toggle-point-b', 416, 214, 'B', pB === 'mid', '#38BDF8')}
+      <!-- Direct Matte Point Levers right at Rail Forks A & B -->
+      ${renderPointLever('toggle-point-a', 248, 96,  'A', pA === 'top', '#F05A5B')}
+      ${renderPointLever('toggle-point-b', 416, 210, 'B', pB === 'mid', '#4FA8D8')}
 
-      <!-- DIRECT DIEGETIC 2.5D SIGNAL TOWER (Tap Signal or Train to GO!) -->
-      <g data-act="dispatch-train" style="cursor:pointer;" transform="translate(174 36)">
-        ${this.swTrain.state === 'waiting' ? `
-          <rect x="-36" y="-26" width="104" height="24" rx="12" fill="#22C55E" stroke="${ink}" stroke-width="2.5"/>
-          <text x="16" y="-9" text-anchor="middle" font-size="12" font-weight="900" fill="#FFFFFF" font-family="sans-serif">しゅっぱつ！</text>
-        ` : ''}
-        <rect x="12" y="54" width="10" height="50" fill="#94A3B8" stroke="${ink}" stroke-width="2.5"/>
-        <rect x="0" y="0" width="34" height="66" rx="14" fill="#1E293B" stroke="${ink}" stroke-width="3.5"/>
-        <circle cx="17" cy="17" r="8" fill="${this.signalGreen ? '#450A0A' : '#EF4444'}" stroke="${ink}" stroke-width="2"/>
-        <circle cx="17" cy="48" r="8" fill="${this.signalGreen ? '#4ADE80' : '#052E16'}" stroke="${ink}" stroke-width="2"/>
+      <!-- Sculpted Matte Signal Tower (Tap to Launch!) -->
+      <g data-act="dispatch-train" style="cursor:pointer;" transform="translate(172 38)">
+        <rect x="13" y="56" width="8" height="48" rx="4" fill="rgba(255,255,255,0.7)"/>
+        <rect x="0" y="4" width="34" height="66" rx="17" fill="rgba(0,0,0,0.16)"/>
+        <rect x="0" y="0" width="34" height="66" rx="17" fill="#3B4252"/>
+        <circle cx="17" cy="18" r="8.5" fill="${this.signalGreen ? '#5C2B2B' : '#FF5E5E'}"/>
+        <circle cx="17" cy="48" r="8.5" fill="${this.signalGreen ? '#4ADE80' : '#1F4B38'}"/>
+        ${this.swTrain.state === 'waiting' ? `<circle cx="17" cy="48" r="14" fill="none" stroke="#6EE7B7" stroke-width="3" stroke-dasharray="6 5"/>` : ''}
       </g>
 
-      <!-- Destination Signboard on Grass -->
-      <g transform="translate(40 370)">
-        <rect x="0" y="6" width="276" height="82" rx="18" fill="#1E293B"/>
-        <rect x="0" y="0" width="276" height="82" rx="18" fill="#FFFFFF" stroke="${ink}" stroke-width="4"/>
-        <text x="138" y="30" text-anchor="middle" font-size="14" font-weight="900" fill="#64748B" font-family="sans-serif">この でんしゃの ゆきさき</text>
-        <text x="138" y="62" text-anchor="middle" font-size="22" font-weight="900" fill="${ink}" font-family="sans-serif">${ord.label}</text>
+      <!-- Clean Frosted Destination Plaque -->
+      <g transform="translate(46 376)">
+        <rect x="0" y="6" width="256" height="72" rx="24" fill="rgba(0,0,0,0.14)"/>
+        <rect x="0" y="0" width="256" height="72" rx="24" fill="#FFFFFF"/>
+        <text x="128" y="27" text-anchor="middle" font-size="13" font-weight="800" fill="#8C9BB0" font-family="${FONT_ROUND}">ゆきさき</text>
+        <text x="128" y="56" text-anchor="middle" font-size="21" font-weight="900" fill="#3D405B" font-family="${FONT_ROUND}">${ord.label}</text>
       </g>
 
-      <!-- Color-Matched Train (also directly tappable to launch!) -->
+      <!-- Color-Matched Train -->
       <g data-act="dispatch-train" style="cursor:pointer;">
         ${renderTrainSvg(ord.color, tx, ty + 4, 1, 0.58)}
       </g>
     `;
   }
 
-  /* =========================================================================
-     Authentic Japanese Railway Web Audio Effects
-     ========================================================================= */
-
+  /* Web Audio Railway Effects */
   playFumikiriBell() {
     const ctx = this.sound && this.sound.ensureContext();
     if (!ctx) return;
