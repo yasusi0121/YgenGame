@@ -388,7 +388,7 @@ export const GAME_REGISTRY = [
     title: 'ぺたぺた テープ',
     sub: 'TAPE CRAFT',
     desc: 'ベリベリ のばして ペタッと はって ビリッと きろう！',
-    badge: 'NEW!',
+    badge: '',
     cta: 'あそぶ',
     bg: '#EA580C',
     shadow: '#9A3412',
@@ -408,6 +408,135 @@ export const GAME_REGISTRY = [
       </svg>
     `,
     load: (v) => loadMod('./tape-craft.js', v)
+  },
+  {
+    id: 'lock-lab',
+    title: 'カギ ラボ',
+    sub: 'LOCK MECHANISM',
+    desc: 'ピンを そろえて カギや きんこを ガチャンと あけよう！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#CA8A04',
+    shadow: '#854D0E',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Brass Cutaway Lock Cylinder -->
+        <rect x="26" y="16" width="56" height="62" rx="12" fill="#F6CE5B" stroke="#78350F" stroke-width="3.5"/>
+        <!-- 3 Visible Cutaway Pin Stacks (Red Driver + Gold Key Pin) -->
+        <rect x="35" y="22" width="10" height="20" rx="2.5" fill="#EF4444" stroke="#7F1D1D" stroke-width="1.8"/>
+        <rect x="35" y="44" width="10" height="14" rx="2.5" fill="#FACC15" stroke="#78350F" stroke-width="1.8"/>
+        <rect x="50" y="26" width="10" height="16" rx="2.5" fill="#EF4444" stroke="#7F1D1D" stroke-width="1.8"/>
+        <rect x="50" y="44" width="10" height="18" rx="2.5" fill="#FACC15" stroke="#78350F" stroke-width="1.8"/>
+        <rect x="65" y="20" width="10" height="22" rx="2.5" fill="#EF4444" stroke="#7F1D1D" stroke-width="1.8"/>
+        <rect x="65" y="44" width="10" height="12" rx="2.5" fill="#FACC15" stroke="#78350F" stroke-width="1.8"/>
+        <!-- Emerald Shear Line -->
+        <line x1="28" y1="43" x2="80" y2="43" stroke="#4ADE80" stroke-width="3"/>
+        <!-- Bitted Key entering from left -->
+        <circle cx="20" cy="64" r="14" fill="#FDE047" stroke="#78350F" stroke-width="3"/>
+        <circle cx="15" cy="64" r="4" fill="#CA8A04"/>
+        <path d="M32 58 H40 L44 62 L52 57 L58 63 L68 58 L76 64 L72 70 H32 Z" fill="#FDE047" stroke="#78350F" stroke-width="2.5" stroke-linejoin="round"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./lock-lab.js', v)
+  },
+  {
+    id: 'vending-lab',
+    title: 'ジハンキ ラボ',
+    sub: 'VENDING MACHINE',
+    desc: 'おかねを いれて ドリンク ゲット！なかの メカも まるみえ！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#DC2626',
+    shadow: '#991B1B',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Japanese Vending Machine Body -->
+        <rect x="20" y="10" width="56" height="76" rx="10" fill="#FFFFFF" stroke="#1E293B" stroke-width="3.5"/>
+        <rect x="22" y="12" width="6" height="72" rx="3" fill="#EF4444"/>
+        <!-- Illuminated Showcase Window -->
+        <rect x="31" y="17" width="38" height="36" rx="5" fill="#E0F2FE" stroke="#475569" stroke-width="2"/>
+        <!-- 3 Mini Cans -->
+        <rect x="35" y="24" width="8" height="16" rx="2" fill="#38BDF8" stroke="#0369A1" stroke-width="1.5"/>
+        <rect x="46" y="24" width="8" height="16" rx="2" fill="#FB923C" stroke="#C2410C" stroke-width="1.5"/>
+        <rect x="57" y="24" width="8" height="16" rx="2" fill="#4ADE80" stroke="#15803D" stroke-width="1.5"/>
+        <!-- Cold Blue Bar & Lit Green Buttons -->
+        <rect x="34" y="42" width="32" height="4" rx="1.5" fill="#0284C7"/>
+        <rect x="35" y="48" width="8" height="3.5" rx="1.5" fill="#22C55E"/>
+        <rect x="46" y="48" width="8" height="3.5" rx="1.5" fill="#22C55E"/>
+        <rect x="57" y="48" width="8" height="3.5" rx="1.5" fill="#22C55E"/>
+        <!-- Coin Slot & LED Display -->
+        <rect x="31" y="57" width="20" height="8" rx="2.5" fill="#0F172A"/>
+        <rect x="34" y="59.5" width="14" height="3" rx="1" fill="#4ADE80"/>
+        <circle cx="62" cy="61" r="4.5" fill="#CBD5E1" stroke="#475569" stroke-width="1.5"/>
+        <!-- Pickup Box -->
+        <rect x="31" y="69" width="38" height="12" rx="4" fill="#1E293B"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./vending-lab.js', v)
+  },
+  {
+    id: 'rail-control',
+    title: 'ふみきり ラボ',
+    sub: 'RAIL CONTROL',
+    desc: 'カンカン しゃだんき と せんろの ポイントを そうさ！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#1D4ED8',
+    shadow: '#1E3A8A',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Fumikiri Post -->
+        <rect x="26" y="18" width="10" height="64" rx="3" fill="#FACC15" stroke="#111827" stroke-width="2.5"/>
+        <!-- X Crossbuck -->
+        <rect x="14" y="24" width="34" height="7" rx="2.5" fill="#FACC15" stroke="#111827" stroke-width="2" transform="rotate(30 31 27.5)"/>
+        <rect x="14" y="24" width="34" height="7" rx="2.5" fill="#FACC15" stroke="#111827" stroke-width="2" transform="rotate(-30 31 27.5)"/>
+        <!-- Flashing Red Warning Lamps -->
+        <rect x="14" y="42" width="34" height="14" rx="7" fill="#1E293B"/>
+        <circle cx="23" cy="49" r="5" fill="#EF4444"/>
+        <circle cx="39" cy="49" r="5" fill="#7F1D1D"/>
+        <!-- Lowered Striped Crossing Gate Bar -->
+        <rect x="28" y="64" width="56" height="9" rx="3.5" fill="#FACC15" stroke="#111827" stroke-width="2.5"/>
+        <path d="M40 64 L48 73 M54 64 L62 73 M68 64 L76 73" stroke="#111827" stroke-width="4"/>
+        <!-- Mini Shinkansen nose peeking behind -->
+        <path d="M52 46 H78 C86 46 88 38 78 32 H52 Z" fill="#FFFFFF" stroke="#1E293B" stroke-width="2.5"/>
+        <line x1="53" y1="41" x2="82" y2="41" stroke="#2563EB" stroke-width="3.5"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./rail-control.js', v)
+  },
+  {
+    id: 'water-lab',
+    title: 'すいどう ラボ',
+    sub: 'WATER & VALVES',
+    desc: 'あかい バルブと パイプで みずぐるまや タンクへ みずを ながそう！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#0284C7',
+    shadow: '#075985',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Transparent Pipe with Flowing Blue Water -->
+        <path d="M12 58 H74 Q82 58 82 66 V82" stroke="#334155" stroke-width="20" stroke-linecap="round" fill="none"/>
+        <path d="M12 58 H74 Q82 58 82 66 V82" stroke="#38BDF8" stroke-width="13" stroke-linecap="round" fill="none"/>
+        <path d="M18 54 H70" stroke="rgba(255,255,255,0.65)" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brass Valve Stem -->
+        <rect x="40" y="34" width="12" height="18" rx="3" fill="#F59E0B" stroke="#78350F" stroke-width="2.5"/>
+        <!-- Red Industrial 5-Spoke Valve Handwheel -->
+        <circle cx="46" cy="28" r="18" fill="none" stroke="#EF4444" stroke-width="6.5"/>
+        <circle cx="46" cy="28" r="18" fill="none" stroke="#7F1D1D" stroke-width="1.5"/>
+        <line x1="30" y1="28" x2="62" y2="28" stroke="#EF4444" stroke-width="4.5"/>
+        <line x1="46" y1="12" x2="46" y2="44" stroke="#EF4444" stroke-width="4.5"/>
+        <circle cx="46" cy="28" r="5" fill="#CBD5E1" stroke="#334155" stroke-width="2"/>
+        <!-- Water Splash Droplets -->
+        <circle cx="72" cy="84" r="4" fill="#BAE6FD"/>
+        <circle cx="88" cy="80" r="3.5" fill="#BAE6FD"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./water-lab.js', v)
   },
   {
     id: 'coming-next',
