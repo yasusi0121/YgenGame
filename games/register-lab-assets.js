@@ -8,7 +8,16 @@ export const SHOP_ITEMS = [
   { id: 'bread',  name: 'メロンパン',   price: 120, color: '#F7C948', accent: '#D99B26' },
   { id: 'cake',   name: 'ケーキ',       price: 250, color: '#FF8FB1', accent: '#FFFDF7' },
   { id: 'juice',  name: 'ジュース',     price: 110, color: '#FF9F5A', accent: '#FFF5D6' },
-  { id: 'cookie', name: 'クッキー',     price: 180, color: '#D49A6A', accent: '#784922' }
+  { id: 'cookie', name: 'クッキー',     price: 180, color: '#D49A6A', accent: '#784922' },
+  { id: 'banana', name: 'バナナ',       price: 130, color: '#FFE066', accent: '#C89B22' },
+  { id: 'donut',  name: 'ドーナツ',     price: 140, color: '#FF8FB1', accent: '#E09F5A' }
+];
+
+export const CUSTOMERS = [
+  { name: 'くまさん',   color: '#C88D55', ear: '#9E6A3B' },
+  { name: 'うさぎさん', color: '#FFFFFF', ear: '#FF8FB1' },
+  { name: 'ねこさん',   color: '#F7C948', ear: '#D9A320' },
+  { name: 'かえるさん', color: '#5CD68D', ear: '#34A867' }
 ];
 
 export function buildRegisterDefsSvg() {
@@ -22,75 +31,112 @@ export function buildRegisterDefsSvg() {
         <stop offset="0%" stop-color="#E5BC8B"/>
         <stop offset="100%" stop-color="#CC9A64"/>
       </linearGradient>
+      <linearGradient id="rl-basket-in" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#56CCF2"/>
+        <stop offset="100%" stop-color="#2F9BC4"/>
+      </linearGradient>
+      <linearGradient id="rl-basket-out" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5CD68D"/>
+        <stop offset="100%" stop-color="#34A867"/>
+      </linearGradient>
     </defs>
   `;
 }
 
-/** Cute matte-toy grocery item with mini barcode tag (zero black outlines!) */
-export function renderShopItemSvg(item, x, y, scanned = false) {
+/** Draggable matte-toy grocery item with visible mini barcode label & scanned check */
+export function renderDraggableItemSvg(item, x, y, { scale = 1, scanned = false, dragging = false } = {}) {
   let art = '';
   if (item.id === 'apple') {
     art = `
-      <circle cx="0" cy="4" r="22" fill="${item.color}"/>
-      <ellipse cx="-8" cy="-3" rx="5" ry="9" transform="rotate(-20 -8 -3)" fill="rgba(255,255,255,0.35)"/>
-      <rect x="-2" y="-22" width="4" height="9" rx="2" fill="#9A6B3B"/>
-      <ellipse cx="9" cy="-19" rx="9" ry="5" transform="rotate(-24 9 -19)" fill="${item.accent}"/>
+      <circle cx="0" cy="2" r="21" fill="${item.color}"/>
+      <ellipse cx="-7" cy="-4" rx="4.5" ry="8" transform="rotate(-20 -7 -4)" fill="rgba(255,255,255,0.35)"/>
+      <rect x="-2" y="-23" width="4" height="8" rx="2" fill="#9A6B3B"/>
+      <ellipse cx="9" cy="-20" rx="8.5" ry="4.5" transform="rotate(-24 9 -20)" fill="${item.accent}"/>
     `;
   } else if (item.id === 'milk') {
     art = `
-      <rect x="-17" y="-12" width="34" height="38" rx="6" fill="#FFFFFF"/>
-      <polygon points="-17,-12 0,-26 17,-12" fill="${item.color}"/>
-      <rect x="-17" y="4" width="34" height="14" fill="${item.color}"/>
-      <circle cx="0" cy="11" r="4" fill="#FFFFFF"/>
+      <rect x="-15" y="-12" width="30" height="34" rx="6" fill="#FFFFFF"/>
+      <polygon points="-15,-12 0,-25 15,-12" fill="${item.color}"/>
+      <rect x="-15" y="3" width="30" height="12" fill="${item.color}"/>
+      <circle cx="0" cy="9" r="3.5" fill="#FFFFFF"/>
     `;
   } else if (item.id === 'bread') {
     art = `
-      <ellipse cx="0" cy="4" rx="25" ry="20" fill="${item.color}"/>
-      <path d="M -14 -8 L 12 16 M 0 -12 L 20 8 M -18 4 L 2 20 M -12 16 L 14 -8 M -20 6 L 2 -12" stroke="${item.accent}" stroke-width="2.5" stroke-linecap="round" opacity="0.65"/>
+      <ellipse cx="0" cy="3" rx="23" ry="18" fill="${item.color}"/>
+      <path d="M -12 -8 L 10 14 M 0 -11 L 18 7 M -16 3 L 2 18 M -10 14 L 12 -8" stroke="${item.accent}" stroke-width="2.4" stroke-linecap="round" opacity="0.65"/>
     `;
   } else if (item.id === 'cake') {
     art = `
-      <rect x="-22" y="-2" width="44" height="28" rx="7" fill="${item.accent}"/>
-      <rect x="-22" y="8" width="44" height="7" fill="${item.color}"/>
-      <circle cx="0" cy="-11" r="9" fill="#F05A5B"/>
-      <ellipse cx="6" cy="-18" rx="5" ry="3" fill="#5CD68D"/>
+      <rect x="-20" y="-2" width="40" height="25" rx="6" fill="${item.accent}"/>
+      <rect x="-20" y="7" width="40" height="6" fill="${item.color}"/>
+      <circle cx="0" cy="-10" r="8" fill="#F05A5B"/>
+      <ellipse cx="5" cy="-16" rx="4.5" ry="2.5" fill="#5CD68D"/>
     `;
   } else if (item.id === 'juice') {
     art = `
-      <rect x="-15" y="-18" width="30" height="44" rx="8" fill="${item.color}"/>
-      <rect x="-15" y="-4" width="30" height="16" fill="${item.accent}"/>
-      <circle cx="0" cy="4" r="5" fill="${item.color}"/>
-      <rect x="-8" y="-24" width="16" height="7" rx="3" fill="#FFFFFF"/>
+      <rect x="-14" y="-17" width="28" height="40" rx="7" fill="${item.color}"/>
+      <rect x="-14" y="-4" width="28" height="14" fill="${item.accent}"/>
+      <circle cx="0" cy="3" r="4.5" fill="${item.color}"/>
+      <rect x="-7" y="-23" width="14" height="6" rx="3" fill="#FFFFFF"/>
+    `;
+  } else if (item.id === 'banana') {
+    art = `
+      <path d="M -18 8 Q 0 24 20 -12 Q 12 -18 4 -8 Q -4 6 -16 0 Z" fill="${item.color}"/>
+      <circle cx="17" cy="-12" r="3" fill="${item.accent}"/>
+    `;
+  } else if (item.id === 'donut') {
+    art = `
+      <circle cx="0" cy="2" r="20" fill="${item.accent}"/>
+      <circle cx="0" cy="0" r="17" fill="${item.color}"/>
+      <circle cx="0" cy="2" r="7" fill="#F6EFE4"/>
     `;
   } else {
     art = `
-      <circle cx="0" cy="4" r="22" fill="${item.color}"/>
-      <circle cx="-8" cy="-2" r="3.5" fill="${item.accent}"/>
-      <circle cx="8"  cy="-4" r="3.2" fill="${item.accent}"/>
-      <circle cx="-4" cy="12" r="3.5" fill="${item.accent}"/>
-      <circle cx="9"  cy="10" r="3"   fill="${item.accent}"/>
-      <circle cx="1"  cy="3"  r="2.8" fill="${item.accent}"/>
+      <circle cx="0" cy="2" r="20" fill="${item.color}"/>
+      <circle cx="-7" cy="-3" r="3" fill="${item.accent}"/>
+      <circle cx="7"  cy="-4" r="2.8" fill="${item.accent}"/>
+      <circle cx="-3" cy="10" r="3" fill="${item.accent}"/>
+      <circle cx="8"  cy="8"  r="2.6" fill="${item.accent}"/>
     `;
   }
 
   return `
-    <g data-act="scan-item" data-id="${item.id}" style="cursor:pointer;" transform="translate(${x} ${y})">
-      <!-- Soft porcelain shelf card -->
-      <rect x="-46" y="-36" width="92" height="92" rx="20" fill="rgba(61,64,91,0.08)"/>
-      <rect x="-46" y="-40" width="92" height="92" rx="20" fill="${scanned ? '#E8FFF1' : '#FFFFFF'}"/>
+    <g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${(dragging ? scale * 1.15 : scale).toFixed(2)})">
+      ${dragging ? `<ellipse cx="0" cy="34" rx="22" ry="7" fill="rgba(61,64,91,0.16)"/>` : ''}
       ${art}
-      <!-- Crisp mini barcode lines at bottom of item -->
-      <g transform="translate(-14 34)">
-        <rect x="0"  y="0" width="2.5" height="10" fill="#3D405B"/>
-        <rect x="5"  y="0" width="1.5" height="10" fill="#3D405B"/>
-        <rect x="9"  y="0" width="3"   height="10" fill="#3D405B"/>
-        <rect x="14" y="0" width="1.5" height="10" fill="#3D405B"/>
-        <rect x="18" y="0" width="2.5" height="10" fill="#3D405B"/>
-        <rect x="23" y="0" width="3"   height="10" fill="#3D405B"/>
+      <!-- Crisp white barcode sticker on the item -->
+      <rect x="-13" y="13" width="26" height="11" rx="3" fill="#FFFFFF"/>
+      <g transform="translate(-10 15)">
+        <rect x="0"  y="0" width="2"   height="7" fill="#3D405B"/>
+        <rect x="4"  y="0" width="1.3" height="7" fill="#3D405B"/>
+        <rect x="7"  y="0" width="2.5" height="7" fill="#3D405B"/>
+        <rect x="11" y="0" width="1.3" height="7" fill="#3D405B"/>
+        <rect x="14" y="0" width="2"   height="7" fill="#3D405B"/>
+        <rect x="18" y="0" width="2.2" height="7" fill="#3D405B"/>
       </g>
-      <!-- Price pill -->
-      <rect x="14" y="-34" width="32" height="18" rx="9" fill="#F7C948"/>
-      <text x="30" y="-21" text-anchor="middle" font-size="10" font-weight="900" fill="#3D405B" font-family="${FONT_ROUND}">${item.price}</text>
+      <!-- Green scanned checkmark badge once scanned! -->
+      ${scanned ? `
+        <g transform="translate(18 -16)">
+          <circle cx="0" cy="0" r="10" fill="#34D399"/>
+          <path d="M -4.5 0 L -1.2 3.5 L 5 -3.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+      ` : ''}
+    </g>
+  `;
+}
+
+/** Cute customer head peeking behind counter */
+export function renderCustomerHeadSvg(cust, x, y) {
+  return `
+    <g transform="translate(${x} ${y})">
+      <circle cx="-16" cy="-16" r="8" fill="${cust.color}"/>
+      <circle cx="16"  cy="-16" r="8" fill="${cust.color}"/>
+      <circle cx="-16" cy="-16" r="4" fill="${cust.ear}"/>
+      <circle cx="16"  cy="-16" r="4" fill="${cust.ear}"/>
+      <circle cx="0"   cy="0"   r="22" fill="${cust.color}"/>
+      <circle cx="-7"  cy="-2"  r="3"  fill="#3D405B"/>
+      <circle cx="7"   cy="-2"  r="3"  fill="#3D405B"/>
+      <path d="M -5 7 Q 0 12 5 7" fill="none" stroke="#3D405B" stroke-width="2.5" stroke-linecap="round"/>
     </g>
   `;
 }

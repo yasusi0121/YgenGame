@@ -13,28 +13,32 @@ export default class ElevatorLabGame {
     this.app = app;
     this.sound = (app && app.sound) ? app.sound : app;
 
-    this.mode = 'mission'; // 'mission' | 'free'
+    this.mode = 'mission'; // 'mission' | 'manual'
     this.xray = true;
     this.delivered = 0;
 
-    // Elevator physical state
     this.carFloor = 1.0; // continuous 1.0 .. 5.0
     this.targetQueue = [];
-    this.movingDir = 0; // -1 down, 0 idle, 1 up
-    this.doorOpen = 1.0; // 0 closed .. 1 open
+    this.movingDir = 0;
+    this.doorOpen = 1.0;
     this.doorTarget = 1.0;
-    this.doorHoldTimer = 0;
     this.sheaveAngle = 0;
 
-    // Passengers
-    this.waitingPassenger = null; // { p, floor, dest }
-    this.ridingPassenger = null;  // { p, dest }
+    // Multiple simultaneous passengers: { uid, p, state: 'waiting'|'riding', floor, dest, x, y }
+    this.pax = [];
+    this.nextUid = 1;
     this.paxCycle = 0;
+
+    // Active drag: { kind: 'pax'|'sheave', uid?, lastAng?, x, y }
+    this.drag = null;
 
     this.rafId = null;
     this.lastFrame = 0;
     this.paused = false;
     this.destroyed = false;
+
+    this._onMove = (e) => this.handlePointerMove(e);
+    this._onUp = (e) => this.handlePointerUp(e);
   }
 
   mount() {
@@ -43,7 +47,7 @@ export default class ElevatorLabGame {
     }
     this.injectStyles();
     this.renderShell();
-    this.spawnMissionPassenger();
+    this.fillWaitingPassengers();
     this.renderScene();
     this.ensureLoop();
   }
@@ -61,6 +65,9 @@ export default class ElevatorLabGame {
   unmount() {
     this.destroyed = true;
     this.stopLoop();
+    window.removeEventListener('pointermove', this._onMove);
+    window.removeEventListener('pointerup', this._onUp);
+    window.removeEventListener('pointercancel', this._onUp);
     if (this.mountEl) this.mountEl.innerHTML = '';
   }
 
@@ -100,18 +107,10 @@ export default class ElevatorLabGame {
         background: #FFFFFF; color: #315772; font-size: 13px; font-weight: 900;
         padding: 2px 10px; border-radius: 999px;
       }
-      .el-eye-btn {
-        border: none; border-radius: 999px; padding: 4px 11px;
-        background: rgba(255,255,255,0.25); color: #FFFFFF; font-size: 12px; font-weight: 800;
-        cursor: pointer; font-family: inherit;
-      }
-      .el-eye-btn.active { background: #34D399; box-shadow: 0 2px 0 #059669; }
-
       .el-stage-wrap {
         position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
       }
       .el-svg { width: 100%; height: 100%; max-width: 980px; display: block; touch-action: none; }
-
       @media (max-width: 640px) {
         .el-root { padding: 8px 6px; }
         .el-topbar { padding-left: 44px; padding-right: 44px; gap: 6px; }
@@ -128,15 +127,13 @@ export default class ElevatorLabGame {
         <div class="el-topbar">
           <div class="el-modes">
             <button class="el-mode-btn active" data-mode="mission" type="button">おとどけ</button>
-            <button class="el-mode-btn" data-mode="free" type="button">じゆう</button>
+            <button class="el-mode-btn" data-mode="manual" type="button">しゅどう かっしゃ</button>
           </div>
           <div class="el-pill">
-            <span class="el-hint" id="el-hint">ボタンを おして うごかそう</span>
+            <span class="el-hint" id="el-hint">どうぶつを ドラッグして カゴへ のせよう！</span>
             <span class="el-score" id="el-score">0にん</span>
-            <button class="el-eye-btn active" id="el-xray-btn" type="button">なか</button>
           </div>
         </div>
-
         <div class="el-stage-wrap">
           <svg class="el-svg" id="el-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
             ${buildElevatorDefsSvg()}
@@ -150,7 +147,6 @@ export default class ElevatorLabGame {
     this.sceneEl = this.mountEl.querySelector('#el-scene');
     this.hintEl = this.mountEl.querySelector('#el-hint');
     this.scoreEl = this.mountEl.querySelector('#el-score');
-    this.xrayBtn = this.mountEl.querySelector('#el-xray-btn');
 
     this.mountEl.querySelectorAll('.el-mode-btn').forEach((btn) => {
       btn.addEventListener('pointerdown', (e) => {
@@ -160,106 +156,187 @@ export default class ElevatorLabGame {
         const m = btn.dataset.mode;
         if (m === this.mode) return;
         this.mode = m;
+        this.targetQueue = [];
+        this.movingDir = 0;
         this.mountEl.querySelectorAll('.el-mode-btn').forEach((b) => b.classList.toggle('active', b.dataset.mode === m));
-        if (m === 'mission') {
-          this.spawnMissionPassenger();
+        if (m === 'manual') {
+          this.doorTarget = 0;
+          this.hintEl.textContent = 'みぎの おおきい かっしゃハンドルを グルグル まわそう！';
         } else {
-          this.waitingPassenger = null;
-          this.ridingPassenger = null;
-          this.hintEl.textContent = 'すきな かいの ボタンを おしてみよう';
+          this.doorTarget = 1;
+          this.fillWaitingPassengers();
+          this.hintEl.textContent = 'どうぶつを ドラッグして カゴへ のせて はこぼう！';
         }
         this.renderScene();
       });
     });
 
-    this.xrayBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      this.sound.unlock();
-      this.sound.playMetalClick();
-      this.xray = !this.xray;
-      this.xrayBtn.classList.toggle('active', this.xray);
-      this.renderScene();
-    });
-
-    this.svgEl.addEventListener('pointerdown', (e) => {
-      const target = e.target.closest('[data-act]');
-      if (!target) return;
-      e.preventDefault();
-      this.sound.unlock();
-      const act = target.dataset.act;
-      if (act === 'press-floor') {
-        this.pressFloorButton(Number(target.dataset.floor));
-      } else if (act === 'door-open') {
-        if (this.movingDir === 0) {
-          this.doorTarget = 1;
-          this.doorHoldTimer = 1.8;
-          this.playDoorSlide();
-        }
-      } else if (act === 'door-close') {
-        if (this.movingDir === 0) {
-          this.doorTarget = 0;
-          this.doorHoldTimer = 0;
-          this.playDoorSlide();
-        }
-      }
-    });
+    this.svgEl.addEventListener('pointerdown', (e) => this.handlePointerDown(e));
+    window.addEventListener('pointermove', this._onMove, { passive: false });
+    window.addEventListener('pointerup', this._onUp);
+    window.addEventListener('pointercancel', this._onUp);
   }
 
-  spawnMissionPassenger() {
-    const curFloor = Math.round(this.carFloor);
-    const p = PASSENGERS[this.paxCycle % PASSENGERS.length];
-    this.paxCycle++;
-    const floors = [1, 2, 3, 4, 5].filter((f) => f !== curFloor);
-    const startFloor = floors[this.paxCycle % floors.length];
-    const destPool = [1, 2, 3, 4, 5].filter((f) => f !== startFloor);
-    const destFloor = destPool[(this.paxCycle * 2 + 1) % destPool.length];
-    this.waitingPassenger = { p, floor: startFloor, dest: destFloor };
-    this.ridingPassenger = null;
-    this.hintEl.textContent = `${startFloor}F で ${p.name} が まってるよ！`;
+  fillWaitingPassengers() {
+    // Keep 3 passengers on distinct floors so child can plan multi-stop trips!
+    while (this.pax.length < 3) {
+      const usedFloors = new Set(this.pax.filter((x) => x.state === 'waiting').map((x) => x.floor));
+      const avail = [1, 2, 3, 4, 5].filter((f) => !usedFloors.has(f));
+      if (!avail.length) break;
+      const floor = this.pax.length === 0 ? Math.round(this.carFloor) : avail[Math.floor(Math.random() * avail.length)];
+      const destPool = [1, 2, 3, 4, 5].filter((f) => f !== floor);
+      const dest = destPool[Math.floor(Math.random() * destPool.length)];
+      const p = PASSENGERS[this.paxCycle % PASSENGERS.length];
+      this.paxCycle++;
+      this.pax.push({ uid: this.nextUid++, p, state: 'waiting', floor, dest, x: 184, y: this.floorToY(floor) + 15 });
+    }
+  }
+
+  getSvgPoint(e) {
+    const rect = this.svgEl.getBoundingClientRect();
+    const aspectView = 800 / 500;
+    const aspectRect = rect.width / Math.max(1, rect.height);
+    let x, y;
+    if (aspectRect > aspectView) {
+      const rw = rect.height * aspectView;
+      x = ((e.clientX - rect.left - (rect.width - rw) / 2) / rw) * 800;
+      y = ((e.clientY - rect.top) / rect.height) * 500;
+    } else {
+      const rh = rect.width / aspectView;
+      x = ((e.clientX - rect.left) / rect.width) * 800;
+      y = ((e.clientY - rect.top - (rect.height - rh) / 2) / rh) * 500;
+    }
+    return { x, y };
+  }
+
+  handlePointerDown(e) {
+    const target = e.target.closest('[data-act]');
+    if (!target) return;
+    e.preventDefault();
+    this.sound.unlock();
+    const act = target.dataset.act;
+    const pt = this.getSvgPoint(e);
+
+    if (act === 'drag-pax') {
+      const uid = Number(target.dataset.uid);
+      const px = this.pax.find((x) => x.uid === uid);
+      if (!px) return;
+      const curFloor = Math.round(this.carFloor);
+      if (this.movingDir !== 0 || this.doorOpen < 0.7) {
+        this.sound.playBoing();
+        this.hintEl.textContent = 'エレベーターが とまって ドアが あいてから のせよう！';
+        return;
+      }
+      if (px.state === 'waiting' && px.floor !== curFloor) {
+        this.sound.playBoing();
+        this.hintEl.textContent = `まず ${px.floor}F の ボタンを おして むかえに いこう！`;
+        return;
+      }
+      this.drag = { kind: 'pax', uid, x: pt.x, y: pt.y };
+      px.x = pt.x;
+      px.y = pt.y;
+      this.sound.playMetalClick();
+      this.renderScene();
+    } else if (act === 'drag-sheave') {
+      this.drag = { kind: 'sheave', lastAng: Math.atan2(pt.y - 252, pt.x - 658), x: pt.x, y: pt.y };
+    } else if (act === 'press-floor') {
+      this.pressFloorButton(Number(target.dataset.floor));
+    } else if (act === 'door-open') {
+      if (this.movingDir === 0) { this.doorTarget = 1; this.playDoorSlide(); }
+    } else if (act === 'door-close') {
+      if (this.movingDir === 0) { this.doorTarget = 0; this.playDoorSlide(); }
+    }
+  }
+
+  handlePointerMove(e) {
+    if (!this.drag) return;
+    e.preventDefault();
+    const pt = this.getSvgPoint(e);
+
+    if (this.drag.kind === 'pax') {
+      const px = this.pax.find((x) => x.uid === this.drag.uid);
+      if (px) {
+        px.x = pt.x;
+        px.y = pt.y;
+        this.renderScene();
+      }
+    } else if (this.drag.kind === 'sheave') {
+      // Hand-crank traction sheave wheel directly moves elevator car & counterweight!
+      const ang = Math.atan2(pt.y - 252, pt.x - 658);
+      let diff = ((ang - this.drag.lastAng) * 180) / Math.PI;
+      if (diff > 180) diff -= 360;
+      if (diff < -180) diff += 360;
+      this.drag.lastAng = ang;
+
+      this.sheaveAngle = (this.sheaveAngle + diff) % 360;
+      const prevF = Math.round(this.carFloor);
+      this.carFloor = Math.max(1, Math.min(5, this.carFloor + diff / 180));
+      if (Math.round(this.carFloor) !== prevF) {
+        this.playArriveChime();
+      }
+      this.renderScene();
+    }
+  }
+
+  handlePointerUp() {
+    if (!this.drag) return;
+    const d = this.drag;
+    this.drag = null;
+
+    if (d.kind === 'pax') {
+      const px = this.pax.find((x) => x.uid === d.uid);
+      if (px) {
+        const curFloor = Math.round(this.carFloor);
+        const carY = this.floorToY(this.carFloor);
+        const inCar = px.x >= 280 && px.x <= 415 && Math.abs(px.y - carY) <= 64;
+        const onFloorHall = px.x >= 44 && px.x <= 260;
+
+        if (px.state === 'waiting' && inCar) {
+          const ridingCount = this.pax.filter((x) => x.state === 'riding').length;
+          if (ridingCount >= 3) {
+            this.sound.playBoing();
+            this.hintEl.textContent = 'まんいん ブザー！ 3にん までしか のれないよ！';
+          } else {
+            px.state = 'riding';
+            this.sound.playSproutPop();
+            this.hintEl.textContent = `${px.p.name} が のったよ！ ${px.dest}F の ボタンを おそう！`;
+          }
+        } else if (px.state === 'riding' && onFloorHall) {
+          if (curFloor === px.dest) {
+            // Delivered to correct floor!
+            this.pax = this.pax.filter((x) => x.uid !== px.uid);
+            this.delivered++;
+            this.scoreEl.textContent = `${this.delivered}にん`;
+            this.sound.playCrackerPop();
+            this.hintEl.textContent = `${px.p.name} が ${curFloor}F に とうちゃく！ ありがとう！`;
+            this.fillWaitingPassengers();
+          } else {
+            // Dropped off on wrong floor -> waits there
+            px.state = 'waiting';
+            px.floor = curFloor;
+            this.sound.playMetalClick();
+            this.hintEl.textContent = `${px.p.name} は ${px.dest}F へ いきたいよ！`;
+          }
+        }
+      }
+      this.renderScene();
+    }
   }
 
   pressFloorButton(floorNum) {
+    if (this.mode === 'manual') return;
     this.playElevButton();
     if (Math.abs(this.carFloor - floorNum) < 0.05 && this.movingDir === 0) {
       this.doorTarget = 1;
-      this.doorHoldTimer = 1.6;
       this.playArriveChime();
-      this.handleFloorStop(floorNum);
       return;
     }
-    if (!this.targetQueue.includes(floorNum)) {
-      this.targetQueue.push(floorNum);
-    }
-    // If idle with doors open, close doors promptly to depart
+    if (!this.targetQueue.includes(floorNum)) this.targetQueue.push(floorNum);
     if (this.movingDir === 0 && this.doorOpen > 0.05) {
       this.doorTarget = 0;
-      this.doorHoldTimer = 0;
       this.playDoorSlide();
     }
     this.renderScene();
-  }
-
-  handleFloorStop(floorNum) {
-    if (this.mode !== 'mission') return;
-    if (this.ridingPassenger && this.ridingPassenger.dest === floorNum) {
-      const doneName = this.ridingPassenger.p.name;
-      this.ridingPassenger = null;
-      this.delivered++;
-      this.scoreEl.textContent = `${this.delivered}にん`;
-      this.sound.playCrackerPop();
-      this.hintEl.textContent = `${doneName} が ${floorNum}F に とうちゃく！`;
-      setTimeout(() => {
-        if (!this.destroyed && this.mode === 'mission' && !this.waitingPassenger && !this.ridingPassenger) {
-          this.spawnMissionPassenger();
-          this.renderScene();
-        }
-      }, 1300);
-    } else if (this.waitingPassenger && this.waitingPassenger.floor === floorNum) {
-      this.ridingPassenger = { p: this.waitingPassenger.p, dest: this.waitingPassenger.dest };
-      this.waitingPassenger = null;
-      this.sound.playSproutPop();
-      this.hintEl.textContent = `${this.ridingPassenger.p.name} は ${this.ridingPassenger.dest}F へ いきたいよ！`;
-    }
   }
 
   ensureLoop() {
@@ -286,35 +363,27 @@ export default class ElevatorLabGame {
 
   step(dt) {
     let dirty = false;
-
-    // 1. Door motion
     if (Math.abs(this.doorOpen - this.doorTarget) > 0.01) {
-      const stepD = dt * 2.2;
+      const stepD = dt * 2.4;
       this.doorOpen += this.doorOpen < this.doorTarget ? Math.min(stepD, this.doorTarget - this.doorOpen) : -Math.min(stepD, this.doorOpen - this.doorTarget);
       dirty = true;
-    } else if (this.doorHoldTimer > 0) {
-      this.doorHoldTimer -= dt;
-      if (this.doorHoldTimer <= 0 && this.targetQueue.length > 0) {
-        this.doorTarget = 0;
-        this.playDoorSlide();
-        dirty = true;
-      }
     }
 
-    // 2. Vertical shaft travel once doors are safely closed
-    if (this.doorOpen <= 0.02 && this.targetQueue.length > 0) {
+    if (this.mode === 'mission' && this.doorOpen <= 0.02 && this.targetQueue.length > 0) {
       const nextFloor = this.targetQueue[0];
       const diff = nextFloor - this.carFloor;
-      const speed = 1.35; // floors per second
+      const speed = 1.4;
       if (Math.abs(diff) <= speed * dt) {
         this.carFloor = nextFloor;
         this.movingDir = 0;
         this.targetQueue.shift();
         this.doorTarget = 1;
-        this.doorHoldTimer = 1.6;
         this.playArriveChime();
         this.playDoorSlide();
-        this.handleFloorStop(nextFloor);
+        const hasDrop = this.pax.some((x) => x.state === 'riding' && x.dest === nextFloor);
+        const hasWait = this.pax.some((x) => x.state === 'waiting' && x.floor === nextFloor);
+        if (hasDrop) this.hintEl.textContent = `${nextFloor}F に とうちゃく！ どうぶつを ひだりへ ドラッグして おろそう！`;
+        else if (hasWait) this.hintEl.textContent = `${nextFloor}F に とうちゃく！ どうぶつを ドラッグして カゴへ のせよう！`;
       } else {
         this.movingDir = diff > 0 ? 1 : -1;
         const deltaF = this.movingDir * speed * dt;
@@ -322,141 +391,132 @@ export default class ElevatorLabGame {
         this.sheaveAngle = (this.sheaveAngle + deltaF * 190) % 360;
       }
       dirty = true;
-    } else if (this.targetQueue.length === 0 && this.movingDir !== 0) {
-      this.movingDir = 0;
-      dirty = true;
     }
 
     if (dirty) this.renderScene();
   }
 
   floorToY(f) {
-    // 1F = 396, 5F = 84 -> linear interpolation
     return 396 - (f - 1) * 78;
   }
 
   renderScene() {
     const carY = this.floorToY(this.carFloor);
-    // Counterweight moves strictly OPPOSITE to the elevator car!
-    const cwFloor = 6 - this.carFloor;
-    const cwY = this.floorToY(cwFloor);
+    const cwY = this.floorToY(6 - this.carFloor);
     const curFloorInt = Math.round(this.carFloor);
+    const ridingList = this.pax.filter((x) => x.state === 'riding');
+    const draggedPax = (this.drag && this.drag.kind === 'pax') ? this.pax.find((x) => x.uid === this.drag.uid) : null;
 
-    // Left Building Floors & Waiting Passenger
     const floorsSvg = FLOORS.map((fl) => {
-      const isHere = curFloorInt === fl.num && this.movingDir === 0;
-      const hasWait = this.waitingPassenger && this.waitingPassenger.floor === fl.num;
+      const waiters = this.pax.filter((x) => x.state === 'waiting' && x.floor === fl.num && (!draggedPax || draggedPax.uid !== x.uid));
       return `
         <g transform="translate(0 ${fl.y})">
-          <!-- Floor slab -->
           <rect x="44" y="34" width="210" height="10" rx="5" fill="rgba(255,255,255,0.22)"/>
-          <!-- Floor color badge -->
           <rect x="52" y="-14" width="44" height="28" rx="14" fill="${fl.color}"/>
           <text x="74" y="5" text-anchor="middle" font-size="13" font-weight="900" fill="#2D3436" font-family="${FONT_ROUND}">${fl.label}</text>
-          <text x="108" y="4" font-size="12" font-weight="800" fill="rgba(255,255,255,0.78)" font-family="${FONT_ROUND}">${fl.name}</text>
-          <!-- Hall call button (also directly clickable!) -->
-          <g data-act="press-floor" data-floor="${fl.num}" style="cursor:pointer;" transform="translate(236 4)">
-            <circle cx="0" cy="0" r="11" fill="${this.targetQueue.includes(fl.num) ? '#F7C948' : 'rgba(255,255,255,0.28)'}"/>
-            <circle cx="0" cy="0" r="5" fill="${isHere ? '#34D399' : '#FFFFFF'}"/>
-          </g>
-          ${hasWait ? renderPassengerSvg(this.waitingPassenger.p, 184, 15, 0.92, this.waitingPassenger.dest) : ''}
+          <text x="108" y="4" font-size="11.5" font-weight="800" fill="rgba(255,255,255,0.78)" font-family="${FONT_ROUND}">${fl.name}</text>
+          ${waiters.map((w) => `
+            <g data-act="drag-pax" data-uid="${w.uid}" style="cursor:grab;">
+              ${renderPassengerSvg(w.p, 190, 15, 0.92, w.dest)}
+            </g>
+          `).join('')}
         </g>
       `;
     }).join('');
 
-    // Elevator Car Sliding Doors
     const doorHalfW = 48 * (1 - this.doorOpen * 0.86);
 
-    // Right: Authentic Elevator Button Panel (5F..1F + Open/Close)
-    const panelButtonsSvg = FLOORS.map((fl, idx) => {
-      const by = 178 + idx * 50;
-      const lit = this.targetQueue.includes(fl.num);
-      const isDestHint = (this.ridingPassenger && this.ridingPassenger.dest === fl.num) ||
-                         (this.waitingPassenger && this.waitingPassenger.floor === fl.num);
-      return `
-        <g data-act="press-floor" data-floor="${fl.num}" style="cursor:pointer;" transform="translate(658 ${by})">
-          ${isDestHint && !lit ? `<circle cx="0" cy="0" r="24" fill="none" stroke="rgba(255,243,161,0.8)" stroke-width="3.5" stroke-dasharray="7 6"/>` : ''}
-          <circle cx="0" cy="4" r="20" fill="${lit ? '#D19D1E' : '#B8C4D0'}"/>
-          <circle cx="0" cy="0" r="20" fill="${lit ? '#F7C948' : '#FFFFFF'}"/>
-          <text x="0" y="6" text-anchor="middle" font-size="17" font-weight="900" fill="${lit ? '#FFFFFF' : '#315772'}" font-family="${FONT_ROUND}">${fl.num}</text>
+    // Right panel: Either Push-Button Panel OR Big Hand-Crank Traction Wheel in Manual Mode!
+    const rightPanelSvg = this.mode === 'manual' ? `
+      <rect x="560" y="42" width="196" height="428" rx="32" fill="#234156"/>
+      <rect x="560" y="34" width="196" height="428" rx="32" fill="url(#el-steel)"/>
+      <rect x="586" y="56" width="144" height="72" rx="20" fill="#233747"/>
+      <text x="658" y="106" text-anchor="middle" font-size="38" font-weight="900" fill="#FFE082" font-family="${FONT_ROUND}">${this.carFloor.toFixed(1)}F</text>
+      <!-- Giant Hand-Crank Sheave Wheel (drag circularly!) -->
+      <g data-act="drag-sheave" style="cursor:grab;" transform="translate(658 252)">
+        <circle cx="0" cy="0" r="82" fill="none" stroke="rgba(49,87,114,0.2)" stroke-width="5" stroke-dasharray="10 8"/>
+        <g transform="rotate(${this.sheaveAngle.toFixed(1)})">
+          <circle cx="0" cy="0" r="68" fill="#E5A931"/>
+          <circle cx="0" cy="0" r="56" fill="#234156"/>
+          ${[0, 60, 120, 180, 240, 300].map((a) => `<line x1="0" y1="0" x2="0" y2="-56" stroke="#F7C948" stroke-width="8" stroke-linecap="round" transform="rotate(${a})"/>`).join('')}
+          <circle cx="0" cy="0" r="16" fill="#FFFFFF"/>
+          <!-- Red crank grip handle -->
+          <circle cx="0" cy="-46" r="15" fill="#F05A5B"/>
+          <circle cx="-4" cy="-50" r="4.5" fill="rgba(255,255,255,0.6)"/>
         </g>
-      `;
-    }).join('');
-
-    this.sceneEl.innerHTML = `
-      <!-- Subtle ambient background circles -->
-      <circle cx="105" cy="95" r="120" fill="rgba(255,255,255,0.04)"/>
-      <circle cx="715" cy="420" r="130" fill="rgba(255,255,255,0.04)"/>
-
-      <!-- Left Floor Gallery -->
-      ${floorsSvg}
-
-      <!-- Center Elevator Shaft Tower (x: 266..514) -->
-      <rect x="266" y="22" width="248" height="456" rx="28" fill="#234156"/>
-
-      <!-- Top Machine Room (Visible when X-ray ON) -->
-      ${this.xray ? `
-        <rect x="280" y="32" width="220" height="58" rx="18" fill="#1B3446"/>
-        <!-- Steel Traction Cables linking Car & Counterweight over the Sheave! -->
-        <line x1="342" y1="60" x2="342" y2="${(carY - 34).toFixed(1)}" stroke="#CBD5E1" stroke-width="3.5"/>
-        <line x1="352" y1="60" x2="352" y2="${(carY - 34).toFixed(1)}" stroke="#94A3B8" stroke-width="2.5"/>
-        <line x1="454" y1="60" x2="454" y2="${(cwY - 26).toFixed(1)}" stroke="#CBD5E1" stroke-width="3.5"/>
-        <line x1="347" y1="38" x2="454" y2="38" stroke="#CBD5E1" stroke-width="3.5"/>
-        ${renderSheaveSvg(347, 60, this.sheaveAngle)}
-        ${renderSheaveSvg(454, 60, this.sheaveAngle)}
-        <!-- Guide Rails -->
-        <line x1="292" y1="90" x2="292" y2="462" stroke="rgba(255,255,255,0.14)" stroke-width="4"/>
-        <line x1="402" y1="90" x2="402" y2="462" stroke="rgba(255,255,255,0.14)" stroke-width="4"/>
-        <!-- Counterweight Block (moves opposite to cabin!) -->
-        <g transform="translate(454 ${cwY.toFixed(1)})">
-          <rect x="-24" y="-26" width="48" height="52" rx="10" fill="#547188"/>
-          <rect x="-20" y="-18" width="40" height="9" rx="4" fill="#7D9BB2"/>
-          <rect x="-20" y="-4"  width="40" height="9" rx="4" fill="#7D9BB2"/>
-          <rect x="-20" y="10"  width="40" height="9" rx="4" fill="#7D9BB2"/>
-        </g>
-      ` : ''}
-
-      <!-- Elevator Car Cabin (moves smoothly from 1F to 5F!) -->
-      <g transform="translate(347 ${carY.toFixed(1)})">
-        <!-- Soft cabin roof & interior -->
-        <rect x="-54" y="-32" width="108" height="72" rx="14" fill="#D5C8B4"/>
-        <rect x="-50" y="-28" width="100" height="64" rx="11" fill="url(#el-cabin)"/>
-        <!-- Warm ceiling light -->
-        <rect x="-26" y="-26" width="52" height="6" rx="3" fill="#FFF3A1"/>
-        <!-- Riding Passenger inside cabin -->
-        ${this.ridingPassenger ? renderPassengerSvg(this.ridingPassenger.p, 0, 16, 0.92, this.ridingPassenger.dest) : ''}
-        <!-- Smooth Sliding Left & Right Satin Doors -->
-        <rect x="-50" y="-28" width="${doorHalfW.toFixed(1)}" height="64" rx="6" fill="url(#el-door)"/>
-        <rect x="${(50 - doorHalfW).toFixed(1)}" y="-28" width="${doorHalfW.toFixed(1)}" height="64" rx="6" fill="url(#el-door)"/>
       </g>
-
-      <!-- Right: Sleek Matte Elevator Control Panel (x: 564..752) -->
+      <text x="658" y="376" text-anchor="middle" font-size="14" font-weight="900" fill="#315772" font-family="${FONT_ROUND}">グルグル まわして</text>
+      <text x="658" y="398" text-anchor="middle" font-size="14" font-weight="900" fill="#315772" font-family="${FONT_ROUND}">うごかそう！</text>
+    ` : `
       <rect x="564" y="42" width="188" height="428" rx="32" fill="#234156"/>
       <rect x="564" y="34" width="188" height="428" rx="32" fill="url(#el-steel)"/>
+      <rect x="588" y="54" width="140" height="80" rx="20" fill="#233747"/>
+      <polygon points="618,74 607,90 629,90" fill="${this.movingDir > 0 ? '#4ADE80' : '#3C5468'}"/>
+      <polygon points="618,116 607,100 629,100" fill="${this.movingDir < 0 ? '#F7C948' : '#3C5468'}"/>
+      <text x="680" y="109" text-anchor="middle" font-size="42" font-weight="900" fill="#FFE082" font-family="${FONT_ROUND}">${curFloorInt}</text>
+      <!-- Capacity / Weight Gauge (3 dots) -->
+      ${[0, 1, 2].map((i) => `<circle cx="${626 + i * 32}" cy="150" r="6" fill="${i < ridingList.length ? '#34D399' : '#CBD6E2'}"/>`).join('')}
 
-      <!-- Top Digital Floor Indicator Display -->
-      <rect x="588" y="54" width="140" height="84" rx="20" fill="#233747"/>
-      <!-- Up / Down Direction Arrows -->
-      <polygon points="618,76 607,92 629,92" fill="${this.movingDir > 0 ? '#4ADE80' : '#3C5468'}"/>
-      <polygon points="618,120 607,104 629,104" fill="${this.movingDir < 0 ? '#F7C948' : '#3C5468'}"/>
-      <text x="680" y="112" text-anchor="middle" font-size="44" font-weight="900" fill="#FFE082" font-family="${FONT_ROUND}">${curFloorInt}</text>
+      ${FLOORS.map((fl, idx) => {
+        const by = 186 + idx * 46;
+        const lit = this.targetQueue.includes(fl.num);
+        return `
+          <g data-act="press-floor" data-floor="${fl.num}" style="cursor:pointer;" transform="translate(658 ${by})">
+            <circle cx="0" cy="4" r="19" fill="${lit ? '#D19D1E' : '#B8C4D0'}"/>
+            <circle cx="0" cy="0" r="19" fill="${lit ? '#F7C948' : '#FFFFFF'}"/>
+            <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="900" fill="${lit ? '#FFFFFF' : '#315772'}" font-family="${FONT_ROUND}">${fl.num}</text>
+          </g>
+        `;
+      }).join('')}
 
-      <!-- Glowing Floor Push Buttons 5..1 -->
-      ${panelButtonsSvg}
-
-      <!-- Bottom Open / Close Door Buttons -->
       <g data-act="door-open" style="cursor:pointer;" transform="translate(618 424)">
-        <circle cx="0" cy="4" r="20" fill="#B8C4D0"/>
-        <circle cx="0" cy="0" r="20" fill="#FFFFFF"/>
-        <polygon points="-9,0 -3,-6 -3,6" fill="#315772"/>
-        <polygon points="9,0 3,-6 3,6" fill="#315772"/>
+        <circle cx="0" cy="4" r="20" fill="#B8C4D0"/><circle cx="0" cy="0" r="20" fill="#FFFFFF"/>
+        <polygon points="-9,0 -3,-6 -3,6" fill="#315772"/><polygon points="9,0 3,-6 3,6" fill="#315772"/>
       </g>
       <g data-act="door-close" style="cursor:pointer;" transform="translate(698 424)">
-        <circle cx="0" cy="4" r="20" fill="#B8C4D0"/>
-        <circle cx="0" cy="0" r="20" fill="#FFFFFF"/>
-        <polygon points="-3,0 -9,-6 -9,6" fill="#315772"/>
-        <polygon points="3,0 9,-6 9,6" fill="#315772"/>
+        <circle cx="0" cy="4" r="20" fill="#B8C4D0"/><circle cx="0" cy="0" r="20" fill="#FFFFFF"/>
+        <polygon points="-3,0 -9,-6 -9,6" fill="#315772"/><polygon points="3,0 9,-6 9,6" fill="#315772"/>
       </g>
+    `;
+
+    this.sceneEl.innerHTML = `
+      ${floorsSvg}
+
+      <!-- Center Shaft Tower -->
+      <rect x="266" y="22" width="248" height="456" rx="28" fill="#234156"/>
+      <rect x="280" y="32" width="220" height="58" rx="18" fill="#1B3446"/>
+      <line x1="342" y1="60" x2="342" y2="${(carY - 34).toFixed(1)}" stroke="#CBD5E1" stroke-width="3.5"/>
+      <line x1="352" y1="60" x2="352" y2="${(carY - 34).toFixed(1)}" stroke="#94A3B8" stroke-width="2.5"/>
+      <line x1="454" y1="60" x2="454" y2="${(cwY - 26).toFixed(1)}" stroke="#CBD5E1" stroke-width="3.5"/>
+      <line x1="347" y1="38" x2="454" y2="38" stroke="#CBD5E1" stroke-width="3.5"/>
+      ${renderSheaveSvg(347, 60, this.sheaveAngle)}
+      ${renderSheaveSvg(454, 60, this.sheaveAngle)}
+
+      <!-- Counterweight -->
+      <g transform="translate(454 ${cwY.toFixed(1)})">
+        <rect x="-24" y="-26" width="48" height="52" rx="10" fill="#547188"/>
+        <rect x="-20" y="-18" width="40" height="9" rx="4" fill="#7D9BB2"/>
+        <rect x="-20" y="-4"  width="40" height="9" rx="4" fill="#7D9BB2"/>
+        <rect x="-20" y="10"  width="40" height="9" rx="4" fill="#7D9BB2"/>
+      </g>
+
+      <!-- Elevator Car Cabin -->
+      <g transform="translate(347 ${carY.toFixed(1)})">
+        <rect x="-54" y="-32" width="108" height="72" rx="14" fill="#D5C8B4"/>
+        <rect x="-50" y="-28" width="100" height="64" rx="11" fill="url(#el-cabin)"/>
+        <rect x="-26" y="-26" width="52" height="6" rx="3" fill="#FFF3A1"/>
+        ${ridingList.filter((r) => !draggedPax || draggedPax.uid !== r.uid).map((r, ri) => {
+          const rx = (ri - (ridingList.length - 1) / 2) * 30;
+          return `<g data-act="drag-pax" data-uid="${r.uid}" style="cursor:grab;">${renderPassengerSvg(r.p, rx, 16, 0.8, r.dest)}</g>`;
+        }).join('')}
+        <rect x="-50" y="-28" width="${doorHalfW.toFixed(1)}" height="64" rx="6" fill="url(#el-door)" pointer-events="none"/>
+        <rect x="${(50 - doorHalfW).toFixed(1)}" y="-28" width="${doorHalfW.toFixed(1)}" height="64" rx="6" fill="url(#el-door)" pointer-events="none"/>
+      </g>
+
+      ${rightPanelSvg}
+
+      <!-- Actively Dragged Passenger rendered on top -->
+      ${draggedPax ? renderPassengerSvg(draggedPax.p, draggedPax.x, draggedPax.y, 1.05, draggedPax.dest) : ''}
     `;
   }
 
@@ -467,10 +527,8 @@ export default class ElevatorLabGame {
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(1046.5, now);
-    g.gain.setValueAtTime(0.16, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(1046.5, now);
+    g.gain.setValueAtTime(0.16, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     osc.connect(g); g.connect(this.sound.dryBus);
     osc.start(now); osc.stop(now + 0.09);
   }
@@ -478,15 +536,12 @@ export default class ElevatorLabGame {
   playArriveChime() {
     const ctx = this.sound && this.sound.ensureContext();
     if (!ctx) return;
-    // Authentic warm 2-tone elevator arrival chime ("Pin-Pon!")
     [880, 659.25].forEach((freq, idx) => {
       const now = ctx.currentTime + idx * 0.16;
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now);
-      g.gain.setValueAtTime(0.22, now);
-      g.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+      osc.type = 'sine'; osc.frequency.setValueAtTime(freq, now);
+      g.gain.setValueAtTime(0.22, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
       osc.connect(g); g.connect(this.sound.wetBus || this.sound.dryBus);
       osc.start(now); osc.stop(now + 0.44);
     });

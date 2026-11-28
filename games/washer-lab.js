@@ -14,28 +14,34 @@ export default class WasherLabGame {
 
     this.xray = true;
     this.doorOpen = true;
-    this.trayOut = false;
-    this.hasSoap = false;
+    this.trayOut = true;
+    this.soapLevel = 0; // 0..1 filled by dragging detergent bottle over drawer!
     this.courseIdx = 0;
 
-    // Garments: { ...item, inDrum: false, dirty: true, angOffset }
-    this.items = LAUNDRY_ITEMS.map((it, i) => ({ ...it, inDrum: false, dirty: true, angOffset: i * 90 }));
-
-    // Cycle state: 'idle' | 'fill' | 'wash' | 'drain' | 'spin' | 'done'
-    this.phase = 'idle';
+    // Garments: state 'basket' | 'drum' | 'hung'
+    this.items = [];
+    this.phase = 'idle'; // 'idle' | 'fill' | 'wash' | 'drain' | 'spin' | 'done'
     this.phaseT = 0;
-    this.waterLevel = 0; // 0..1
-    this.foamLevel = 0;  // 0..1
+    this.waterLevel = 0;
+    this.foamLevel = 0;
     this.drumAngle = 0;
     this.motorAngle = 0;
     this.drumSpeed = 0;
     this.washCount = 0;
     this.lastSloshAt = 0;
 
+    // Active drag: { kind: 'item'|'bottle'|'dial', idx?, x, y, lastAng? }
+    this.drag = null;
+    this.bottlePos = { x: 86, y: 122 };
+    this.pouring = false;
+
     this.rafId = null;
     this.lastFrame = 0;
     this.paused = false;
     this.destroyed = false;
+
+    this._onMove = (e) => this.handlePointerMove(e);
+    this._onUp = (e) => this.handlePointerUp(e);
   }
 
   mount() {
@@ -44,7 +50,7 @@ export default class WasherLabGame {
     }
     this.injectStyles();
     this.renderShell();
-    this.renderScene();
+    this.spawnDirtyBasket();
     this.ensureLoop();
   }
 
@@ -61,6 +67,9 @@ export default class WasherLabGame {
   unmount() {
     this.destroyed = true;
     this.stopLoop();
+    window.removeEventListener('pointermove', this._onMove);
+    window.removeEventListener('pointerup', this._onUp);
+    window.removeEventListener('pointercancel', this._onUp);
     if (this.mountEl) this.mountEl.innerHTML = '';
   }
 
@@ -110,7 +119,7 @@ export default class WasherLabGame {
       <div class="wl2-root">
         <div class="wl2-topbar">
           <div class="wl2-pill">
-            <span class="wl2-hint" id="wl2-hint">どろんこ ふくを タップして いれよう</span>
+            <span class="wl2-hint" id="wl2-hint">どろんこ ふくを ドラッグして ドラムへ いれよう！</span>
             <button class="wl2-eye-btn active" id="wl2-xray-btn" type="button">なか</button>
           </div>
         </div>
@@ -137,51 +146,178 @@ export default class WasherLabGame {
       this.renderScene();
     });
 
-    this.svgEl.addEventListener('pointerdown', (e) => {
-      const target = e.target.closest('[data-act]');
-      if (!target) return;
-      e.preventDefault();
-      this.sound.unlock();
-      const act = target.dataset.act;
+    this.svgEl.addEventListener('pointerdown', (e) => this.handlePointerDown(e));
+    window.addEventListener('pointermove', this._onMove, { passive: false });
+    window.addEventListener('pointerup', this._onUp);
+    window.addEventListener('pointercancel', this._onUp);
+  }
 
-      if (act === 'load-item') {
-        this.loadLaundryItem(Number(target.dataset.idx));
-      } else if (act === 'toggle-door') {
-        this.toggleDoor();
-      } else if (act === 'toggle-tray') {
-        this.toggleSoapTray();
-      } else if (act === 'turn-dial') {
-        if (this.isRunning()) return;
-        this.courseIdx = (this.courseIdx + 1) % WASH_COURSES.length;
-        this.playDialClick();
-        this.hintEl.textContent = `コース：${WASH_COURSES[this.courseIdx].label}`;
-        this.renderScene();
-      } else if (act === 'start-stop') {
-        this.pressStartStop();
-      } else if (act === 'reset-dirty') {
-        this.resetForNextLoad();
-      }
+  spawnDirtyBasket() {
+    this.phase = 'idle';
+    this.doorOpen = true;
+    this.trayOut = true;
+    this.soapLevel = 0;
+    this.waterLevel = 0;
+    this.foamLevel = 0;
+    this.bottlePos = { x: 86, y: 122 };
+    this.items = LAUNDRY_ITEMS.map((it, i) => {
+      const bx = 64 + (i % 2) * 48;
+      const by = 292 + Math.floor(i / 2) * 56;
+      return { ...it, idx: i, state: 'basket', dirty: true, x: bx, y: by, homeX: bx, homeY: by, angOffset: i * 90 };
     });
+    this.hintEl.textContent = 'どろんこ ふくを ドラッグして ドラムへ いれよう！';
+    this.renderScene();
   }
 
   isRunning() {
     return ['fill', 'wash', 'drain', 'spin'].includes(this.phase);
   }
 
-  loadLaundryItem(idx) {
-    if (this.isRunning()) return;
-    const it = this.items[idx];
-    if (!it || it.inDrum) return;
-    if (!this.doorOpen) {
-      this.doorOpen = true;
-      this.playDoorLatch();
+  getSvgPoint(e) {
+    const rect = this.svgEl.getBoundingClientRect();
+    const aspectView = 800 / 500;
+    const aspectRect = rect.width / Math.max(1, rect.height);
+    let x, y;
+    if (aspectRect > aspectView) {
+      const rw = rect.height * aspectView;
+      x = ((e.clientX - rect.left - (rect.width - rw) / 2) / rw) * 800;
+      y = ((e.clientY - rect.top) / rect.height) * 500;
+    } else {
+      const rh = rect.width / aspectView;
+      x = ((e.clientX - rect.left) / rect.width) * 800;
+      y = ((e.clientY - rect.top - (rect.height - rh) / 2) / rh) * 500;
     }
-    it.inDrum = true;
-    this.sound.playSproutPop();
-    const inCount = this.items.filter((x) => x.inDrum).length;
-    if (inCount === this.items.length) {
-      this.hintEl.textContent = this.hasSoap ? 'ドアを しめて スタートを おそう！' : 'ひだりうえの せんざいトレイを いれよう！';
+    return { x, y };
+  }
+
+  handlePointerDown(e) {
+    const target = e.target.closest('[data-act]');
+    if (!target) return;
+    e.preventDefault();
+    this.sound.unlock();
+    const act = target.dataset.act;
+    const pt = this.getSvgPoint(e);
+
+    if (act === 'drag-item') {
+      if (this.isRunning()) return;
+      const idx = Number(target.dataset.idx);
+      const it = this.items[idx];
+      if (!it || it.state === 'hung') return;
+      if (it.state === 'drum' && !this.doorOpen) {
+        this.sound.playBoing();
+        this.hintEl.textContent = 'まず ドアを あけてから とりだそう！';
+        return;
+      }
+      this.drag = { kind: 'item', idx, x: pt.x, y: pt.y };
+      it.x = pt.x;
+      it.y = pt.y;
+      this.sound.playMetalClick();
+      this.renderScene();
+    } else if (act === 'drag-bottle') {
+      if (this.isRunning()) return;
+      this.drag = { kind: 'bottle', x: pt.x, y: pt.y };
+      this.bottlePos = { x: pt.x, y: pt.y };
+      this.renderScene();
+    } else if (act === 'toggle-door') {
+      this.toggleDoor();
+    } else if (act === 'toggle-tray') {
+      if (this.isRunning()) return;
+      this.trayOut = !this.trayOut;
+      this.sound.playMetalClick();
+      this.renderScene();
+    } else if (act === 'turn-dial') {
+      if (this.isRunning()) return;
+      this.courseIdx = (this.courseIdx + 1) % WASH_COURSES.length;
+      this.playDialClick();
+      this.hintEl.textContent = `コース：${WASH_COURSES[this.courseIdx].label}`;
+      this.renderScene();
+    } else if (act === 'start-stop') {
+      this.pressStartStop();
     }
+  }
+
+  handlePointerMove(e) {
+    if (!this.drag) return;
+    e.preventDefault();
+    const pt = this.getSvgPoint(e);
+    this.drag.x = pt.x;
+    this.drag.y = pt.y;
+
+    if (this.drag.kind === 'item') {
+      const it = this.items[this.drag.idx];
+      if (it) {
+        it.x = pt.x;
+        it.y = pt.y;
+        this.renderScene();
+      }
+    } else if (this.drag.kind === 'bottle') {
+      this.bottlePos = { x: pt.x, y: pt.y };
+      // Pour detergent when held over top-left soap tray (x: 165..285, y: 35..135)!
+      const overTray = this.trayOut && pt.x >= 155 && pt.x <= 290 && pt.y >= 20 && pt.y <= 140;
+      this.pouring = overTray && this.soapLevel < 1;
+      if (this.pouring) {
+        this.ensureLoop();
+      }
+      this.renderScene();
+    }
+  }
+
+  handlePointerUp() {
+    if (!this.drag) return;
+    const d = this.drag;
+    this.drag = null;
+    this.pouring = false;
+
+    if (d.kind === 'item') {
+      const it = this.items[d.idx];
+      if (it) {
+        const inDrumZone = Math.hypot(d.x - 320, d.y - 310) <= 112;
+        const onClothesline = d.x >= 505 && d.x <= 785 && d.y >= 30 && d.y <= 175;
+
+        if (it.state === 'basket' && inDrumZone) {
+          if (!this.doorOpen) {
+            it.x = it.homeX; it.y = it.homeY;
+            this.sound.playBoing();
+            this.hintEl.textContent = 'ドアが しまっているよ！ ドアを あけてね！';
+          } else {
+            it.state = 'drum';
+            this.sound.playSproutPop();
+            const remaining = this.items.filter((x) => x.state === 'basket').length;
+            if (remaining === 0) {
+              this.hintEl.textContent = this.soapLevel < 0.8
+                ? 'あおい せんざいボトルを トレイの うえで かたむけよう！'
+                : 'ドアを しめて スタートボタンを おそう！';
+            }
+          }
+        } else if (it.state === 'drum' && !it.dirty && onClothesline) {
+          // Hang sparkling clean item on the clothesline!
+          it.state = 'hung';
+          const hungIdx = this.items.filter((x) => x.state === 'hung').length - 1;
+          it.x = 562 + hungIdx * 56;
+          it.y = 104;
+          this.sound.playSproutPop();
+          if (this.items.every((x) => x.state === 'hung')) {
+            this.washCount++;
+            this.sound.playCrackerPop();
+            this.hintEl.textContent = 'ぜんぶ ぴかぴかに ほせたよ！ だいせいこう！';
+            setTimeout(() => {
+              if (!this.destroyed) this.spawnDirtyBasket();
+            }, 1500);
+          } else {
+            this.hintEl.textContent = 'のこりの ふくも ものほしざお へ ほそう！';
+          }
+        } else if (it.state === 'basket') {
+          it.x = it.homeX; it.y = it.homeY;
+        }
+      }
+    } else if (d.kind === 'bottle') {
+      this.bottlePos = { x: 86, y: 122 };
+      if (this.soapLevel >= 0.85) {
+        this.trayOut = false;
+        this.hintEl.textContent = 'せんざい たっぷり OK！ ドアを しめて スタート！';
+      }
+    }
+
     this.renderScene();
   }
 
@@ -194,20 +330,8 @@ export default class WasherLabGame {
     this.doorOpen = !this.doorOpen;
     this.playDoorLatch();
     if (this.phase === 'done' && this.doorOpen) {
-      // Unload sparkling clean laundry back to basket!
-      this.items.forEach((it) => { it.inDrum = false; });
-      this.sound.playCrackerPop();
-      this.hintEl.textContent = 'ぴかぴかに なったよ！';
+      this.hintEl.textContent = 'ぴかぴかの ふくを ドラッグして みぎうえの ものほしざお へ ほそう！';
     }
-    this.renderScene();
-  }
-
-  toggleSoapTray() {
-    if (this.isRunning()) return;
-    this.trayOut = !this.trayOut;
-    this.hasSoap = true;
-    this.playWaterBurst(0.5);
-    this.hintEl.textContent = 'せんざい OK！ スタートを おそう！';
     this.renderScene();
   }
 
@@ -216,17 +340,18 @@ export default class WasherLabGame {
       this.phase = 'idle';
       this.drumSpeed = 0;
       this.sound.playMetalClick();
-      this.hintEl.textContent = 'いちじ ていし';
       this.renderScene();
       return;
     }
-    const inCount = this.items.filter((x) => x.inDrum).length;
-    if (inCount === 0) {
+    if (this.items.filter((x) => x.state === 'drum').length === 0) {
       this.sound.playBoing();
-      this.hintEl.textContent = 'まず どろんこ ふくを いれよう！';
+      this.hintEl.textContent = 'まず ふくを ドラッグして ドラムへ いれよう！';
       return;
     }
-    this.doorOpen = false;
+    if (this.doorOpen) {
+      this.doorOpen = false;
+      this.playDoorLatch();
+    }
     this.trayOut = false;
     const course = WASH_COURSES[this.courseIdx];
     this.phase = course.id === 'spin' ? 'spin' : 'fill';
@@ -237,20 +362,8 @@ export default class WasherLabGame {
     this.ensureLoop();
   }
 
-  resetForNextLoad() {
-    this.phase = 'idle';
-    this.doorOpen = true;
-    this.hasSoap = false;
-    this.waterLevel = 0;
-    this.foamLevel = 0;
-    this.items.forEach((it) => { it.inDrum = false; it.dirty = true; });
-    this.sound.playPageTurn(1);
-    this.hintEl.textContent = 'どろんこ ふくを タップして いれよう';
-    this.renderScene();
-  }
-
   needsLoop() {
-    return this.isRunning() || Math.abs(this.drumSpeed) > 1;
+    return this.isRunning() || this.pouring || Math.abs(this.drumSpeed) > 1;
   }
 
   ensureLoop() {
@@ -277,39 +390,44 @@ export default class WasherLabGame {
   }
 
   step(dt, now) {
+    if (this.pouring && this.soapLevel < 1) {
+      this.soapLevel = Math.min(1, this.soapLevel + dt * 0.75);
+      if (now - this.lastSloshAt > 260) {
+        this.lastSloshAt = now;
+        this.playWaterBurst(0.4);
+      }
+      if (this.soapLevel >= 1) {
+        this.pouring = false;
+        this.sound.playSproutPop();
+      }
+    }
+
     const course = WASH_COURSES[this.courseIdx];
-    this.phaseT += dt;
+    if (this.isRunning()) this.phaseT += dt;
 
     if (this.phase === 'fill') {
-      this.waterLevel = Math.min(1, this.waterLevel + dt * 0.55);
+      this.waterLevel = Math.min(1, this.waterLevel + dt * 0.6);
       this.drumSpeed = 48;
-      if (now - this.lastSloshAt > 420) {
-        this.lastSloshAt = now;
-        this.playWaterBurst(0.7);
-      }
+      if (now - this.lastSloshAt > 420) { this.lastSloshAt = now; this.playWaterBurst(0.7); }
       if (this.waterLevel >= 1) {
         this.phase = 'wash';
         this.phaseT = 0;
         this.hintEl.textContent = 'あわあわ あらい ちゅう…！';
       }
     } else if (this.phase === 'wash') {
-      // Gentle tumble reversing direction every 1.4s
       const dir = Math.floor(this.phaseT / 1.4) % 2 === 0 ? 1 : -1;
       this.drumSpeed = dir * 135;
-      if (this.hasSoap) this.foamLevel = Math.min(1, this.foamLevel + dt * 0.45);
-      if (now - this.lastSloshAt > 560) {
-        this.lastSloshAt = now;
-        this.playWaterBurst(0.45);
-      }
+      if (this.soapLevel > 0.15) this.foamLevel = Math.min(1, this.foamLevel + dt * 0.48);
+      if (now - this.lastSloshAt > 560) { this.lastSloshAt = now; this.playWaterBurst(0.45); }
       if (this.phaseT >= course.washDur) {
-        this.items.forEach((it) => { if (it.inDrum) it.dirty = false; });
+        this.items.forEach((it) => { if (it.state === 'drum') it.dirty = false; });
         this.phase = 'drain';
         this.phaseT = 0;
         this.hintEl.textContent = 'はいすい ポンプ で みずを だすよ！';
       }
     } else if (this.phase === 'drain') {
-      this.waterLevel = Math.max(0, this.waterLevel - dt * 0.65);
-      this.foamLevel = Math.max(0, this.foamLevel - dt * 0.65);
+      this.waterLevel = Math.max(0, this.waterLevel - dt * 0.7);
+      this.foamLevel = Math.max(0, this.foamLevel - dt * 0.7);
       this.drumSpeed = 75;
       if (this.waterLevel <= 0.01) {
         this.phase = 'spin';
@@ -317,19 +435,14 @@ export default class WasherLabGame {
         this.hintEl.textContent = 'こうそく だっすい！（ブォーン！）';
       }
     } else if (this.phase === 'spin') {
-      // High-speed centrifugal spin!
       this.drumSpeed = Math.min(720, this.drumSpeed + dt * 360);
-      if (now - this.lastSloshAt > 260) {
-        this.lastSloshAt = now;
-        this.playSpinHum(this.drumSpeed / 720);
-      }
+      if (now - this.lastSloshAt > 260) { this.lastSloshAt = now; this.playSpinHum(this.drumSpeed / 720); }
       if (this.phaseT >= course.spinDur) {
         this.phase = 'done';
         this.drumSpeed = 0;
-        this.washCount++;
-        this.items.forEach((it) => { if (it.inDrum) it.dirty = false; });
+        this.items.forEach((it) => { if (it.state === 'drum') it.dirty = false; });
         this.sound.playSuccessFanfare();
-        this.hintEl.textContent = 'せんたく かんりょう！ ドアを あけよう！';
+        this.hintEl.textContent = 'せんたく かんりょう！ ドアを あけて ものほしざお へ ほそう！';
       }
     } else {
       this.drumSpeed *= 0.85;
@@ -344,174 +457,170 @@ export default class WasherLabGame {
   renderScene() {
     const course = WASH_COURSES[this.courseIdx];
     const running = this.isRunning();
-    const inDrumItems = this.items.filter((x) => x.inDrum);
-    const basketItems = this.items.filter((x) => !x.inDrum);
-    const allCleanOutside = basketItems.length === this.items.length && basketItems.every((x) => !x.dirty);
-
-    // Drum center (320, 304), radius 112
     const dCx = 320;
-    const dCy = 304;
+    const dCy = 310;
     const waterH = this.waterLevel * 124;
     const waterY = dCy + 96 - waterH;
 
-    // Tumbling clothes inside the drum
+    const draggedItem = (this.drag && this.drag.kind === 'item') ? this.items[this.drag.idx] : null;
+    const inDrumItems = this.items.filter((x) => x.state === 'drum' && (!draggedItem || draggedItem.idx !== x.idx));
+    const basketItems = this.items.filter((x) => x.state === 'basket' && (!draggedItem || draggedItem.idx !== x.idx));
+    const hungItems = this.items.filter((x) => x.state === 'hung');
+
     const drumClothesSvg = inDrumItems.map((it) => {
       const a = ((this.drumAngle + it.angOffset) * Math.PI) / 180;
-      const rad = this.phase === 'spin' ? 68 : 48;
+      const rad = this.phase === 'spin' ? 66 : 44;
       const cx = dCx + Math.cos(a) * rad;
       const cy = dCy + Math.sin(a) * rad;
-      return renderLaundryItemSvg(it, cx, cy, 0.85, this.drumAngle + it.angOffset, it.dirty);
+      const canPullOut = !running && this.doorOpen && !it.dirty;
+      return `
+        <g ${canPullOut ? `data-act="drag-item" data-idx="${it.idx}" style="cursor:grab;"` : ''}>
+          ${renderLaundryItemSvg(it, cx, cy, 0.85, this.drumAngle + it.angOffset, it.dirty)}
+        </g>
+      `;
     }).join('');
 
-    // Fluffy soap bubbles when washing with detergent
     const bubblesSvg = this.foamLevel > 0.05 ? [
-      [-54, 16, 16], [-24, 24, 20], [10, 18, 18], [44, 22, 15],
-      [-38, -8, 13], [26, -6, 14], [0, 36, 17]
+      [-52, 16, 15], [-22, 24, 19], [10, 18, 17], [42, 22, 14], [-36, -6, 12], [26, -6, 13]
     ].map(([bx, by, br], i) => `
       <circle cx="${(dCx + bx + Math.sin(this.drumAngle * 0.04 + i) * 8).toFixed(1)}"
-        cy="${(waterY + by * 0.4).toFixed(1)}" r="${(br * this.foamLevel).toFixed(1)}"
-        fill="#FFFFFF" opacity="0.72"/>
+        cy="${(waterY + by * 0.4).toFixed(1)}" r="${(br * this.foamLevel).toFixed(1)}" fill="#FFFFFF" opacity="0.72"/>
     `).join('') : '';
 
-    // Right: Mechanical Cutaway Panel (Inlet Valve, Belt-Drive Motor, Drain Pump)
+    // Right Top: Clothesline drying rack (drop clean clothes here!)
+    const clotheslineSvg = `
+      <g>
+        <rect x="526" y="42" width="244" height="122" rx="22" fill="rgba(255,255,255,0.12)"
+          stroke="${this.phase === 'done' && this.doorOpen ? '#FFE082' : 'rgba(255,255,255,0.22)'}" stroke-width="3" stroke-dasharray="10 7"/>
+        <line x1="538" y1="74" x2="758" y2="74" stroke="#F0CFA6" stroke-width="6" stroke-linecap="round"/>
+        ${[562, 618, 674, 730].map((px) => `<rect x="${px - 4}" y="66" width="8" height="16" rx="3" fill="#F7C948"/>`).join('')}
+        ${hungItems.map((it) => renderLaundryItemSvg(it, it.x, it.y, 0.92, 0, false)).join('')}
+        <text x="648" y="152" text-anchor="middle" font-size="11.5" font-weight="800" fill="rgba(255,255,255,0.82)" font-family="${FONT_ROUND}">ものほしざお (${hungItems.length}/4)</text>
+      </g>
+    `;
+
+    // Right Bottom: Mechanical Cutaway Panel (Belt-Drive Motor + Drain Pump)
     const mechPanelSvg = this.xray ? `
-      <rect x="526" y="42" width="242" height="422" rx="28" fill="#295B53"/>
-      <rect x="526" y="34" width="242" height="422" rx="28" fill="#2F665D"/>
-
-      <!-- 1. Top Water Inlet Solenoid Valve -->
-      <rect x="546" y="54" width="202" height="72" rx="18" fill="#234F48"/>
-      <line x1="560" y1="90" x2="734" y2="90" stroke="${this.phase === 'fill' ? '#5CE1E6' : 'rgba(255,255,255,0.22)'}" stroke-width="14" stroke-linecap="round"/>
-      <rect x="628" y="72" width="38" height="36" rx="10" fill="${this.phase === 'fill' ? '#34D399' : '#F7C948'}"/>
-      <text x="647" y="119" text-anchor="middle" font-size="11" font-weight="800" fill="rgba(255,255,255,0.8)" font-family="${FONT_ROUND}">きゅうすい バルブ</text>
-
-      <!-- 2. Rear Drum Pulley + V-Belt + Drive Motor -->
-      <rect x="546" y="138" width="202" height="196" rx="18" fill="#234F48"/>
-      <!-- V-Belt connecting large drum pulley (647,208) to lower drive motor (647,298) -->
-      <line x1="598" y1="208" x2="626" y2="298" stroke="#94A3B8" stroke-width="5.5" stroke-linecap="round"/>
-      <line x1="696" y1="208" x2="668" y2="298" stroke="#94A3B8" stroke-width="5.5" stroke-linecap="round"/>
-      <!-- Large Drum Pulley -->
-      <g transform="translate(647 208) rotate(${this.drumAngle.toFixed(1)})">
-        <circle cx="0" cy="0" r="48" fill="none" stroke="#DCE5EF" stroke-width="8"/>
-        <line x1="-44" y1="0" x2="44" y2="0" stroke="#DCE5EF" stroke-width="6" stroke-linecap="round"/>
-        <line x1="0" y1="-44" x2="0" y2="44" stroke="#DCE5EF" stroke-width="6" stroke-linecap="round"/>
-        <circle cx="0" cy="0" r="12" fill="#F7C948"/>
+      <rect x="526" y="182" width="244" height="284" rx="26" fill="#295B53"/>
+      <rect x="526" y="176" width="244" height="284" rx="26" fill="#2F665D"/>
+      <rect x="544" y="192" width="208" height="168" rx="18" fill="#234F48"/>
+      <line x1="600" y1="252" x2="628" y2="332" stroke="#94A3B8" stroke-width="5" stroke-linecap="round"/>
+      <line x1="696" y1="252" x2="668" y2="332" stroke="#94A3B8" stroke-width="5" stroke-linecap="round"/>
+      <g transform="translate(648 252) rotate(${this.drumAngle.toFixed(1)})">
+        <circle cx="0" cy="0" r="44" fill="none" stroke="#DCE5EF" stroke-width="7"/>
+        <line x1="-40" y1="0" x2="40" y2="0" stroke="#DCE5EF" stroke-width="5.5" stroke-linecap="round"/>
+        <line x1="0" y1="-40" x2="0" y2="40" stroke="#DCE5EF" stroke-width="5.5" stroke-linecap="round"/>
+        <circle cx="0" cy="0" r="11" fill="#F7C948"/>
       </g>
-      <!-- Lower High-Speed Motor -->
-      <g transform="translate(647 298) rotate(${this.motorAngle.toFixed(1)})">
-        <circle cx="0" cy="0" r="22" fill="#56CCF2"/>
-        <rect x="-4" y="-16" width="8" height="32" rx="4" fill="#FFFFFF"/>
-        <circle cx="0" cy="0" r="7" fill="#234F48"/>
-      </g>
-      <text x="647" y="330" text-anchor="middle" font-size="11" font-weight="800" fill="rgba(255,255,255,0.8)" font-family="${FONT_ROUND}">モーター ＆ Vベルト</text>
-
-      <!-- 3. Bottom Drain Pump -->
-      <rect x="546" y="346" width="202" height="90" rx="18" fill="#234F48"/>
-      <line x1="560" y1="388" x2="734" y2="388" stroke="${this.phase === 'drain' || this.phase === 'spin' ? '#5CE1E6' : 'rgba(255,255,255,0.22)'}" stroke-width="14" stroke-linecap="round"/>
-      <g transform="translate(647 388) rotate(${(this.phase === 'drain' || this.phase === 'spin') ? this.motorAngle.toFixed(0) : 0})">
-        <circle cx="0" cy="0" r="20" fill="#FF9F5A"/>
+      <g transform="translate(648 332) rotate(${this.motorAngle.toFixed(1)})">
+        <circle cx="0" cy="0" r="20" fill="#56CCF2"/>
         <rect x="-3.5" y="-14" width="7" height="28" rx="3.5" fill="#FFFFFF"/>
-        <rect x="-14" y="-3.5" width="28" height="7" rx="3.5" fill="#FFFFFF"/>
+        <circle cx="0" cy="0" r="6" fill="#234F48"/>
       </g>
-      <text x="647" y="428" text-anchor="middle" font-size="11" font-weight="800" fill="rgba(255,255,255,0.8)" font-family="${FONT_ROUND}">はいすい ポンプ</text>
+      <!-- Drain Pump -->
+      <rect x="544" y="370" width="208" height="74" rx="16" fill="#234F48"/>
+      <line x1="558" y1="406" x2="738" y2="406" stroke="${this.phase === 'drain' || this.phase === 'spin' ? '#5CE1E6' : 'rgba(255,255,255,0.22)'}" stroke-width="13" stroke-linecap="round"/>
+      <g transform="translate(648 406) rotate(${(this.phase === 'drain' || this.phase === 'spin') ? this.motorAngle.toFixed(0) : 0})">
+        <circle cx="0" cy="0" r="18" fill="#FF9F5A"/>
+        <rect x="-3" y="-13" width="6" height="26" rx="3" fill="#FFFFFF"/>
+        <rect x="-13" y="-3" width="26" height="6" rx="3" fill="#FFFFFF"/>
+      </g>
     ` : '';
 
     this.sceneEl.innerHTML = `
-      <circle cx="96" cy="95" r="120" fill="rgba(255,255,255,0.04)"/>
-
-      <!-- Left: Laundry Basket with Tappable Clothes -->
-      <g transform="translate(88 354)">
-        <ellipse cx="0" cy="108" rx="64" ry="12" fill="rgba(0,0,0,0.14)"/>
-        <!-- Woven Matte Cream Laundry Basket -->
-        <path d="M -56 12 H 56 L 46 102 Q 44 110 34 110 H -34 Q -44 110 -46 102 Z" fill="#E3BC8E"/>
-        <rect x="-60" y="2" width="120" height="16" rx="8" fill="#F0CFA6"/>
-        <line x1="-42" y1="36" x2="42" y2="36" stroke="#C99B6B" stroke-width="4" stroke-linecap="round"/>
-        <line x1="-38" y1="62" x2="38" y2="62" stroke="#C99B6B" stroke-width="4" stroke-linecap="round"/>
-        <line x1="-34" y1="88" x2="34" y2="88" stroke="#C99B6B" stroke-width="4" stroke-linecap="round"/>
+      <!-- Left: Laundry Basket -->
+      <g transform="translate(88 358)">
+        <ellipse cx="0" cy="102" rx="62" ry="11" fill="rgba(0,0,0,0.14)"/>
+        <path d="M -54 12 H 54 L 44 98 Q 42 106 32 106 H -32 Q -42 106 -44 98 Z" fill="#E3BC8E"/>
+        <rect x="-58" y="2" width="116" height="16" rx="8" fill="#F0CFA6"/>
       </g>
-      ${this.items.map((it, idx) => {
-        if (it.inDrum) return '';
-        const bx = 66 + (idx % 2) * 46;
-        const by = 274 + Math.floor(idx / 2) * 58;
-        return `<g data-act="load-item" data-idx="${idx}" style="cursor:pointer;">${renderLaundryItemSvg(it, bx, by, 1.0, (idx - 1.5) * 8, it.dirty)}</g>`;
-      }).join('')}
-      ${allCleanOutside ? `
-        <g data-act="reset-dirty" style="cursor:pointer;" transform="translate(88 214)">
-          <rect x="-56" y="-18" width="112" height="40" rx="20" fill="#D19D1E"/>
-          <rect x="-56" y="-22" width="112" height="40" rx="20" fill="#F7C948"/>
-          <text x="0" y="3" text-anchor="middle" font-size="13" font-weight="900" fill="#2D3436" font-family="${FONT_ROUND}">もういっかい</text>
+      ${basketItems.map((it) => `
+        <g data-act="drag-item" data-idx="${it.idx}" style="cursor:grab;">
+          ${renderLaundryItemSvg(it, it.x, it.y, 1.0, (it.idx - 1.5) * 8, it.dirty)}
         </g>
-      ` : ''}
+      `).join('')}
 
-      <!-- Center: Sculpted Matte Porcelain Drum Washing Machine (x: 168..472) -->
-      <ellipse cx="320" cy="466" rx="154" ry="14" fill="rgba(0,0,0,0.14)"/>
-      <rect x="168" y="44" width="304" height="422" rx="34" fill="#CBD6E2"/>
-      <rect x="168" y="34" width="304" height="422" rx="34" fill="url(#wl2-body)"/>
+      <!-- Center: Sculpted Matte Porcelain Drum Washer -->
+      <ellipse cx="320" cy="468" rx="154" ry="14" fill="rgba(0,0,0,0.14)"/>
+      <rect x="168" y="48" width="304" height="418" rx="34" fill="#CBD6E2"/>
+      <rect x="168" y="38" width="304" height="418" rx="34" fill="url(#wl2-body)"/>
+      <line x1="184" y1="142" x2="456" y2="142" stroke="#DCE5EF" stroke-width="3" stroke-linecap="round"/>
 
-      <!-- Top Control Fascia -->
-      <line x1="184" y1="138" x2="456" y2="138" stroke="#DCE5EF" stroke-width="3" stroke-linecap="round"/>
-
-      <!-- Left Top: Slide-Out Detergent Drawer -->
-      <g data-act="toggle-tray" style="cursor:pointer;" transform="translate(${this.trayOut ? 176 : 192} 56)">
-        <rect x="0" y="4" width="84" height="58" rx="14" fill="#CBD6E2"/>
-        <rect x="0" y="0" width="84" height="58" rx="14" fill="#FFFFFF"/>
-        <rect x="12" y="12" width="60" height="22" rx="8" fill="${this.hasSoap ? '#56CCF2' : '#EAF4FA'}"/>
-        <rect x="26" y="44" width="32" height="6" rx="3" fill="#B8C4D0"/>
+      <!-- Left Top: Slide-Out Detergent Drawer (fill with bottle!) -->
+      <g data-act="toggle-tray" style="cursor:pointer;" transform="translate(${this.trayOut ? 174 : 192} 58)">
+        <rect x="0" y="4" width="86" height="58" rx="14" fill="#CBD6E2"/>
+        <rect x="0" y="0" width="86" height="58" rx="14" fill="#FFFFFF"/>
+        <rect x="12" y="12" width="62" height="24" rx="8" fill="#EAF4FA"/>
+        ${this.soapLevel > 0.02 ? `<rect x="12" y="${(36 - this.soapLevel * 24).toFixed(1)}" width="62" height="${(this.soapLevel * 24).toFixed(1)}" rx="6" fill="#56CCF2"/>` : ''}
+        <rect x="26" y="44" width="34" height="6" rx="3" fill="#B8C4D0"/>
       </g>
 
-      <!-- Center Top: Chunky Rotating Course Dial -->
-      <g data-act="turn-dial" style="cursor:pointer;" transform="translate(322 86)">
-        <circle cx="0" cy="4" r="30" fill="#CBD6E2"/>
-        <circle cx="0" cy="0" r="30" fill="url(#wl2-chrome)"/>
+      <!-- Center Top: Rotating Course Dial -->
+      <g data-act="turn-dial" style="cursor:pointer;" transform="translate(322 90)">
+        <circle cx="0" cy="4" r="29" fill="#CBD6E2"/>
+        <circle cx="0" cy="0" r="29" fill="url(#wl2-chrome)"/>
         <g transform="rotate(${course.deg})">
-          <circle cx="0" cy="0" r="22" fill="#FFFFFF"/>
-          <rect x="-3.5" y="-20" width="7" height="14" rx="3.5" fill="#3A7D72"/>
+          <circle cx="0" cy="0" r="21" fill="#FFFFFF"/>
+          <rect x="-3.5" y="-19" width="7" height="13" rx="3.5" fill="#3A7D72"/>
         </g>
-        <text x="0" y="44" text-anchor="middle" font-size="11.5" font-weight="900" fill="#3A7D72" font-family="${FONT_ROUND}">${course.label}</text>
+        <text x="0" y="43" text-anchor="middle" font-size="11.5" font-weight="900" fill="#3A7D72" font-family="${FONT_ROUND}">${course.label}</text>
       </g>
 
-      <!-- Right Top: Glowing Start / Pause Push Button -->
-      <g data-act="start-stop" style="cursor:pointer;" transform="translate(418 86)">
-        <circle cx="0" cy="4" r="25" fill="${running ? '#C43B3C' : '#059669'}"/>
-        <circle cx="0" cy="0" r="25" fill="${running ? '#F05A5B' : '#34D399'}"/>
+      <!-- Right Top: Start / Pause Button -->
+      <g data-act="start-stop" style="cursor:pointer;" transform="translate(418 90)">
+        <circle cx="0" cy="4" r="24" fill="${running ? '#C43B3C' : '#059669'}"/>
+        <circle cx="0" cy="0" r="24" fill="${running ? '#F05A5B' : '#34D399'}"/>
         ${running
           ? `<rect x="-7" y="-8" width="5" height="16" rx="2.5" fill="#FFFFFF"/><rect x="2" y="-8" width="5" height="16" rx="2.5" fill="#FFFFFF"/>`
           : `<polygon points="-5,-9 11,0 -5,9" fill="#FFFFFF"/>`
         }
       </g>
 
-      <!-- Big Round Porthole Drum Window (tap door ring to open/close!) -->
+      <!-- Big Round Drum Window -->
+      <circle cx="${dCx}" cy="${dCy + 6}" r="116" fill="rgba(0,0,0,0.08)"/>
       <g data-act="toggle-door" style="cursor:pointer;">
-        <circle cx="${dCx}" cy="${dCy + 6}" r="118" fill="rgba(0,0,0,0.08)"/>
-        <circle cx="${dCx}" cy="${dCy}" r="118" fill="url(#wl2-chrome)"/>
-        <circle cx="${dCx}" cy="${dCy}" r="96" fill="#2A3E4C"/>
+        <circle cx="${dCx}" cy="${dCy}" r="116" fill="url(#wl2-chrome)"/>
+        <rect x="${dCx + 94}" y="${dCy - 24}" width="14" height="48" rx="7" fill="${this.doorOpen ? '#34D399' : '#94A3B8'}"/>
+      </g>
+      <circle cx="${dCx}" cy="${dCy}" r="94" fill="#2A3E4C"/>
 
-        <!-- Rotating Stainless Drum Baffles -->
-        <g transform="translate(${dCx} ${dCy}) rotate(${this.drumAngle.toFixed(1)})">
-          <circle cx="0" cy="0" r="88" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="5" stroke-dasharray="12 10"/>
-          ${[0, 120, 240].map((a) => `<rect x="-12" y="-92" width="24" height="14" rx="6" fill="#94A3B8" transform="rotate(${a})"/>`).join('')}
-        </g>
-
-        <!-- Clip Water & Clothes cleanly inside round drum! -->
-        <clipPath id="wl2-drum-clip"><circle cx="${dCx}" cy="${dCy}" r="94"/></clipPath>
-        <g clip-path="url(#wl2-drum-clip)">
-          ${waterH > 2 ? `<rect x="${dCx - 98}" y="${waterY.toFixed(1)}" width="196" height="${(waterH + 10).toFixed(1)}" fill="#5CE1E6" opacity="0.62"/>` : ''}
-          ${drumClothesSvg}
-          ${bubblesSvg}
-        </g>
-
-        <!-- Glass Sheen Overlay (opens aside when doorOpen!) -->
-        ${!this.doorOpen ? `
-          <circle cx="${dCx}" cy="${dCy}" r="96" fill="url(#wl2-glass)"/>
-          <path d="M ${dCx - 58} ${dCy - 50} A 78 78 0 0 1 ${dCx + 42} ${dCy - 62}" stroke="rgba(255,255,255,0.58)" stroke-width="7" stroke-linecap="round" fill="none"/>
-        ` : `
-          <!-- Open swung door edge indicator -->
-          <circle cx="${dCx}" cy="${dCy}" r="96" fill="none" stroke="#34D399" stroke-width="5" stroke-dasharray="14 10" stroke-linecap="round"/>
-        `}
-        <!-- Door Handle Grip on right rim -->
-        <rect x="${dCx + 96}" y="${dCy - 24}" width="14" height="48" rx="7" fill="${this.doorOpen ? '#34D399' : '#94A3B8'}"/>
+      <g transform="translate(${dCx} ${dCy}) rotate(${this.drumAngle.toFixed(1)})">
+        <circle cx="0" cy="0" r="86" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="5" stroke-dasharray="12 10"/>
+        ${[0, 120, 240].map((a) => `<rect x="-12" y="-90" width="24" height="14" rx="6" fill="#94A3B8" transform="rotate(${a})"/>`).join('')}
       </g>
 
+      <clipPath id="wl2-drum-clip"><circle cx="${dCx}" cy="${dCy}" r="92"/></clipPath>
+      <g clip-path="url(#wl2-drum-clip)">
+        ${waterH > 2 ? `<rect x="${dCx - 96}" y="${waterY.toFixed(1)}" width="192" height="${(waterH + 10).toFixed(1)}" fill="#5CE1E6" opacity="0.62"/>` : ''}
+        ${drumClothesSvg}
+        ${bubblesSvg}
+      </g>
+
+      ${!this.doorOpen ? `
+        <circle cx="${dCx}" cy="${dCy}" r="94" fill="url(#wl2-glass)" pointer-events="none"/>
+        <path d="M ${dCx - 56} ${dCy - 48} A 76 76 0 0 1 ${dCx + 40} ${dCy - 60}" stroke="rgba(255,255,255,0.58)" stroke-width="7" stroke-linecap="round" fill="none" pointer-events="none"/>
+      ` : `
+        <circle cx="${dCx}" cy="${dCy}" r="94" fill="none" stroke="#34D399" stroke-width="4.5" stroke-dasharray="14 10" stroke-linecap="round" pointer-events="none"/>
+      `}
+
+      ${clotheslineSvg}
       ${mechPanelSvg}
+
+      <!-- Draggable Blue Liquid Detergent Bottle (tilts & pours stream when held over soap tray!) -->
+      <g data-act="drag-bottle" style="cursor:grab;" transform="translate(${this.bottlePos.x.toFixed(1)} ${this.bottlePos.y.toFixed(1)}) rotate(${this.pouring ? 55 : 0})">
+        <rect x="-18" y="-22" width="36" height="54" rx="12" fill="#56CCF2"/>
+        <rect x="-9"  y="-34" width="18" height="14" rx="5"  fill="#FFFFFF"/>
+        <rect x="-12" y="-6"  width="24" height="22" rx="6"  fill="#FFFFFF" opacity="0.9"/>
+        <circle cx="0" cy="5" r="6" fill="#56CCF2"/>
+        <path d="M 18 -10 Q 28 -10 28 4 Q 28 16 18 16" fill="none" stroke="#2F9BC4" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      ${this.pouring ? `
+        <line x1="${(this.bottlePos.x + 22).toFixed(1)}" y1="${(this.bottlePos.y - 10).toFixed(1)}"
+          x2="215" y2="82" stroke="#5CE1E6" stroke-width="7" stroke-linecap="round" stroke-dasharray="10 6"/>
+      ` : ''}
+
+      <!-- Actively Dragged Garment on top of everything! -->
+      ${draggedItem ? renderLaundryItemSvg(draggedItem, draggedItem.x, draggedItem.y, 1.15, 0, draggedItem.dirty) : ''}
     `;
   }
 
@@ -525,8 +634,7 @@ export default class WasherLabGame {
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(360, now);
     osc.frequency.exponentialRampToValueAtTime(140, now + 0.08);
-    g.gain.setValueAtTime(0.24, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    g.gain.setValueAtTime(0.24, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
     osc.connect(g); g.connect(this.sound.dryBus);
     osc.start(now); osc.stop(now + 0.1);
   }
@@ -540,8 +648,7 @@ export default class WasherLabGame {
     osc.type = 'square';
     osc.frequency.setValueAtTime(1100, now);
     osc.frequency.exponentialRampToValueAtTime(520, now + 0.03);
-    g.gain.setValueAtTime(0.14, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+    g.gain.setValueAtTime(0.14, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
     osc.connect(g); g.connect(this.sound.dryBus);
     osc.start(now); osc.stop(now + 0.04);
   }
@@ -582,10 +689,8 @@ export default class WasherLabGame {
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(110 + ratio * 220, now);
-    g.gain.setValueAtTime(0.08, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(110 + ratio * 220, now);
+    g.gain.setValueAtTime(0.08, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
     osc.connect(g); g.connect(this.sound.dryBus);
     osc.start(now); osc.stop(now + 0.24);
   }

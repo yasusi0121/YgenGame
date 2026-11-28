@@ -1,8 +1,10 @@
 import {
   FONT_ROUND,
   SHOP_ITEMS,
+  CUSTOMERS,
   buildRegisterDefsSvg,
-  renderShopItemSvg
+  renderDraggableItemSvg,
+  renderCustomerHeadSvg
 } from './register-lab-assets.js';
 
 export default class RegisterLabGame {
@@ -11,22 +13,35 @@ export default class RegisterLabGame {
     this.app = app;
     this.sound = (app && app.sound) ? app.sound : app;
 
-    this.cart = []; // [{ id, name, price }]
-    this.total = 0;
     this.customersServed = 0;
+    this.customerIdx = 0;
 
-    // Thermal paper roll & checkout drawer state
-    this.paperRemain = 1.0; // 0..1 (reduces with each scanned line & receipt!)
-    this.drawerOpen = 0;    // 0 closed .. 1 open
+    // Customer's basket items: { uid, ...item, x, y, homeX, homeY, state: 'in-basket'|'bagged', scanned: false }
+    this.items = [];
+    this.scannedLines = [];
+    this.total = 0;
+
+    // Checkout flow phase: 'scanning' | 'ready-pay' | 'collect-cash' | 'tear-receipt'
+    this.phase = 'scanning';
+    this.paperRemain = 1.0;
+    this.drawerOpen = 0;
     this.drawerTarget = 0;
-    this.receiptReady = false;
-    this.laserFlash = null; // { x, y, life }
-    this.scanCount = 0;
+    this.laserFlash = 0;
+
+    // Customer payment bill/coin waiting to be dragged into drawer
+    this.paymentMoney = null; // { x, y, homeX, homeY, amount }
+
+    // Active drag state: { kind: 'item'|'money'|'receipt'|'roll', uid?, startY?, x, y }
+    this.drag = null;
+    this.receiptPull = 0;
 
     this.rafId = null;
     this.lastFrame = 0;
     this.paused = false;
     this.destroyed = false;
+
+    this._onMove = (e) => this.handlePointerMove(e);
+    this._onUp = (e) => this.handlePointerUp(e);
   }
 
   mount() {
@@ -35,7 +50,7 @@ export default class RegisterLabGame {
     }
     this.injectStyles();
     this.renderShell();
-    this.renderScene();
+    this.spawnCustomer();
   }
 
   onPause() {
@@ -51,6 +66,9 @@ export default class RegisterLabGame {
   unmount() {
     this.destroyed = true;
     this.stopLoop();
+    window.removeEventListener('pointermove', this._onMove);
+    window.removeEventListener('pointerup', this._onUp);
+    window.removeEventListener('pointercancel', this._onUp);
     if (this.mountEl) this.mountEl.innerHTML = '';
   }
 
@@ -72,7 +90,7 @@ export default class RegisterLabGame {
       }
       .rl-pill {
         display: inline-flex; align-items: center; gap: 10px;
-        background: rgba(255,255,255,0.88); border: 2px solid #FFFFFF;
+        background: rgba(255,255,255,0.9); border: 2px solid #FFFFFF;
         border-radius: 999px; padding: 5px 16px;
         box-shadow: 0 3px 0 rgba(61,64,91,0.08);
       }
@@ -99,7 +117,7 @@ export default class RegisterLabGame {
       <div class="rl-root">
         <div class="rl-topbar">
           <div class="rl-pill">
-            <span class="rl-hint" id="rl-hint">しょうひんを タップして ピッ！と スキャンしよう</span>
+            <span class="rl-hint" id="rl-hint">カゴから しょうひんを とって スキャナーで ピッ！</span>
             <span class="rl-score" id="rl-score">0にん</span>
           </div>
         </div>
@@ -117,108 +135,238 @@ export default class RegisterLabGame {
     this.hintEl = this.mountEl.querySelector('#rl-hint');
     this.scoreEl = this.mountEl.querySelector('#rl-score');
 
-    this.svgEl.addEventListener('pointerdown', (e) => {
-      const target = e.target.closest('[data-act]');
-      if (!target) return;
-      e.preventDefault();
-      this.sound.unlock();
-      const act = target.dataset.act;
-
-      if (act === 'scan-item') {
-        this.scanItem(target.dataset.id);
-      } else if (act === 'checkout') {
-        this.pressCheckout();
-      } else if (act === 'tear-receipt') {
-        this.tearReceipt();
-      } else if (act === 'refill-roll') {
-        this.refillPaperRoll();
-      } else if (act === 'toggle-drawer') {
-        this.drawerTarget = this.drawerTarget > 0.5 ? 0 : 1;
-        this.playDrawerBell();
-        this.ensureLoop();
-      } else if (act === 'clear-cart') {
-        this.cart = [];
-        this.total = 0;
-        this.receiptReady = false;
-        this.drawerTarget = 0;
-        this.sound.playPageTurn(-1);
-        this.hintEl.textContent = 'しょうひんを タップして ピッ！と スキャンしよう';
-        this.renderScene();
-        this.ensureLoop();
-      }
-    });
+    this.svgEl.addEventListener('pointerdown', (e) => this.handlePointerDown(e));
+    window.addEventListener('pointermove', this._onMove, { passive: false });
+    window.addEventListener('pointerup', this._onUp);
+    window.addEventListener('pointercancel', this._onUp);
   }
 
-  scanItem(id) {
-    if (this.paperRemain <= 0.02) {
-      this.sound.playBoing();
-      this.hintEl.textContent = 'レシートの かみが ないよ！ ロールを タップして ほじゅうしよう！';
-      return;
-    }
-    const idx = SHOP_ITEMS.findIndex((x) => x.id === id);
-    const item = SHOP_ITEMS[idx];
-    if (!item) return;
+  spawnCustomer() {
+    const cust = CUSTOMERS[this.customerIdx % CUSTOMERS.length];
+    this.customerIdx++;
+    const count = 3 + (this.customerIdx % 2); // 3 or 4 random items per customer
+    const pool = [...SHOP_ITEMS].sort(() => Math.random() - 0.5).slice(0, count);
 
-    this.cart.push(item);
-    if (this.cart.length > 7) this.cart.shift();
-    this.total += item.price;
-    this.paperRemain = Math.max(0, this.paperRemain - 0.075);
-    this.receiptReady = false;
+    // Arrange neatly inside left blue customer basket (x: 68..224, y: 312..392)
+    this.items = pool.map((it, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const hx = 104 + col * 72 + (row ? 10 : 0);
+      const hy = 326 + row * 46;
+      return { uid: i + 1, ...it, x: hx, y: hy, homeX: hx, homeY: hy, state: 'in-basket', scanned: false };
+    });
 
-    const ix = 104 + (idx % 2) * 116;
-    const iy = 128 + Math.floor(idx / 2) * 114;
-    this.laserFlash = { x: ix, y: iy, life: 1.0 };
-
-    this.playBarcodeBeep();
-    if (this.paperRemain <= 0.02) {
-      this.hintEl.textContent = 'レシートが なくなった！ ロールを タップして いれよう！';
-    } else {
-      this.hintEl.textContent = `ピッ！ ${item.name} ${item.price}えん（ごうけい ${this.total}えん）`;
-    }
+    this.scannedLines = [];
+    this.total = 0;
+    this.phase = 'scanning';
+    this.drawerTarget = 0;
+    this.paymentMoney = null;
+    this.receiptPull = 0;
+    this.hintEl.textContent = `${cust.name} が きたよ！ カゴから だして ピッ → みぎのカゴへ！`;
     this.renderScene();
     this.ensureLoop();
+  }
+
+  getSvgPoint(e) {
+    const rect = this.svgEl.getBoundingClientRect();
+    const aspectView = 800 / 500;
+    const aspectRect = rect.width / Math.max(1, rect.height);
+    let x, y;
+    if (aspectRect > aspectView) {
+      const rw = rect.height * aspectView;
+      x = ((e.clientX - rect.left - (rect.width - rw) / 2) / rw) * 800;
+      y = ((e.clientY - rect.top) / rect.height) * 500;
+    } else {
+      const rh = rect.width / aspectView;
+      x = ((e.clientX - rect.left) / rect.width) * 800;
+      y = ((e.clientY - rect.top - (rect.height - rh) / 2) / rh) * 500;
+    }
+    return { x, y };
+  }
+
+  handlePointerDown(e) {
+    const target = e.target.closest('[data-act]');
+    if (!target) return;
+    e.preventDefault();
+    this.sound.unlock();
+    const act = target.dataset.act;
+    const pt = this.getSvgPoint(e);
+
+    if (act === 'drag-item') {
+      const uid = Number(target.dataset.uid);
+      const item = this.items.find((it) => it.uid === uid);
+      if (!item || item.state === 'bagged') return;
+      this.drag = { kind: 'item', uid, x: pt.x, y: pt.y };
+      item.x = pt.x;
+      item.y = pt.y;
+      this.sound.playMetalClick();
+      this.renderScene();
+    } else if (act === 'drag-roll') {
+      if (this.paperRemain > 0.25) {
+        this.sound.playMetalClick();
+        return;
+      }
+      this.drag = { kind: 'roll', x: pt.x, y: pt.y };
+      this.renderScene();
+    } else if (act === 'checkout') {
+      this.pressCheckout();
+    } else if (act === 'drag-money') {
+      if (!this.paymentMoney) return;
+      this.drag = { kind: 'money', x: pt.x, y: pt.y };
+      this.paymentMoney.x = pt.x;
+      this.paymentMoney.y = pt.y;
+      this.sound.playMetalClick();
+      this.renderScene();
+    } else if (act === 'drag-receipt') {
+      if (this.phase !== 'tear-receipt') return;
+      this.drag = { kind: 'receipt', startY: pt.y, x: pt.x, y: pt.y };
+    }
+  }
+
+  handlePointerMove(e) {
+    if (!this.drag) return;
+    e.preventDefault();
+    const pt = this.getSvgPoint(e);
+    this.drag.x = pt.x;
+    this.drag.y = pt.y;
+
+    if (this.drag.kind === 'item') {
+      const item = this.items.find((it) => it.uid === this.drag.uid);
+      if (!item) return;
+      item.x = pt.x;
+      item.y = pt.y;
+
+      // Live barcode scanner detection when dragged over the red scanner glass (cx=340, cy=325)!
+      if (!item.scanned && Math.hypot(pt.x - 340, pt.y - 325) <= 68) {
+        if (this.paperRemain <= 0.02) {
+          this.sound.playBoing();
+          this.hintEl.textContent = 'レシートが ないよ！ よびの ロールを ドラッグして いれよう！';
+        } else {
+          item.scanned = true;
+          this.scannedLines.push(item);
+          this.total += item.price;
+          this.paperRemain = Math.max(0, this.paperRemain - 0.08);
+          this.laserFlash = 1.0;
+          this.playBarcodeBeep();
+          this.hintEl.textContent = `ピッ！ ${item.name} ${item.price}えん → みぎの カゴへ いれよう！`;
+          this.ensureLoop();
+        }
+      }
+      this.renderScene();
+    } else if (this.drag.kind === 'money') {
+      if (this.paymentMoney) {
+        this.paymentMoney.x = pt.x;
+        this.paymentMoney.y = pt.y;
+        this.renderScene();
+      }
+    } else if (this.drag.kind === 'receipt') {
+      const pull = Math.max(0, this.drag.startY - pt.y);
+      this.receiptPull = Math.min(54, pull);
+      if (pull >= 44) {
+        this.drag = null;
+        this.completeReceiptTear();
+        return;
+      }
+      this.renderScene();
+    } else if (this.drag.kind === 'roll') {
+      this.renderScene();
+    }
+  }
+
+  handlePointerUp() {
+    if (!this.drag) return;
+    const d = this.drag;
+    this.drag = null;
+
+    if (d.kind === 'item') {
+      const item = this.items.find((it) => it.uid === d.uid);
+      if (item) {
+        // Right green "My Basket" drop zone: x 460..630, y 280..450
+        const inRightBasket = d.x >= 440 && d.x <= 650 && d.y >= 260 && d.y <= 460;
+        if (inRightBasket) {
+          if (item.scanned) {
+            item.state = 'bagged';
+            const baggedCount = this.items.filter((x) => x.state === 'bagged').length;
+            item.x = 502 + ((baggedCount - 1) % 2) * 62;
+            item.y = 338 + Math.floor((baggedCount - 1) / 2) * 38;
+            this.sound.playSproutPop();
+            if (this.items.every((x) => x.state === 'bagged')) {
+              this.phase = 'ready-pay';
+              this.hintEl.textContent = 'ぜんぶ スキャンしたよ！「おかいけい」を おそう！';
+            } else {
+              this.hintEl.textContent = 'つぎの しょうひんも ピッ！と スキャンしよう';
+            }
+          } else {
+            // Tried to bag without scanning! Bounce back nicely
+            item.x = item.homeX;
+            item.y = item.homeY;
+            this.sound.playBoing();
+            this.hintEl.textContent = 'まだ ピッ！してないよ！ まんなかの スキャナーを とおしてね！';
+          }
+        } else {
+          // Snap back gently to left customer basket
+          item.x = item.homeX;
+          item.y = item.homeY;
+        }
+      }
+    } else if (d.kind === 'money') {
+      // Dropped into open cash drawer (x: 495..770, y: 215..360)
+      if (d.x >= 490 && d.x <= 775 && d.y >= 210 && d.y <= 370) {
+        this.paymentMoney = null;
+        this.phase = 'tear-receipt';
+        this.drawerTarget = 0;
+        this.playCoinClink();
+        this.playPrinterBuzz();
+        this.hintEl.textContent = 'レシートを うえに ひっぱって ビリッと ちぎろう！';
+        this.ensureLoop();
+      } else if (this.paymentMoney) {
+        this.paymentMoney.x = this.paymentMoney.homeX;
+        this.paymentMoney.y = this.paymentMoney.homeY;
+      }
+    } else if (d.kind === 'receipt') {
+      this.receiptPull = 0;
+    } else if (d.kind === 'roll') {
+      // Dropped onto thermal printer roll housing (cx=544, cy=104)
+      if (Math.hypot(d.x - 544, d.y - 104) <= 72) {
+        this.paperRemain = 1.0;
+        this.sound.playSproutPop();
+        this.hintEl.textContent = 'あたらしい レシート ロールを セットしたよ！';
+      }
+    }
+
+    this.renderScene();
   }
 
   pressCheckout() {
-    if (this.cart.length === 0) {
+    if (this.phase !== 'ready-pay') {
       this.sound.playBoing();
-      this.hintEl.textContent = 'まず しょうひんを ピッ！と スキャンしよう';
+      this.hintEl.textContent = 'ぜんぶの しょうひんを ピッ！して みぎのカゴへ いれてね！';
       return;
     }
+    this.phase = 'collect-cash';
     this.drawerTarget = 1;
-    this.receiptReady = true;
-    this.paperRemain = Math.max(0, this.paperRemain - 0.1);
+    this.paymentMoney = { x: 340, y: 196, homeX: 340, homeY: 196, amount: this.total };
     this.playDrawerBell();
-    this.playPrinterBuzz();
-    this.hintEl.textContent = 'チーン！ レシートを タップして ビリッと わたそう！';
+    this.hintEl.textContent = 'チーン！ おかねを ドラッグして レジの ひきだしへ いれよう！';
     this.renderScene();
     this.ensureLoop();
   }
 
-  tearReceipt() {
-    if (!this.receiptReady) return;
+  completeReceiptTear() {
     this.playPaperRip();
     this.sound.playCrackerPop();
     this.customersServed++;
     this.scoreEl.textContent = `${this.customersServed}にん`;
-    this.cart = [];
-    this.total = 0;
-    this.receiptReady = false;
-    this.drawerTarget = 0;
-    this.hintEl.textContent = 'ありがとう！ つぎの おきゃくさん どうぞ！';
+    this.receiptPull = 0;
+    this.hintEl.textContent = 'ありがとう！ つぎの おきゃくさんが くるよ！';
     this.renderScene();
-    this.ensureLoop();
-  }
-
-  refillPaperRoll() {
-    this.paperRemain = 1.0;
-    this.sound.playSproutPop();
-    this.hintEl.textContent = 'あたらしい レシート ロールを セットしたよ！';
-    this.renderScene();
+    setTimeout(() => {
+      if (!this.destroyed) this.spawnCustomer();
+    }, 1100);
   }
 
   needsLoop() {
-    return (this.laserFlash && this.laserFlash.life > 0) || Math.abs(this.drawerOpen - this.drawerTarget) > 0.01;
+    return this.laserFlash > 0.01 || Math.abs(this.drawerOpen - this.drawerTarget) > 0.01;
   }
 
   ensureLoop() {
@@ -229,10 +377,7 @@ export default class RegisterLabGame {
       if (now - this.lastFrame >= 32) {
         const dt = Math.min(0.06, (now - this.lastFrame) / 1000);
         this.lastFrame = now;
-        if (this.laserFlash) {
-          this.laserFlash.life -= dt * 3.8;
-          if (this.laserFlash.life <= 0) this.laserFlash = null;
-        }
+        if (this.laserFlash > 0) this.laserFlash = Math.max(0, this.laserFlash - dt * 3.5);
         if (Math.abs(this.drawerOpen - this.drawerTarget) > 0.01) {
           const step = dt * 3.8;
           this.drawerOpen += this.drawerOpen < this.drawerTarget ? Math.min(step, this.drawerTarget - this.drawerOpen) : -Math.min(step, this.drawerOpen - this.drawerTarget);
@@ -253,127 +398,147 @@ export default class RegisterLabGame {
   }
 
   renderScene() {
-    const rollR = 11 + this.paperRemain * 21; // Visibly shrinks from 32 down to 11!
-    const drawerSlide = this.drawerOpen * 58;
-    const receiptH = this.receiptReady ? Math.min(138, 44 + this.cart.length * 16) : Math.min(82, this.cart.length * 14);
-    const scannedIds = new Set(this.cart.map((c) => c.id));
+    const cust = CUSTOMERS[(this.customerIdx - 1 + CUSTOMERS.length) % CUSTOMERS.length];
+    const rollR = 10 + this.paperRemain * 20;
+    const drawerSlide = this.drawerOpen * 46;
+    const receiptH = this.phase === 'tear-receipt' ? 92 : Math.min(54, this.scannedLines.length * 13);
+
+    // Draw items in clean depth order: bagged -> in-basket -> currently dragged on top!
+    const baggedItems = this.items.filter((x) => x.state === 'bagged');
+    const basketItems = this.items.filter((x) => x.state === 'in-basket' && !(this.drag && this.drag.kind === 'item' && this.drag.uid === x.uid));
+    const draggedItem = (this.drag && this.drag.kind === 'item') ? this.items.find((x) => x.uid === this.drag.uid) : null;
 
     this.sceneEl.innerHTML = `
-      <!-- Soft Lingokids ambient pastel blobs -->
-      <circle cx="96" cy="84" r="110" fill="#FFE29A" opacity="0.34"/>
-      <circle cx="716" cy="96" r="120" fill="#C8F2D6" opacity="0.38"/>
+      <!-- Soft pastel studio circles -->
+      <circle cx="90" cy="84" r="105" fill="#FFE29A" opacity="0.34"/>
+      <circle cx="716" cy="94" r="115" fill="#C8F2D6" opacity="0.36"/>
 
-      <!-- Warm Wooden Shop Counter Base -->
-      <rect x="26" y="424" width="748" height="58" rx="22" fill="#B58352"/>
-      <rect x="26" y="416" width="748" height="58" rx="22" fill="url(#rl-wood)"/>
+      <!-- Customer peeking happily behind the counter -->
+      ${renderCustomerHeadSvg(cust, 150, 128)}
+      <rect x="74" y="152" width="152" height="32" rx="16" fill="#FFFFFF"/>
+      <text x="150" y="173" text-anchor="middle" font-size="13" font-weight="900" fill="#3D405B" font-family="${FONT_ROUND}">${cust.name} の カゴ</text>
 
-      <!-- LEFT: Grocery Items on Counter (tap directly to scan!) -->
-      ${SHOP_ITEMS.map((it, idx) => {
-        const ix = 104 + (idx % 2) * 116;
-        const iy = 128 + Math.floor(idx / 2) * 114;
-        return renderShopItemSvg(it, ix, iy, scannedIds.has(it.id));
-      }).join('')}
+      <!-- Warm Wooden Shop Counter Surface -->
+      <rect x="24" y="246" width="752" height="232" rx="28" fill="#C28F5B"/>
+      <rect x="24" y="236" width="752" height="232" rx="28" fill="url(#rl-wood)"/>
 
-      <!-- Handheld Barcode Scanner Docked at Center-Left -->
-      <g transform="translate(322 252)">
-        <rect x="-14" y="14" width="28" height="58" rx="12" fill="#3D405B"/>
-        <path d="M -30 -8 Q -30 -24 -12 -24 H 18 Q 28 -24 28 -10 V 14 Q 28 24 14 24 H -16 Q -30 24 -30 10 Z" fill="#FFFFFF"/>
-        <rect x="-26" y="-12" width="12" height="24" rx="5" fill="#F05A5B"/>
+      <!-- 1. LEFT BLUE BASKET (Customer's Unscanned Basket) -->
+      <g transform="translate(52 284)">
+        <rect x="0" y="6" width="194" height="156" rx="24" fill="#237C9E"/>
+        <rect x="0" y="0" width="194" height="156" rx="24" fill="url(#rl-basket-in)"/>
+        <rect x="14" y="14" width="166" height="128" rx="16" fill="#DCF4FC"/>
+        <text x="97" y="136" text-anchor="middle" font-size="12" font-weight="900" fill="#237C9E" font-family="${FONT_ROUND}">ここから だそう</text>
       </g>
 
-      <!-- Red Laser Scan Beam Flash! -->
-      ${this.laserFlash ? `
-        <line x1="296" y1="252" x2="${this.laserFlash.x}" y2="${this.laserFlash.y}"
-          stroke="#FF5E5E" stroke-width="5" stroke-linecap="round" opacity="${this.laserFlash.life.toFixed(2)}"/>
-        <circle cx="${this.laserFlash.x}" cy="${this.laserFlash.y}" r="${(18 + (1 - this.laserFlash.life) * 20).toFixed(1)}"
-          fill="none" stroke="#FF5E5E" stroke-width="4" opacity="${this.laserFlash.life.toFixed(2)}"/>
-      ` : ''}
-
-      <!-- RIGHT: Sleek Matte Mint & Porcelain POS Cash Register (x: 382..754) -->
-      <!-- 1. Top Thermal Receipt Printer + Visible Shrinking Paper Roll -->
-      <g data-act="refill-roll" style="cursor:pointer;" transform="translate(468 124)">
-        ${this.paperRemain <= 0.04 ? `<circle cx="0" cy="0" r="46" fill="none" stroke="#F05A5B" stroke-width="4.5" stroke-dasharray="10 7"/>` : ''}
-        <rect x="-54" y="-50" width="108" height="106" rx="22" fill="#379989"/>
-        <rect x="-54" y="-56" width="108" height="106" rx="22" fill="#45B5A2"/>
-        <!-- Clear Cutaway Window showing paper roll thickness! -->
-        <circle cx="0" cy="-2" r="36" fill="#2A3647"/>
-        <circle cx="0" cy="-2" r="${rollR.toFixed(1)}" fill="#FFFFFF"/>
-        <circle cx="0" cy="-2" r="9.5" fill="#D4A373"/>
-        <circle cx="0" cy="-2" r="5" fill="#2A3647"/>
-        ${this.paperRemain <= 0.04 ? `<text x="0" y="34" text-anchor="middle" font-size="11" font-weight="900" fill="#FFF3A1" font-family="${FONT_ROUND}">ほじゅう！</text>` : ''}
+      <!-- 2. CENTER BUILT-IN BARCODE SCANNER PAD (drag items across the red beam!) -->
+      <g transform="translate(274 268)">
+        <rect x="0" y="6" width="132" height="126" rx="24" fill="#CBD6E2"/>
+        <rect x="0" y="0" width="132" height="126" rx="24" fill="#FFFFFF"/>
+        <!-- Dark Optical Glass Window -->
+        <rect x="18" y="18" width="96" height="72" rx="14" fill="#2A3647"/>
+        <!-- Live Red Laser Crosshair -->
+        <line x1="26" y1="54" x2="106" y2="54" stroke="#FF5E5E" stroke-width="${this.laserFlash > 0.1 ? '7' : '3.5'}" stroke-linecap="round" opacity="${this.laserFlash > 0.1 ? '1' : '0.78'}"/>
+        <line x1="66" y1="28" x2="66" y2="80" stroke="#FF5E5E" stroke-width="2" stroke-linecap="round" opacity="0.45"/>
+        <text x="66" y="112" text-anchor="middle" font-size="12" font-weight="900" fill="#3D405B" font-family="${FONT_ROUND}">ここで ピッ！</text>
       </g>
 
-      <!-- Printed Receipt Strip rising out of the printer slot (tap to tear!) -->
-      ${receiptH > 6 ? `
-        <g data-act="tear-receipt" style="cursor:pointer;" transform="translate(468 ${(124 - 52 - receiptH).toFixed(1)})">
-          ${this.receiptReady ? `<rect x="-44" y="-6" width="88" height="${(receiptH + 12).toFixed(1)}" rx="12" fill="none" stroke="#34D399" stroke-width="4" stroke-dasharray="8 6"/>` : ''}
-          <rect x="-38" y="0" width="76" height="${receiptH.toFixed(1)}" rx="6" fill="#FFFFFF"/>
-          ${this.cart.slice(-5).map((c, ci) => `
-            <text x="-30" y="${18 + ci * 15}" font-size="9.5" font-weight="800" fill="#3D405B" font-family="${FONT_ROUND}">${c.name.slice(0, 4)}</text>
-            <text x="30"  y="${18 + ci * 15}" text-anchor="end" font-size="9.5" font-weight="900" fill="#45B5A2" font-family="${FONT_ROUND}">${c.price}</text>
-          `).join('')}
-          ${this.receiptReady ? `
-            <line x1="-30" y1="${receiptH - 28}" x2="30" y2="${receiptH - 28}" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="4 3"/>
-            <text x="0" y="${receiptH - 11}" text-anchor="middle" font-size="11.5" font-weight="900" fill="#F05A5B" font-family="${FONT_ROUND}">¥${this.total}</text>
-          ` : ''}
+      <!-- 3. RIGHT MINT BASKET (Scanned "My Basket" Drop Zone) -->
+      <g transform="translate(442 294)">
+        <rect x="0" y="6" width="194" height="146" rx="24" fill="#298752"/>
+        <rect x="0" y="0" width="194" height="146" rx="24" fill="url(#rl-basket-out)"/>
+        <rect x="14" y="14" width="166" height="118" rx="16" fill="#E6FAF0"/>
+        <text x="97" y="124" text-anchor="middle" font-size="12" font-weight="900" fill="#298752" font-family="${FONT_ROUND}">ピッ！のあと ここ</text>
+      </g>
+
+      <!-- 4. TOP-RIGHT MATTE MINT POS REGISTER & THERMAL PAPER ROLL -->
+      <!-- Spare Paper Roll sitting on shelf when low (drag onto printer!) -->
+      ${this.paperRemain <= 0.25 ? `
+        <g data-act="drag-roll" style="cursor:grab;" transform="translate(414 114)">
+          <circle cx="0" cy="4" r="28" fill="rgba(61,64,91,0.12)"/>
+          <circle cx="0" cy="0" r="28" fill="#FFFFFF"/>
+          <circle cx="0" cy="0" r="9" fill="#D4A373"/>
+          <text x="0" y="42" text-anchor="middle" font-size="11" font-weight="900" fill="#F05A5B" font-family="${FONT_ROUND}">よびロール</text>
         </g>
       ` : ''}
 
-      <!-- 2. Digital LED Total Price Pole Display -->
-      <rect x="546" y="74" width="186" height="82" rx="22" fill="#2A3647"/>
-      <rect x="556" y="84" width="166" height="62" rx="14" fill="#1E2836"/>
-      <text x="708" y="128" text-anchor="end" font-size="38" font-weight="900" fill="#6EE7B7" font-family="monospace">¥${this.total}</text>
-
-      <!-- 3. Main Mint POS Body & Tactile Keypad -->
-      <rect x="392" y="176" width="356" height="174" rx="28" fill="#379989"/>
-      <rect x="392" y="166" width="356" height="174" rx="28" fill="url(#rl-mint)"/>
-
-      <!-- Decorative Clean Soft Keypad + Clear & Checkout Big Keys -->
-      ${[0, 1, 2, 3, 4, 5].map((k) => {
-        const kx = 434 + (k % 3) * 52;
-        const ky = 210 + Math.floor(k / 3) * 50;
-        return `
-          <rect x="${kx - 19}" y="${ky - 16}" width="38" height="38" rx="12" fill="rgba(0,0,0,0.12)"/>
-          <rect x="${kx - 19}" y="${ky - 20}" width="38" height="38" rx="12" fill="#FFFFFF"/>
-          <text x="${kx}" y="${ky + 4}" text-anchor="middle" font-size="16" font-weight="900" fill="#3D405B" font-family="${FONT_ROUND}">${k + 1}</text>
-        `;
-      }).join('')}
-
-      <!-- Clear Key -->
-      <g data-act="clear-cart" style="cursor:pointer;" transform="translate(486 306)">
-        <rect x="-70" y="-16" width="140" height="36" rx="14" fill="#C43B3C"/>
-        <rect x="-70" y="-20" width="140" height="36" rx="14" fill="#F05A5B"/>
-        <text x="0" y="3" text-anchor="middle" font-size="14" font-weight="900" fill="#FFFFFF" font-family="${FONT_ROUND}">やりなおす</text>
+      <!-- Thermal Printer Cutaway Housing -->
+      <g transform="translate(544 108)">
+        <rect x="-46" y="-44" width="92" height="92" rx="22" fill="#379989"/>
+        <rect x="-46" y="-50" width="92" height="92" rx="22" fill="#45B5A2"/>
+        <circle cx="0" cy="-4" r="32" fill="#2A3647"/>
+        <circle cx="0" cy="-4" r="${rollR.toFixed(1)}" fill="#FFFFFF"/>
+        <circle cx="0" cy="-4" r="8.5" fill="#D4A373"/>
+        <circle cx="0" cy="-4" r="4" fill="#2A3647"/>
       </g>
 
-      <!-- Big Tactile Checkout Key ("おかいけい") -->
-      <g data-act="checkout" style="cursor:pointer;" transform="translate(656 254)">
-        <rect x="-66" y="-56" width="132" height="122" rx="24" fill="#D19D1E"/>
-        <rect x="-66" y="-62" width="132" height="122" rx="24" fill="#F7C948"/>
-        <text x="0" y="-6" text-anchor="middle" font-size="19" font-weight="900" fill="#3D405B" font-family="${FONT_ROUND}">おかいけい</text>
-        <text x="0" y="22" text-anchor="middle" font-size="14" font-weight="800" fill="#854D0E" font-family="${FONT_ROUND}">チーン！</text>
+      <!-- Printed Receipt Strip rising from printer (drag UP to tear!) -->
+      ${receiptH > 6 ? `
+        <g data-act="drag-receipt" style="cursor:${this.phase === 'tear-receipt' ? 'ns-resize' : 'default'};"
+           transform="translate(544 ${(64 - receiptH - this.receiptPull).toFixed(1)})">
+          ${this.phase === 'tear-receipt' ? `<rect x="-42" y="-6" width="84" height="${(receiptH + 12).toFixed(1)}" rx="12" fill="none" stroke="#34D399" stroke-width="4" stroke-dasharray="8 6"/>` : ''}
+          <rect x="-36" y="0" width="72" height="${receiptH.toFixed(1)}" rx="6" fill="#FFFFFF"/>
+          ${this.scannedLines.slice(-4).map((c, ci) => `
+            <text x="-28" y="${16 + ci * 14}" font-size="9" font-weight="800" fill="#3D405B" font-family="${FONT_ROUND}">${c.name.slice(0, 4)}</text>
+            <text x="28"  y="${16 + ci * 14}" text-anchor="end" font-size="9" font-weight="900" fill="#45B5A2" font-family="${FONT_ROUND}">${c.price}</text>
+          `).join('')}
+          ${this.phase === 'tear-receipt' ? `<text x="0" y="${receiptH - 10}" text-anchor="middle" font-size="11" font-weight="900" fill="#F05A5B" font-family="${FONT_ROUND}">↑ ひっぱる</text>` : ''}
+        </g>
+      ` : ''}
+
+      <!-- Digital Price Display & Checkout Button -->
+      <rect x="606" y="56" width="164" height="62" rx="18" fill="#2A3647"/>
+      <text x="754" y="100" text-anchor="end" font-size="32" font-weight="900" fill="#6EE7B7" font-family="monospace">¥${this.total}</text>
+
+      <g data-act="checkout" style="cursor:pointer;" transform="translate(688 164)">
+        ${this.phase === 'ready-pay' ? `<rect x="-86" y="-36" width="172" height="72" rx="24" fill="none" stroke="#34D399" stroke-width="4.5" stroke-dasharray="10 7"/>` : ''}
+        <rect x="-80" y="-26" width="160" height="58" rx="20" fill="${this.phase === 'ready-pay' ? '#D19D1E' : '#379989'}"/>
+        <rect x="-80" y="-32" width="160" height="58" rx="20" fill="${this.phase === 'ready-pay' ? '#F7C948' : 'url(#rl-mint)'}"/>
+        <text x="0" y="4" text-anchor="middle" font-size="18" font-weight="900" fill="${this.phase === 'ready-pay' ? '#3D405B' : '#FFFFFF'}" font-family="${FONT_ROUND}">おかいけい</text>
       </g>
 
-      <!-- 4. Sliding Cash Drawer beneath POS Body -->
-      <g data-act="toggle-drawer" style="cursor:pointer;" transform="translate(0 ${drawerSlide.toFixed(1)})">
+      <!-- Sliding Cash Drawer on Right -->
+      <g transform="translate(0 ${drawerSlide.toFixed(1)})">
         ${this.drawerOpen > 0.1 ? `
-          <!-- Inside Cash Compartment (Bills & Coins revealed as drawer opens!) -->
-          <rect x="404" y="324" width="332" height="60" rx="14" fill="#2A3647"/>
-          <rect x="420" y="332" width="76" height="42" rx="8" fill="#5CD68D"/>
-          <rect x="506" y="332" width="76" height="42" rx="8" fill="#56CCF2"/>
-          <circle cx="624" cy="354" r="14" fill="#F7C948"/>
-          <circle cx="662" cy="354" r="14" fill="#E6EDF4"/>
-          <circle cx="700" cy="354" r="14" fill="#E0925C"/>
+          <rect x="604" y="198" width="166" height="52" rx="14" fill="#2A3647"/>
+          <rect x="614" y="206" width="66" height="36" rx="8" fill="#5CD68D"/>
+          <circle cx="708" cy="224" r="12" fill="#F7C948"/>
+          <circle cx="742" cy="224" r="12" fill="#E6EDF4"/>
         ` : ''}
-        <!-- Drawer Front Plate -->
-        <rect x="392" y="352" width="356" height="66" rx="20" fill="#CBD6E2"/>
-        <rect x="392" y="344" width="356" height="66" rx="20" fill="#FFFFFF"/>
-        <rect x="526" y="370" width="88" height="14" rx="7" fill="#CBD6E2"/>
+        <rect x="604" y="218" width="166" height="46" rx="16" fill="#CBD6E2"/>
+        <rect x="604" y="212" width="166" height="46" rx="16" fill="#FFFFFF"/>
+        <rect x="662" y="230" width="50" height="10" rx="5" fill="#CBD6E2"/>
       </g>
+
+      <!-- Bagged Items & Unscanned Basket Items -->
+      ${baggedItems.map((it) => renderDraggableItemSvg(it, it.x, it.y, { scale: 0.82, scanned: true })).join('')}
+      ${basketItems.map((it) => `
+        <g data-act="drag-item" data-uid="${it.uid}" style="cursor:grab;">
+          ${renderDraggableItemSvg(it, it.x, it.y, { scale: 0.96, scanned: it.scanned })}
+        </g>
+      `).join('')}
+
+      <!-- Customer Payment Money (drag into open cash drawer!) -->
+      ${this.paymentMoney ? `
+        <g data-act="drag-money" style="cursor:grab;" transform="translate(${this.paymentMoney.x.toFixed(1)} ${this.paymentMoney.y.toFixed(1)})">
+          <rect x="-42" y="-20" width="84" height="46" rx="12" fill="#34A867"/>
+          <rect x="-42" y="-25" width="84" height="46" rx="12" fill="#5CD68D"/>
+          <circle cx="0" cy="-2" r="13" fill="#E8FFF1"/>
+          <text x="0" y="3" text-anchor="middle" font-size="13" font-weight="900" fill="#298752" font-family="${FONT_ROUND}">¥${this.paymentMoney.amount}</text>
+        </g>
+      ` : ''}
+
+      <!-- Actively Dragged Item / Spare Roll rendered on very top! -->
+      ${draggedItem ? renderDraggableItemSvg(draggedItem, draggedItem.x, draggedItem.y, { scale: 1.0, scanned: draggedItem.scanned, dragging: true }) : ''}
+      ${this.drag && this.drag.kind === 'roll' ? `
+        <g transform="translate(${this.drag.x.toFixed(1)} ${this.drag.y.toFixed(1)})" pointer-events="none">
+          <circle cx="0" cy="0" r="30" fill="#FFFFFF"/>
+          <circle cx="0" cy="0" r="9.5" fill="#D4A373"/>
+        </g>
+      ` : ''}
     `;
   }
 
-  /* Web Audio Register & Barcode Synthesizers */
+  /* Web Audio Register Effects */
   playBarcodeBeep() {
     const ctx = this.sound && this.sound.ensureContext();
     if (!ctx) return;
@@ -392,16 +557,28 @@ export default class RegisterLabGame {
     const ctx = this.sound && this.sound.ensureContext();
     if (!ctx) return;
     const now = ctx.currentTime;
-    // Classic cash register "CHING!" metallic bell
     [1567.98, 3135.96].forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now);
+      osc.type = 'sine'; osc.frequency.setValueAtTime(freq, now);
       g.gain.setValueAtTime(idx === 0 ? 0.24 : 0.09, now);
       g.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
       osc.connect(g); g.connect(this.sound.wetBus || this.sound.dryBus);
       osc.start(now); osc.stop(now + 0.58);
+    });
+  }
+
+  playCoinClink() {
+    const ctx = this.sound && this.sound.ensureContext();
+    if (!ctx) return;
+    [0, 0.06].forEach((d, i) => {
+      const now = ctx.currentTime + d;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(i === 0 ? 2200 : 2650, now);
+      g.gain.setValueAtTime(0.16, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      osc.connect(g); g.connect(this.sound.dryBus);
+      osc.start(now); osc.stop(now + 0.15);
     });
   }
 
@@ -415,7 +592,7 @@ export default class RegisterLabGame {
     bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 3.5;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.001, now);
-    g.gain.linearRampToValueAtTime(0.16, now + 0.02);
+    g.gain.linearRampToValueAtTime(0.15, now + 0.02);
     g.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
     src.connect(bp); bp.connect(g); g.connect(this.sound.dryBus);
     src.start(now, Math.random() * 0.2, 0.26);
