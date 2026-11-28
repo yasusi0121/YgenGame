@@ -539,6 +539,119 @@ export const GAME_REGISTRY = [
     load: (v) => loadMod('./water-lab.js', v)
   },
   {
+    id: 'elevator-lab',
+    title: 'エレベーター ラボ',
+    sub: 'ELEVATOR LAB',
+    desc: 'ボタンと かっしゃの しくみで おきゃくさんを はこぼう！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#315772',
+    shadow: '#1E3A50',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Traction sheave pulley at top -->
+        <circle cx="48" cy="18" r="10" fill="#F7C948"/>
+        <circle cx="48" cy="18" r="4.5" fill="#315772"/>
+        <line x1="48" y1="26" x2="48" y2="38" stroke="#E2E8F0" stroke-width="3.5"/>
+        <!-- Matte Elevator Cabin & Sliding Doors -->
+        <rect x="20" y="34" width="56" height="50" rx="12" fill="#FFFFFF"/>
+        <rect x="26" y="40" width="20" height="38" rx="6" fill="#D5E0EB"/>
+        <rect x="50" y="40" width="20" height="38" rx="6" fill="#D5E0EB"/>
+        <!-- Glowing Up/Down Call Arrows -->
+        <polygon points="82,46 77,54 87,54" fill="#4ADE80"/>
+        <polygon points="82,68 77,60 87,60" fill="#F7C948"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./elevator-lab.js', v)
+  },
+  {
+    id: 'washer-lab',
+    title: 'せんたくき ラボ',
+    sub: 'WASHER LAB',
+    desc: 'あわあわ あらい と こうそく だっすい の メカ！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#3A7D72',
+    shadow: '#25554D',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <rect x="18" y="12" width="60" height="72" rx="14" fill="#FFFFFF"/>
+        <rect x="25" y="19" width="18" height="10" rx="5" fill="#D5E0EB"/>
+        <circle cx="54" cy="24" r="6" fill="#56CCF2"/>
+        <circle cx="68" cy="24" r="5" fill="#34D399"/>
+        <!-- Round Drum Glass Door with Water & Bubbles -->
+        <circle cx="48" cy="56" r="22" fill="#CBD6E2"/>
+        <circle cx="48" cy="56" r="16" fill="#2A3E4C"/>
+        <path d="M 33 60 Q 48 52 63 60 A 16 16 0 0 1 33 60 Z" fill="#5CE1E6"/>
+        <circle cx="42" cy="54" r="4" fill="#FFFFFF" opacity="0.85"/>
+        <circle cx="53" cy="52" r="3.5" fill="#FFFFFF" opacity="0.85"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./washer-lab.js', v)
+  },
+  {
+    id: 'musicbox-lab',
+    title: 'オルゴール ラボ',
+    sub: 'MUSIC BOX LAB',
+    desc: 'ぜんまいを まいて ピンで きれいな メロディを かなでよう！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#5B4B8A',
+    shadow: '#3B2F63',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <rect x="14" y="18" width="68" height="62" rx="14" fill="#D9A36A"/>
+        <rect x="21" y="25" width="54" height="48" rx="9" fill="#2B2B45"/>
+        <!-- Brass Pin Cylinder -->
+        <rect x="27" y="30" width="42" height="22" rx="6" fill="#F7C948"/>
+        <circle cx="35" cy="38" r="2.8" fill="#F05A5B"/>
+        <circle cx="45" cy="44" r="2.8" fill="#5CD68D"/>
+        <circle cx="55" cy="36" r="2.8" fill="#56CCF2"/>
+        <circle cx="62" cy="43" r="2.8" fill="#FF8FB1"/>
+        <!-- Steel Comb Teeth -->
+        <rect x="29" y="54" width="5" height="16" rx="2.5" fill="#E2E8F0"/>
+        <rect x="37" y="54" width="5" height="14" rx="2.5" fill="#E2E8F0"/>
+        <rect x="45" y="54" width="5" height="12" rx="2.5" fill="#E2E8F0"/>
+        <rect x="53" y="54" width="5" height="10" rx="2.5" fill="#E2E8F0"/>
+        <rect x="61" y="54" width="5" height="8"  rx="2.5" fill="#E2E8F0"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./musicbox-lab.js', v)
+  },
+  {
+    id: 'register-lab',
+    title: 'レジ ラボ',
+    sub: 'REGISTER LAB',
+    desc: 'ピッ！と スキャンして チーン！と おかいけい ＆ ロールほじゅう！',
+    badge: 'NEW!',
+    cta: 'あそぶ',
+    bg: '#45B5A2',
+    shadow: '#2C8575',
+    available: true,
+    iconSvg: `
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <!-- Receipt Strip & Thermal Roll -->
+        <rect x="24" y="10" width="18" height="24" rx="4" fill="#FFFFFF"/>
+        <line x1="28" y1="16" x2="38" y2="16" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="28" y1="22" x2="36" y2="22" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Digital Display -->
+        <rect x="48" y="16" width="30" height="18" rx="6" fill="#2A3647"/>
+        <rect x="54" y="22" width="18" height="6" rx="3" fill="#6EE7B7"/>
+        <!-- Matte Mint Register Body & Gold Checkout Key -->
+        <rect x="16" y="34" width="64" height="32" rx="10" fill="#6DD5C3"/>
+        <rect x="24" y="42" width="22" height="16" rx="5" fill="#FFFFFF"/>
+        <rect x="52" y="42" width="20" height="16" rx="5" fill="#F7C948"/>
+        <!-- Cash Drawer -->
+        <rect x="16" y="68" width="64" height="16" rx="7" fill="#FFFFFF"/>
+        <rect x="38" y="74" width="20" height="5" rx="2.5" fill="#CBD6E2"/>
+      </svg>
+    `,
+    load: (v) => loadMod('./register-lab.js', v)
+  },
+  {
     id: 'coming-next',
     title: 'つぎの あそび',
     sub: 'COMING SOON',
